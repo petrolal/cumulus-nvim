@@ -809,7 +809,7 @@ function M.check()
   local parity_servers = {
     { bin = "basedpyright-langserver", desc = "Python type checker LSP (IDEA 'Python')" },
     { bin = "ruff", desc = "Python lint + format LSP (IDEA 'Python')" },
-    { bin = "sqls", desc = "SQL language server (IDEA Database tools)" },
+    { bin = "sql-language-server", desc = "SQL language server (IDEA Database tools)" },
     { bin = "vue-language-server", desc = "Vue / Volar LSP (IDEA 'Vue.js')" },
     { bin = "svelteserver", desc = "Svelte LSP (IDEA 'Svelte')" },
     { bin = "astro-ls", desc = "Astro LSP (IDEA 'Astro')" },

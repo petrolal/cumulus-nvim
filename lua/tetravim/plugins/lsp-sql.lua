@@ -2,8 +2,8 @@
 --
 -- Two layers, matching what IDEA's "Database" plugin gives you:
 --   query execution / schema browsing -> vim-dadbod (see tools-dadbod.lua)
---   language intelligence             -> sqls (completion, hover, go-to-def,
---                                        :SqlsExecuteQuery against a connection)
+--   language intelligence             -> sqlls (sql-language-server: completion,
+--                                        hover, go-to-def)
 --
 -- Tree-sitter `sql` provides syntax highlighting and is also probed by
 -- `:checkhealth tetravim` (Embedded Database Explorer section).

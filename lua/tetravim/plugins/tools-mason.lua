@@ -53,7 +53,7 @@ local ensure_installed = {
   "basedpyright",
   "ruff",
   -- SQL (bundled Database tools): language intelligence layer over vim-dadbod.
-  "sqls",
+  "sqlls",
   -- Web framework servers (bundled Vue / Svelte / Astro / Angular plugins).
   "vue-language-server",
   "svelte-language-server",
