@@ -196,3 +196,137 @@ describe("Test Coverage Module", function()
     os.remove(tmp_xml)
   end)
 end)
+
+-- Migrated from scripts/validate-test-coverage.sh (SPEC-1.3). Steps [1] item 2
+-- and [2] (parse/signs/virt-text/toggle/clear/errors) are covered by the
+-- describe block above; ported here are the neotest lazy-spec shape + which-key
+-- groups + JVM keymap registration + user-command round-trip (step [1] items
+-- 1,3,4,5,6 and step [2] item 7) and the degraded neotest key handlers (step
+-- [3] -- every handler is pcall(require,"neotest")-guarded, so it exercises the
+-- "not available" branch cleanly in the plenary child).
+describe("SPEC-1.3 test runner wiring (migrated from validate-test-coverage.sh)", function()
+  local tools_test = require("tetravim.plugins.tools-test")
+  local neotest_spec = tools_test[1]
+
+  local function key_map()
+    local t = {}
+    for _, k in ipairs(neotest_spec.keys or {}) do
+      t[k[1]] = k[2]
+    end
+    return t
+  end
+
+  it("tools-test declares neotest + neotest-java, ft-gated on java only", function()
+    assert.is_table(neotest_spec)
+    assert.are.equal("nvim-neotest/neotest", neotest_spec[1])
+
+    local dep_names = {}
+    for _, dep in ipairs(neotest_spec.dependencies or {}) do
+      dep_names[type(dep) == "table" and dep[1] or dep] = true
+    end
+    assert.is_true(dep_names["rcasia/neotest-java"], "missing rcasia/neotest-java dependency")
+
+    local ft = {}
+    for _, f in ipairs(neotest_spec.ft or {}) do
+      ft[f] = true
+    end
+    assert.is_true(ft.java)
+    assert.is_falsy(ft.kotlin)
+    assert.is_falsy(ft.scala)
+  end)
+
+  it("exposes <leader>tr/tf/ts/to/td as callable key handlers", function()
+    local keys = key_map()
+    for _, lhs in ipairs({ "<leader>tr", "<leader>tf", "<leader>ts", "<leader>to", "<leader>td" }) do
+      assert.is_function(keys[lhs], lhs .. " missing in tools-test keys")
+    end
+  end)
+
+  it("neotest key handlers run without error when neotest is absent (degraded path)", function()
+    local keys = key_map()
+    local orig_notify = vim.notify
+    vim.notify = function() end
+    vim.cmd("enew")
+    assert.has_no.errors(function()
+      keys["<leader>ts"]()
+      keys["<leader>to"]()
+      keys["<leader>tr"]()
+      keys["<leader>tf"]()
+      keys["<leader>td"]()
+    end)
+    vim.notify = orig_notify
+  end)
+
+  it("jvm.whichkey_spec() carries the <leader>jt / <leader>jc groups", function()
+    local jvm = require("tetravim.util.jvm")
+    local groups = {}
+    for _, item in ipairs(jvm.whichkey_spec()) do
+      groups[item[1]] = item.group
+    end
+    assert.are.equal("test runner", groups["<leader>jt"])
+    assert.are.equal("code coverage", groups["<leader>jc"])
+  end)
+
+  it("ui-whichkey global spec registers <leader>t as 'test runner'", function()
+    local wk = require("tetravim.plugins.ui-whichkey")
+    local opts = wk[1].opts(nil, { spec = {} })
+    local groups = {}
+    for _, item in ipairs(opts.spec) do
+      if item[1] and item.group then
+        groups[item[1]] = item.group
+      end
+    end
+    assert.are.equal("test runner", groups["<leader>t"])
+  end)
+
+  it("jvm.setup_keymaps() registers the <leader>jt* / <leader>jc* leaves", function()
+    local jvm = require("tetravim.util.jvm")
+    jvm.setup_keymaps()
+    for _, lhs in ipairs({
+      "<leader>jtt",
+      "<leader>jtc",
+      "<leader>jta",
+      "<leader>jts",
+      "<leader>jto",
+      "<leader>jtd",
+      "<leader>jcl",
+      "<leader>jcx",
+      "<leader>jct",
+      "<leader>jcs",
+    }) do
+      assert.are_not.equal("", vim.fn.maparg(lhs, "n"), lhs .. " not registered")
+    end
+  end)
+
+  it("defines the :TetraVimCoverage* user commands and they round-trip", function()
+    for _, cmd in ipairs({
+      "TetraVimCoverageLoad",
+      "TetraVimCoverageClear",
+      "TetraVimCoverageToggle",
+      "TetraVimCoverageSummary",
+    }) do
+      assert.are.equal(2, vim.fn.exists(":" .. cmd), ":" .. cmd .. " not defined")
+    end
+
+    local tmp_xml = vim.fn.tempname() .. ".xml"
+    local fh = assert(io.open(tmp_xml, "w"))
+    fh:write([[<?xml version="1.0"?>
+<report name="cmd-test">
+  <package name="com/x">
+    <sourcefile name="X.java"><line nr="1" mi="0" ci="1" mb="0" cb="0"/></sourcefile>
+  </package>
+</report>]])
+    fh:close()
+
+    vim.cmd("TetraVimCoverageLoad " .. tmp_xml)
+    assert.is_true(coverage.is_visible)
+    vim.wait(2000, function()
+      return not coverage.is_loading
+    end, 10)
+    vim.cmd("TetraVimCoverageToggle")
+    assert.is_false(coverage.is_visible)
+    vim.cmd("TetraVimCoverageClear")
+    assert.is_nil(coverage.last_coverage)
+    os.remove(tmp_xml)
+  end)
+end)

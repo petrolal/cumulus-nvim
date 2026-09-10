@@ -10,6 +10,7 @@
 -- time each one attaches.
 local attach_messages = {
   jdtls = "JDTLS attached -- test runner & refactor keymaps are ready",
+  kotlin_lsp = "Kotlin LSP (JetBrains) attached",
   kotlin_language_server = "Kotlin Language Server attached",
   html = "HTML Language Server attached",
   cssls = "CSS Language Server attached",
@@ -46,24 +47,26 @@ return {
         vim.lsp.config("*", { capabilities = vim.deepcopy(capabilities) })
         for server, server_opts in pairs(opts.servers or {}) do
           server_opts = server_opts or {}
-          -- Bounded auto-restart for every generically-configured server, not
-          -- just jdtls/metals: an unexpected exit re-enables the server (max
-          -- 3 times / 180s, then it gives up and points at :LspLog). Specs
-          -- that need bespoke restart handling set their own `on_exit`.
-          if server_opts.on_exit == nil then
-            local name = server
-            server_opts.on_exit = resilience.make_on_exit(name, function()
-              pcall(vim.lsp.enable, name, false)
-              pcall(vim.lsp.enable, name)
-            end)
+          if server_opts.enabled ~= false then
+            -- Bounded auto-restart for every generically-configured server, not
+            -- just jdtls/metals: an unexpected exit re-enables the server (max
+            -- 3 times / 180s, then it gives up and points at :LspLog). Specs
+            -- that need bespoke restart handling set their own `on_exit`.
+            if server_opts.on_exit == nil then
+              local name = server
+              server_opts.on_exit = resilience.make_on_exit(name, function()
+                pcall(vim.lsp.enable, name, false)
+                pcall(vim.lsp.enable, name)
+              end)
+            end
+            vim.lsp.config(server, server_opts)
+            vim.lsp.enable(server)
           end
-          vim.lsp.config(server, server_opts)
-          vim.lsp.enable(server)
         end
       else
         local lspconfig = require("lspconfig")
         for server, server_opts in pairs(opts.servers or {}) do
-          if lspconfig[server] then
+          if server_opts and server_opts.enabled ~= false and lspconfig[server] then
             lspconfig[server].setup(
               vim.tbl_deep_extend("keep", server_opts or {}, { capabilities = vim.deepcopy(capabilities) })
             )

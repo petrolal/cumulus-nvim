@@ -72,6 +72,7 @@ end
 ---@param bufnr integer
 function M.wire_document_highlight(client, bufnr)
   if not supports(client, "textDocument/documentHighlight") then
+    pcall(vim.api.nvim_clear_autocmds, { group = highlight_group, buffer = bufnr })
     return
   end
   pcall(vim.api.nvim_clear_autocmds, { group = highlight_group, buffer = bufnr })
@@ -79,7 +80,9 @@ function M.wire_document_highlight(client, bufnr)
     group = highlight_group,
     buffer = bufnr,
     callback = function()
-      pcall(vim.lsp.buf.document_highlight)
+      if supports(client, "textDocument/documentHighlight") then
+        pcall(vim.lsp.buf.document_highlight)
+      end
     end,
   })
   vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {

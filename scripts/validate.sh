@@ -5,8 +5,8 @@ set -e
 
 echo "=== TetraVim Neovim Distribution Smoke Test ==="
 
-echo "[1/7] Verifying Shell Scripts Syntax (bootstrap.sh, scripts/bootstrap.sh, headless-setup.sh, dev-init.sh, validate.sh, validate-test-coverage.sh)..."
-if bash -n bootstrap.sh && bash -n scripts/bootstrap.sh && bash -n scripts/headless-setup.sh && bash -n scripts/dev-init.sh && bash -n scripts/validate.sh && bash -n scripts/validate-test-coverage.sh; then
+echo "[1/7] Verifying Shell Scripts Syntax (bootstrap.sh, scripts/bootstrap.sh, headless-setup.sh, dev-init.sh, validate.sh)..."
+if bash -n bootstrap.sh && bash -n scripts/bootstrap.sh && bash -n scripts/headless-setup.sh && bash -n scripts/dev-init.sh && bash -n scripts/validate.sh; then
   echo "✔ Shell scripts syntax PASSED."
 else
   echo "✖ Shell scripts syntax FAILED."
@@ -461,22 +461,14 @@ end
 " -c "qa!"
 echo "✔ Native DevOps suite PASSED."
 
-echo "[6.1/7] Verifying Coverage Unit Specs (test_coverage_spec.lua)..."
+echo "[7/7] Verifying Visual Test Runner & JaCoCo Coverage (SPEC-1.3) via test_coverage_spec.lua..."
 if nvim --headless -u init.lua \
   -c "lua require('plenary.busted')" \
   -c "PlenaryBustedDirectory lua/tetravim/tests/test_coverage_spec.lua" \
   -c "qa"; then
-  echo "✔ Coverage unit specs PASSED."
+  echo "✔ Test runner & coverage specs PASSED."
 else
-  echo "✖ Coverage unit specs FAILED."
-  exit 1
-fi
-
-echo "[7/7] Verifying Visual Test Runner & JaCoCo Coverage (SPEC-1.3)..."
-if bash scripts/validate-test-coverage.sh; then
-  echo "✔ Test runner & coverage suite PASSED."
-else
-  echo "✖ Test runner & coverage suite FAILED."
+  echo "✖ Test runner & coverage specs FAILED."
   exit 1
 fi
 

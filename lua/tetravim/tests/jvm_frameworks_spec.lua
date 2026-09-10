@@ -2,9 +2,10 @@
 -- resolution (Spring Boot / Quarkus / MicroProfile).
 --
 -- Behavioural assertions that need the plugins actually loaded (quarkus.nvim /
--- microprofile.nvim launch, jdtls bundle extension) live in
--- scripts/validate-jvm-frameworks.sh -- forcing require("lazy").load() inside
--- plenary's harness corrupts lazy's internal state (see dap_jvm_spec.lua).
+-- microprofile.nvim launch, jdtls bundle extension) are NOT exercised here: the
+-- plenary busted subprocess has no third-party plugins on its runtimepath and
+-- forcing require("lazy").load() corrupts lazy's internal state (see
+-- dap_jvm_spec.lua). Verify those manually per the story's Verification section.
 
 local fw = require("tetravim.util.jvm_frameworks")
 
@@ -143,5 +144,15 @@ describe("JVM framework plugin specs (static shape)", function()
 
   it("health.lua has the JVM Framework Config LSP section", function()
     assert.is_truthy(read("lua/tetravim/health.lua"):match("JVM Framework Config LSP"))
+  end)
+
+  -- Migrated from scripts/validate-jvm-frameworks.sh step [4/4].
+  it("fetch-jvm-lsp-jars.sh is present, executable and syntactically valid", function()
+    local path = "scripts/fetch-jvm-lsp-jars.sh"
+    local st = vim.uv.fs_stat(path)
+    assert.is_table(st, path .. " is missing")
+    assert.is_true(bit.band(st.mode, tonumber("111", 8)) ~= 0, path .. " is not executable")
+    vim.fn.system({ "bash", "-n", path })
+    assert.are.equal(0, vim.v.shell_error, path .. " has a shell syntax error")
   end)
 end)

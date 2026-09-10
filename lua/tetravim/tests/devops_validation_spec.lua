@@ -223,3 +223,45 @@ describe("DevOps Module - Error Handling", function()
     assert.truthy(code:find("configuration found"))
   end)
 end)
+
+-- Migrated from scripts/validate-devops.sh: the root-finder declaration-order
+-- regression guard. `create_root_finder` closes over `resolve_search_dir`, and
+-- every `M.find_*_root` is built by calling it at module-load time; a prior
+-- version assigned those before the helpers existed (forward local refs capture
+-- nil, so the assignment is silent but every later CALL throws).
+describe("DevOps Module - root-finder declaration order", function()
+  it("declares resolve_search_dir and create_root_finder before any M.find_*_root assignment", function()
+    local src = io.open("lua/tetravim/core/devops.lua"):read("*a")
+    local resolve_pos = src:find("local function resolve_search_dir")
+    local factory_pos = src:find("local function create_root_finder")
+    local first_assign_pos = src:find("M%.find_tf_root%s*=%s*create_root_finder")
+
+    assert.truthy(resolve_pos, "resolve_search_dir declaration not found")
+    assert.truthy(factory_pos, "create_root_finder declaration not found")
+    assert.truthy(first_assign_pos, "M.find_tf_root assignment not found")
+    assert.is_true(resolve_pos < first_assign_pos, "resolve_search_dir must precede the first M.find_*_root assignment")
+    assert.is_true(factory_pos < first_assign_pos, "create_root_finder must precede the first M.find_*_root assignment")
+  end)
+
+  it("every M.find_*_root is real-callable (buffer and path forms) without erroring", function()
+    local devops = require("tetravim.core.devops")
+    local finders = { "find_tf_root", "find_cfn_root", "find_ansible_root", "find_docker_root", "find_helm_root" }
+
+    vim.cmd("enew")
+    local bufnr = vim.api.nvim_get_current_buf()
+    local orig_notify = vim.notify
+    vim.notify = function() end
+    local err
+    for _, name in ipairs(finders) do
+      assert.is_function(devops[name], name .. " is not a function on tetravim.core.devops")
+      local ok1 = pcall(devops[name], bufnr)
+      local ok2 = pcall(devops[name], vim.fn.getcwd())
+      if not (ok1 and ok2) then
+        err = name .. " raised an error -- declaration-order regression"
+        break
+      end
+    end
+    vim.notify = orig_notify
+    assert.is_nil(err, err)
+  end)
+end)

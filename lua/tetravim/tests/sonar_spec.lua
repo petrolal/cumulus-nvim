@@ -252,3 +252,138 @@ describe("tetravim.util.sonar", function()
     end)
   end)
 end)
+
+-- Migrated from scripts/validate-6.sh steps [2/6] and [5/6]: the cve / lint /
+-- sonar function surface, the :TetraVimSonar* commands, the plugin / keymap /
+-- whichkey / mason / bootstrap wiring markers, the <leader>x keymaps and the two
+-- Epic 6 :checkhealth sections. The functional CVE report parsing / scan
+-- branches (steps [3]-[4]) are already covered in cve_spec.lua, and the pure
+-- sonar parser / backend selection above.
+describe("Epic 6 module surface + wiring (static)", function()
+  local sonar = require("tetravim.util.sonar")
+  local function read(path)
+    local fh = assert(io.open(path, "r"))
+    local body = fh:read("*a")
+    fh:close()
+    return body
+  end
+
+  it("util/cve exposes the documented function surface", function()
+    local cve = require("tetravim.util.cve")
+    for _, fn in ipairs({
+      "scan",
+      "scan_command",
+      "parse_results",
+      "remediation_hint",
+      "locate_coordinate",
+      "build_diagnostics",
+      "publish_diagnostics",
+      "clear_diagnostics",
+      "project_scan",
+      "render_report",
+    }) do
+      assert.are.equal("function", type(cve[fn]), "util/cve missing " .. fn)
+    end
+    assert.is_truthy(cve.render_report({}, "/x"):match("No known vulnerabilities"))
+  end)
+
+  it("util/lint exposes lint_now / fix_now / project_run / project_plan + buffer_fix_argv", function()
+    local lint = require("tetravim.util.lint")
+    for _, fn in ipairs({ "lint_now", "fix_now", "project_run", "project_plan" }) do
+      assert.are.equal("function", type(lint[fn]), "util/lint missing " .. fn)
+    end
+    assert.are.equal("table", type(lint.buffer_fix_argv))
+    assert.are.equal("function", type(lint.buffer_fix_argv.java))
+  end)
+
+  it("util/sonar exposes its full function surface", function()
+    for _, fn in ipairs({
+      "language_server_cmd",
+      "analyzer_paths",
+      "settings_from_properties",
+      "project_key",
+      "find_project_settings",
+      "has_language_server",
+      "has_scanner",
+      "choose_backend",
+      "parse_report_task",
+      "report_task_path",
+      "is_sweep_source",
+      "collect_sources",
+      "is_sonar_diagnostic",
+      "summarize",
+      "scan_cli",
+      "sweep",
+      "project_scan",
+    }) do
+      assert.are.equal("function", type(sonar[fn]), "util/sonar missing " .. fn)
+    end
+  end)
+
+  it("util/sonar registers :TetraVimSonarScan / Sweep / Scanner", function()
+    for _, cmd in ipairs({ "TetraVimSonarScan", "TetraVimSonarSweep", "TetraVimSonarScanner" }) do
+      assert.are.equal(2, vim.fn.exists(":" .. cmd), "missing :" .. cmd)
+    end
+  end)
+
+  it("lsp-sonarlint.lua references sonarlint.nvim and pcall-guards its setup", function()
+    local body = read("lua/tetravim/plugins/lsp-sonarlint.lua")
+    assert.is_truthy(body:match("sonarlint%.nvim"))
+    assert.is_truthy(body:match("pcall"))
+  end)
+
+  it("tools-mason.lua ensures sonarlint-language-server", function()
+    assert.is_truthy(read("lua/tetravim/plugins/tools-mason.lua"):match("sonarlint%-language%-server"))
+  end)
+
+  it("ui-whichkey.lua registers the <leader>x group", function()
+    assert.is_truthy(read("lua/tetravim/plugins/ui-whichkey.lua"):match('"<leader>x"'))
+  end)
+
+  it("bootstrap.sh installs osv-scanner and the sonar-scanner CLI", function()
+    local body = read("bootstrap.sh")
+    assert.is_truthy(body:match("osv%-scanner"))
+    assert.is_truthy(body:match("sonarqube%-scanner"))
+  end)
+
+  it("core/keymaps.lua binds every <leader>x quality/security key", function()
+    require("tetravim.core.keymaps")
+    local maps = vim.api.nvim_get_keymap("n")
+    -- nvim_get_keymap returns lhs with <leader> already resolved, so match the
+    -- trailing suffix (this mirrors scripts/validate-6.sh step [5]).
+    local function bound(suffix)
+      for _, m in ipairs(maps) do
+        if m.lhs:match(vim.pesc(suffix) .. "$") then
+          return true
+        end
+      end
+      return false
+    end
+    for _, k in ipairs({ "xdb", "xdp", "xlb", "xlf", "xlp", "xlF", "xsb", "xsp", "xvb", "xvp", "xvc" }) do
+      assert.is_true(bound(k), "<leader>" .. k .. " not bound")
+    end
+  end)
+
+  it("health.check emits the SonarLint and CVE sections", function()
+    local sections = {}
+    local orig = {
+      start = vim.health.start,
+      ok = vim.health.ok,
+      info = vim.health.info,
+      warn = vim.health.warn,
+      error = vim.health.error,
+    }
+    vim.health.start = function(name)
+      table.insert(sections, tostring(name))
+    end
+    vim.health.ok, vim.health.info, vim.health.warn, vim.health.error =
+      function() end, function() end, function() end, function() end
+    pcall(require("tetravim.health").check)
+    vim.health.start, vim.health.ok, vim.health.info, vim.health.warn, vim.health.error =
+      orig.start, orig.ok, orig.info, orig.warn, orig.error
+
+    local joined = table.concat(sections, "\n")
+    assert.is_truthy(joined:match("SonarLint"))
+    assert.is_truthy(joined:match("CVE"))
+  end)
+end)

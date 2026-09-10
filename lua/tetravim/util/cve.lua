@@ -380,35 +380,12 @@ end
 -- report renders into a reused persistent split rather than as buffer
 -- diagnostics anchored to one build file.
 
---- Drop `text` into a reused persistent split (mirrors util/lint.lua's
---- `open_in_split`: an unlisted nofile scratch buffer, never a float).
+--- Drop `text` into a reused persistent split via the shared renderer
+--- (util/split.lua): an unlisted nofile scratch buffer, never a float.
 ---@param text string
 ---@param name_hint string
 local function open_in_split(text, name_hint)
-  local target_win
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    local bufname = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
-    if vim.fs.basename(bufname):match("^" .. vim.pesc(name_hint) .. "%-") then
-      target_win = win
-      break
-    end
-  end
-
-  if target_win and vim.api.nvim_win_is_valid(target_win) then
-    vim.api.nvim_set_current_win(target_win)
-  else
-    vim.cmd("botright vsplit")
-  end
-
-  local bufnr = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_win_set_buf(0, bufnr)
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(text, "\n", { plain = true }))
-  vim.bo[bufnr].buftype = "nofile"
-  vim.bo[bufnr].bufhidden = "wipe"
-  vim.bo[bufnr].swapfile = false
-  vim.bo[bufnr].filetype = "log"
-  vim.bo[bufnr].modified = false
-  pcall(vim.api.nvim_buf_set_name, bufnr, name_hint .. "-" .. tostring(bufnr))
+  require("tetravim.util.split").open(text, { filetype = "log", name_hint = name_hint })
 end
 
 --- Render `parse_results` findings as a plain-text report. Pure.

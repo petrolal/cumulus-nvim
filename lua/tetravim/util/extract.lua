@@ -32,7 +32,7 @@ local function proceed_with_action(bufnr, jvm_client, action_name, target_action
 
     if resolve_provider then
       local resolve_responded = false
-      vim.defer_fn(function()
+      local resolve_timer = vim.defer_fn(function()
         if resolve_responded then
           return
         end
@@ -46,6 +46,12 @@ local function proceed_with_action(bufnr, jvm_client, action_name, target_action
           return
         end
         resolve_responded = true
+        -- Response landed -- cancel the watchdog instead of leaving it
+        -- pending for the full ACTION_TIMEOUT_MS.
+        if resolve_timer and not resolve_timer:is_closing() then
+          resolve_timer:stop()
+          resolve_timer:close()
+        end
         vim.schedule(function()
           local res = resolve_responses[jvm_client.id]
           if res and res.result and res.result.edit then
@@ -290,7 +296,7 @@ local function do_action(action_name, kind_prefix, title_substring, is_visual)
     }
 
     local responded = false
-    vim.defer_fn(function()
+    local action_timer = vim.defer_fn(function()
       if responded then
         return
       end
@@ -311,6 +317,10 @@ local function do_action(action_name, kind_prefix, title_substring, is_visual)
         return
       end
       responded = true
+      if action_timer and not action_timer:is_closing() then
+        action_timer:stop()
+        action_timer:close()
+      end
       vim.schedule(function()
         local hok, herr =
           pcall(handle_action_response, bufnr, jvm_client, action_name, responses, kind_prefix, title_substring)

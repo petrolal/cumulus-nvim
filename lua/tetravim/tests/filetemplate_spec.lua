@@ -252,4 +252,69 @@ describe("tetravim.util.filetemplate", function()
       assert.is_string(t.ext)
     end
   end)
+
+  -- Migrated from scripts/validate-filetemplate.sh steps [1/6] (wiring markers)
+  -- and [5/6] (user template discovery). The rest of that script -- scaffold,
+  -- derive_package, overwrite guard, fixed_name, BufNewFile skeleton -- is
+  -- already covered by the describe blocks above.
+  describe("keymap / command / health wiring (static)", function()
+    local function read(path)
+      local fh = assert(io.open(path, "r"))
+      local body = fh:read("*a")
+      fh:close()
+      return body
+    end
+
+    it("core/keymaps.lua dispatches into filetemplate via :TetraVimNewFile and <leader>fn", function()
+      local km = read("lua/tetravim/core/keymaps.lua")
+      assert.is_truthy(km:match("filetemplate"))
+      assert.is_truthy(km:match("TetraVimNewFile"))
+      assert.is_truthy(km:match("<leader>fn"))
+    end)
+
+    it("health.lua carries the New File from Template section", function()
+      assert.is_truthy(read("lua/tetravim/health.lua"):match("New File from Template"))
+    end)
+  end)
+
+  describe("user templates", function()
+    local tmp, orig_user_dir
+
+    before_each(function()
+      tmp = vim.fn.tempname()
+      vim.fn.mkdir(tmp, "p")
+      orig_user_dir = ft.user_dir
+    end)
+
+    after_each(function()
+      ft.user_dir = orig_user_dir
+      pcall(vim.fn.delete, tmp, "rf")
+    end)
+
+    it("discovers a user template dir, parses its directive and expands ${NAME}/${PACKAGE}", function()
+      vim.fn.writefile({
+        "<!-- tetravim: label=DDD_Aggregate langs=java -->",
+        "package ${PACKAGE};",
+        "",
+        "public final class ${NAME} {",
+        "    private ${NAME}() {}",
+        "}",
+      }, tmp .. "/Aggregate.java")
+      ft.user_dir = function()
+        return tmp
+      end
+
+      local loaded = ft.load_user_templates()
+      local tpl = loaded["user.Aggregate.java"]
+      assert.is_table(tpl, "user template not discovered; keys: " .. vim.inspect(vim.tbl_keys(loaded)))
+      assert.are.equal("DDD Aggregate", tpl.label)
+      assert.are.equal("java", tpl.ext)
+
+      local content = ft.render(tpl, { name = "Order", package = "com.example" })
+      assert.is_truthy(content:match("package com%.example;"))
+      assert.is_truthy(content:match("public final class Order {"))
+      assert.is_truthy(content:match("private Order%(%) {}"))
+      assert.is_falsy(content:match("tetravim:"))
+    end)
+  end)
 end)

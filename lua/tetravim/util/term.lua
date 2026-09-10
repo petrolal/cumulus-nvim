@@ -1,8 +1,8 @@
 -- TetraVim interactive terminal runner
 --
 -- Runs a command in a non-blocking terminal. Prefers Snacks.terminal when the
--- distribution loads it; otherwise opens a bottom split with termopen and the
--- usual terminal keymaps.
+-- distribution loads it; otherwise opens a bottom split with `jobstart({ term
+-- = true })` and the usual terminal keymaps.
 
 local notify = require("tetravim.util.notify")
 
@@ -28,7 +28,15 @@ function M.run_term(cmd, opts)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_win_set_buf(win, buf)
 
-  local job_id = vim.fn.termopen(cmd, {
+  -- Watchdog timer id, so on_exit can cancel it -- otherwise a job that
+  -- finishes in seconds still leaves a timer pending for the full `timeout`
+  -- (default 1h), firing into a dead job id.
+  local timeout_timer
+
+  -- `vim.fn.termopen` is deprecated in Neovim 0.11; `jobstart({ term = true
+  -- })` is the supported form and takes the same option table.
+  local job_id = vim.fn.jobstart(cmd, {
+    term = true,
     cwd = term_cwd,
     on_stdout = function(_, data)
       if opts.on_stdout then
@@ -41,6 +49,10 @@ function M.run_term(cmd, opts)
       end
     end,
     on_exit = function(_, code)
+      if timeout_timer then
+        pcall(vim.fn.timer_stop, timeout_timer)
+        timeout_timer = nil
+      end
       if opts.on_exit then
         opts.on_exit(code)
       else
@@ -55,7 +67,8 @@ function M.run_term(cmd, opts)
 
   -- Set timeout timer to prevent indefinite hangs
   if timeout > 0 then
-    vim.fn.timer_start(timeout, function()
+    timeout_timer = vim.fn.timer_start(timeout, function()
+      timeout_timer = nil
       if vim.fn.jobwait({ job_id }, 0)[1] == -1 then
         vim.fn.jobstop(job_id)
         notify.notify_warn("Process timeout (" .. (timeout / 1000) .. "s), job terminated", title)

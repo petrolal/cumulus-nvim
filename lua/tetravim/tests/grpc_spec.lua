@@ -258,4 +258,94 @@ describe("tetravim.util.grpc", function()
       assert.is_truthy(tostring(last_error()):lower():match("timed out"))
     end)
   end)
+
+  -- Migrated from scripts/validate-3-4.sh steps [1/9] (module + plugin wiring)
+  -- and [8/9] (keymaps / health / ftplugin). The functional grpcurl matrix
+  -- (steps [3]-[7]) is covered by the describe blocks above; the real-binary
+  -- steps ([9/9]: grpcurl / buf / protols actually present) stay in the shell
+  -- script because conform + the binaries are absent from the plenary child.
+  describe("SPEC-3.4 wiring (migrated from validate-3-4.sh)", function()
+    local function read(path)
+      local fh = assert(io.open(path, "r"))
+      local body = fh:read("*a")
+      fh:close()
+      return body
+    end
+
+    it("util/grpc exports list_services / describe / invoke / request_skeleton", function()
+      for _, fn in ipairs({ "list_services", "describe", "invoke", "request_skeleton" }) do
+        assert.is_function(grpc[fn], "util/grpc missing " .. fn)
+      end
+    end)
+
+    it("lsp-proto.lua wires protols, the proto TS parser and the .proto filetype guard", function()
+      local body = read("lua/tetravim/plugins/lsp-proto.lua")
+      assert.is_truthy(body:match("protols"))
+      assert.is_truthy(body:match('"proto"'))
+      assert.is_truthy(body:match("vim%.filetype%.add"))
+    end)
+
+    it("tools-formatting.lua maps proto -> buf", function()
+      assert.is_truthy(read("lua/tetravim/plugins/tools-formatting.lua"):match('proto%s*=%s*{%s*"buf"%s*}'))
+    end)
+
+    it("tools-mason.lua ensure_installs buf + protols (but not grpcurl)", function()
+      local body = read("lua/tetravim/plugins/tools-mason.lua")
+      assert.is_truthy(body:match('"buf"'))
+      assert.is_truthy(body:match('"protols"'))
+    end)
+
+    it("ui-whichkey.lua registers the <leader>ag group", function()
+      assert.is_truthy(read("lua/tetravim/plugins/ui-whichkey.lua"):match('"<leader>ag"'))
+    end)
+
+    it("core/keymaps registers <leader>ag l/m/i/f", function()
+      require("tetravim.core.keymaps")
+      local maps = vim.api.nvim_get_keymap("n")
+      local function has(suffix)
+        for _, m in ipairs(maps) do
+          if m.lhs:match(suffix .. "$") then
+            return true
+          end
+        end
+        return false
+      end
+      for _, s in ipairs({ "agl", "agm", "agi", "agf" }) do
+        assert.is_true(has(s), "<leader>" .. s .. " keymap missing")
+      end
+    end)
+
+    it("ftplugin/proto.lua sets the proto buffer conventions", function()
+      vim.cmd("new")
+      local buf = vim.api.nvim_get_current_buf()
+      vim.bo[buf].filetype = "proto"
+      -- FileType fires synchronously; the repo root is on the runtimepath so
+      -- ftplugin/proto.lua is sourced.
+      assert.are.equal(2, vim.bo[buf].shiftwidth)
+      assert.is_true(vim.bo[buf].expandtab)
+      assert.are.equal("// %s", vim.bo[buf].commentstring)
+      vim.api.nvim_buf_delete(buf, { force = true })
+    end)
+
+    it("health.check emits a gRPC & Protobufs section", function()
+      local sections = {}
+      local orig = {
+        start = vim.health.start,
+        ok = vim.health.ok,
+        info = vim.health.info,
+        warn = vim.health.warn,
+        error = vim.health.error,
+      }
+      vim.health.start = function(name)
+        table.insert(sections, tostring(name))
+      end
+      vim.health.ok, vim.health.info, vim.health.warn, vim.health.error =
+        function() end, function() end, function() end, function() end
+      pcall(require("tetravim.health").check)
+      vim.health.start, vim.health.ok, vim.health.info, vim.health.warn, vim.health.error =
+        orig.start, orig.ok, orig.info, orig.warn, orig.error
+
+      assert.is_truthy(table.concat(sections, "\n"):match("gRPC"))
+    end)
+  end)
 end)

@@ -29,21 +29,19 @@ bash scripts/headless-setup.sh
 # Full smoke test (shell syntax, headless load, core modules, theme, plugins, DevOps suite)
 bash scripts/validate.sh
 
-# Component validation suites (each is a standalone headless assertion script)
-bash scripts/validate-refactor.sh      # safe rename / move
-bash scripts/validate-extract.sh       # method/variable/interface extraction
-bash scripts/validate-db.sh            # dadbod DB explorer
-bash scripts/validate-http.sh          # kulala HTTP client + OpenAPI
-bash scripts/validate-dap-jvm.sh       # JVM DAP debugger
-bash scripts/validate-devops.sh        # Terraform/CFN/Ansible root discovery
-bash scripts/validate-filetemplate.sh  # "New File from Template" (IDEA-style New)
-bash scripts/validate-completion.sh    # nvim-cmp + LuaSnip IntelliSense wiring
-bash scripts/validate-jvm-frameworks.sh # Spring Boot / Quarkus / MicroProfile config LSP wiring
-# ...see scripts/ for the rest
-
-# Lua test suite (plenary busted)
+# Lua test suite (plenary busted) -- the bulk of the component coverage.
+# Most former validate-*.sh scripts were migrated to companion *_spec.lua here.
 nvim --headless -u init.lua -c "Lazy! load plenary.nvim" \
   -c "PlenaryBustedDirectory lua/tetravim/tests/" -c "qa"
+
+# Remaining shell suites -- only the steps that need a real external binary or
+# a plugin the busted subprocess cannot load (cmp / dap / conform / kulala):
+bash scripts/validate-3-4.sh           # gRPC/Protobuf -- real grpcurl / buf / protols
+bash scripts/validate-db.sh            # dadbod cmp-source registration on sql buffers
+bash scripts/validate-http.sh          # kulala HTTP client -- real jq filter steps
+bash scripts/validate-4-1.sh           # Git 3-way conflict resolution (runtime-only)
+bash scripts/validate-completion.sh    # nvim-cmp + LuaSnip IntelliSense wiring (runtime-only)
+bash scripts/validate-dap-jvm.sh       # JVM DAP debugger (runtime-only)
 
 # Single test file
 nvim --headless -u init.lua -c "Lazy! load plenary.nvim" \
@@ -74,7 +72,7 @@ file returns a lazy.nvim spec (single spec table or a list of them). `defaults.l
 | --- | --- |
 | `lua/tetravim/core/` | Editor bootstrap: options, global keymaps, autocmds, diagnostics, health JSON, devops keymap engine, `lang-keymaps` |
 | `lua/tetravim/plugins/` | One lazy.nvim spec file per concern. Prefixes: `lsp-*`, `tools-*`, `editor-*`, `ui-*`, `cloud-*`, `core-*` |
-| `lua/tetravim/util/` | Pure Lua logic modules (`jvm`, `spring`, `refactor`, `extract`, `filetemplate`, `db`, `http`, `grpc`, `cve`, `sonar`, `forge`, `lsp_async`, `lsp_resilience`, `lsp_capabilities`, `format`, `git`, `maven`, `gradle`, …). Keymaps call into these; business logic lives here, not in the keymap files |
+| `lua/tetravim/util/` | Pure Lua logic modules (`jvm`, `spring`, `refactor`, `extract`, `filetemplate`, `db`, `http`, `grpc`, `cve`, `sonar`, `forge`, `lsp_async`, `lsp_resilience`, `lsp_capabilities`, `format`, `git`, `build`, `split`, …). Keymaps call into these; business logic lives here, not in the keymap files |
 | `lua/tetravim/theme/` | `tetris.lua` = canonical palette + highlight table; `init.lua` = loader/persistence shim |
 | `colors/tetravim.lua` | `:colorscheme tetravim` entry point |
 | `lua/tetravim/tests/` | `*_spec.lua` plenary busted specs |
@@ -138,7 +136,7 @@ JVM framework config intelligence (`application.properties` / `application.yml` 
 `spring_boot_ls_jar`, `spring_boot_ready`) used by both plugin specs,
 `ftplugin/java.lua` (folds each module's `java_extensions()` into the jdtls
 `bundles`) and the `:checkhealth tetravim` "JVM Framework Config LSP" section.
-`scripts/validate-jvm-frameworks.sh` + `tests/jvm_frameworks_spec.lua` cover it.
+`tests/jvm_frameworks_spec.lua` covers it.
 
 Completion capabilities: `util/lsp_capabilities.make()` is the one source of truth
 for the `capabilities` table every server starts with — it folds

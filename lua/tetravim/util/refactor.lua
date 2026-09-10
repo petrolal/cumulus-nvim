@@ -43,6 +43,7 @@ M.RENAME_TIMEOUT_MS = 10000
 
 local JVM_CLIENT_NAMES = {
   jdtls = true,
+  kotlin_lsp = true,
   kotlin_language_server = true,
 }
 
@@ -367,7 +368,7 @@ function M._do_rename(bufnr, win, jvm_client, old_name, new_name)
 
   local responded = false
 
-  vim.defer_fn(function()
+  local timeout_timer = vim.defer_fn(function()
     if responded then
       return
     end
@@ -388,6 +389,12 @@ function M._do_rename(bufnr, win, jvm_client, old_name, new_name)
       return
     end
     responded = true
+    -- Cancel the watchdog now that a response landed -- otherwise it stays
+    -- pending for the full RENAME_TIMEOUT_MS before firing into a no-op.
+    if timeout_timer and not timeout_timer:is_closing() then
+      timeout_timer:stop()
+      timeout_timer:close()
+    end
     vim.schedule(function()
       M._on_rename_response(bufnr, jvm_client, old_name, new_name, responses)
     end)

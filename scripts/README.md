@@ -21,25 +21,25 @@ bash scripts/dev-init.sh
 
 ## Validation & Test Suites
 
-The test and smoke verification suite lives in `scripts/validate*.sh`:
+Most component assertions have been migrated into plenary busted specs under
+`lua/tetravim/tests/` (one `*_spec.lua` per concern). The remaining
+`scripts/validate*.sh` cover only the steps that need a real external binary
+or a plugin the busted subprocess cannot load (`cmp`, `dap`, `conform`,
+`kulala`, …).
 
+- **Plenary Busted specs (the bulk of the coverage):**
+  ```bash
+  nvim --headless -u init.lua -c "Lazy! load plenary.nvim" -c "PlenaryBustedDirectory lua/tetravim/tests/"
+  ```
 - **Full distribution smoke test:**
   ```bash
   bash scripts/validate.sh
   ```
-- **Component verification suites:**
-  - `bash scripts/validate-2-3.sh`: Spring Boot Discovery (native Tree-sitter & DAP)
-  - `bash scripts/validate-refactor.sh`: Safe rename/move refactoring
-  - `bash scripts/validate-extract.sh`: Method/variable/interface extraction
-  - `bash scripts/validate-db.sh`: Database explorer & datasource auto-discovery
-  - `bash scripts/validate-http.sh`: HTTP client & OpenAPI explorer
-  - `bash scripts/validate-4-1.sh`: Git 3-way conflict resolution
-  - `bash scripts/validate-4-2.sh`: In-editor code reviews (GitHub/GitLab)
-  - `bash scripts/validate-dap-jvm.sh`: JVM DAP debugger & breakpoint controls
-  - `bash scripts/validate-devops.sh`: DevOps tooling & root discovery guards
-
-- **Plenary Busted specs:**
-  ```bash
-  nvim --headless -u init.lua -c "Lazy! load plenary.nvim" -c "PlenaryBustedDirectory lua/tetravim/tests/"
-  ```
+- **Remaining shell verification suites:**
+  - `bash scripts/validate-3-4.sh`: gRPC/Protobuf — real `grpcurl` / `buf` / `protols` steps
+  - `bash scripts/validate-db.sh`: DB explorer — `cmp`-source registration on sql buffers
+  - `bash scripts/validate-http.sh`: HTTP client — real `jq` filter steps
+  - `bash scripts/validate-4-1.sh`: Git 3-way conflict resolution (runtime-only)
+  - `bash scripts/validate-completion.sh`: nvim-cmp + LuaSnip IntelliSense wiring (runtime-only)
+  - `bash scripts/validate-dap-jvm.sh`: JVM DAP debugger & breakpoint controls (runtime-only)
 

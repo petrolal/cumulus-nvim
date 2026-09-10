@@ -71,6 +71,11 @@ return {
 
       opts.picker = opts.picker or {}
       opts.picker.prompt = " ☁ >"
+      opts.picker.sources = vim.tbl_deep_extend("force", opts.picker.sources or {}, {
+        lsp_implementations = {
+          include_current = true,
+        },
+      })
 
       opts.notifier = opts.notifier or {}
       opts.notifier.enabled = true
@@ -238,6 +243,38 @@ return {
       require("snacks").setup(opts)
       vim.notify = function(msg, level, notify_opts)
         Snacks.notifier.notify(msg, level, notify_opts)
+      end
+
+      -- Guard Snacks picker jump action against "Invalid cursor line: out of range"
+      -- (folke/snacks.nvim#2939) when target position exceeds buffer line count.
+      local ok_actions, actions = pcall(require, "snacks.picker.actions")
+      if ok_actions and actions and actions.jump then
+        local orig_jump = actions.jump
+        actions.jump = function(picker, item_arg, action)
+          local orig_set_cursor = vim.api.nvim_win_set_cursor
+          vim.api.nvim_win_set_cursor = function(win, pos)
+            local buf = vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win)
+            if buf and vim.api.nvim_buf_is_valid(buf) then
+              local line_count = vim.api.nvim_buf_line_count(buf)
+              if line_count > 0 then
+                pos[1] = math.max(1, math.min(pos[1], line_count))
+                local lines = vim.api.nvim_buf_get_lines(buf, pos[1] - 1, pos[1], false)
+                local line_len = lines[1] and #lines[1] or 0
+                pos[2] = math.max(0, math.min(pos[2] or 0, line_len))
+              end
+            end
+            local ok, err = pcall(orig_set_cursor, win, pos)
+            if not ok then
+              return nil
+            end
+          end
+          local ok_j, res = pcall(orig_jump, picker, item_arg, action)
+          vim.api.nvim_win_set_cursor = orig_set_cursor
+          if not ok_j then
+            error(res)
+          end
+          return res
+        end
       end
 
       -- State toggles under <leader>u. Snacks.toggle gives each one a
@@ -451,7 +488,7 @@ return {
         "gi",
         function()
           if #vim.lsp.get_clients({ bufnr = 0, method = "textDocument/implementation" }) > 0 then
-            Snacks.picker.lsp_implementations()
+            Snacks.picker.lsp_implementations({ include_current = true })
           else
             pcall(vim.cmd, "normal! gi")
           end

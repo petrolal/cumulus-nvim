@@ -180,10 +180,13 @@ jobs:
             echo "::endgroup::"
           }
 
-          # Aggregate suite first; it already invokes validate-test-coverage.sh.
+          # Aggregate suite first. The bulk of the old validate-*.sh
+          # assertions now live in lua/tetravim/tests/ and run in the `busted`
+          # job above; the remaining validate-*.sh are the shrunk real-binary
+          # steps (3-4 / db / http) and the runtime-only ones (4-1 /
+          # completion / dap-jvm).
           run scripts/validate.sh
           for s in scripts/validate-*.sh; do
-            [ "$s" = "scripts/validate-test-coverage.sh" ] && continue
             run "$s"
           done
 

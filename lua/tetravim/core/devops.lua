@@ -190,20 +190,32 @@ function M.terraform_fmt()
         vim.notify("Failed to save file: " .. err_save, vim.log.levels.ERROR, { title = "TetraVim DevOps" })
         return
       end
-      local out = vim.fn.system({ tf, "fmt", file })
-      local ok_reload, err_reload = pcall(vim.cmd, "edit!")
-      if not ok_reload then
-        vim.notify(
-          "Failed to reload file after format: " .. err_reload,
-          vim.log.levels.WARN,
-          { title = "TetraVim DevOps" }
-        )
-      end
-      if vim.v.shell_error == 0 then
-        vim.notify("Formatted with " .. tf .. " fmt", vim.log.levels.INFO, { title = "TetraVim DevOps" })
-      else
-        vim.notify("Formatting error: " .. out, vim.log.levels.ERROR, { title = "TetraVim DevOps" })
-      end
+      -- Async (canonical vim.system + vim.schedule pattern): a slow disk /
+      -- NFS mount must never stall the UI thread. The buffer is reloaded
+      -- ONLY on success -- `edit!` on a failed `fmt` would discard buffer
+      -- state for nothing.
+      vim.system({ tf, "fmt", file }, { text = true, timeout = 15000 }, function(out)
+        vim.schedule(function()
+          local timed_out = out.code == 124 and out.signal ~= 0
+          if out.code == 0 then
+            local ok_reload, err_reload = pcall(vim.cmd, "edit!")
+            if not ok_reload then
+              vim.notify(
+                "Formatted, but failed to reload buffer: " .. tostring(err_reload),
+                vim.log.levels.WARN,
+                { title = "TetraVim DevOps" }
+              )
+            else
+              vim.notify("Formatted with " .. tf .. " fmt", vim.log.levels.INFO, { title = "TetraVim DevOps" })
+            end
+          elseif timed_out then
+            vim.notify(tf .. " fmt timed out after 15s", vim.log.levels.ERROR, { title = "TetraVim DevOps" })
+          else
+            local msg = (out.stderr and out.stderr ~= "" and out.stderr) or out.stdout or "unknown error"
+            vim.notify("Formatting error: " .. vim.trim(msg), vim.log.levels.ERROR, { title = "TetraVim DevOps" })
+          end
+        end)
+      end)
     else
       if not is_tf_file then
         vim.notify(

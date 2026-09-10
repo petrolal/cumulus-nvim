@@ -172,3 +172,73 @@ describe("make_on_exit", function()
     assert.is_truthy(table.concat(notes, "\n"):match("no restart handler wired"))
   end)
 end)
+
+-- Migrated from scripts/validate-5.sh steps [2/5] and [5/5]: the resilience /
+-- async module surface, the ftplugin + refactor + ui + notify wiring markers,
+-- and the two Epic 5 :checkhealth sections. The functional heap-limit / restart
+-- budget (step [3]) and async fan-out + telemetry (step [4]) are already covered
+-- above and in lsp_async_spec.lua / headless_spec.lua.
+describe("Epic 5 module surface + wiring (static)", function()
+  local function read(path)
+    local fh = assert(io.open(path, "r"))
+    local body = fh:read("*a")
+    fh:close()
+    return body
+  end
+
+  it("util/lsp_resilience exposes the documented function + constant surface", function()
+    for _, fn in ipairs({ "apply_memory_limit", "note_exit", "reset", "make_on_exit", "health" }) do
+      assert.are.equal("function", type(resilience[fn]), "lsp_resilience missing " .. fn)
+    end
+    assert.are.equal("string", type(resilience.JDTLS_MAX_HEAP))
+    assert.are.equal("number", type(resilience.MAX_RESTARTS))
+  end)
+
+  it("util/lsp_async exposes request_all_async + request_all_sync", function()
+    local async = require("tetravim.util.lsp_async")
+    assert.are.equal("function", type(async.request_all_async))
+    assert.are.equal("function", type(async.request_all_sync))
+  end)
+
+  it("ftplugin/java.lua bounds the JDTLS heap and wires an on_exit restart", function()
+    local body = read("ftplugin/java.lua")
+    assert.is_truthy(body:match("lsp_resilience"))
+    assert.is_truthy(body:match("apply_memory_limit"))
+    assert.is_truthy(body:match("on_exit"))
+  end)
+
+  it("refactor.lua dispatches through the async wrapper", function()
+    assert.is_truthy(read("lua/tetravim/util/refactor.lua"):match("lsp_async"))
+  end)
+
+  it("util/ui.lua routes notifications through util/notify for telemetry", function()
+    assert.is_truthy(read("lua/tetravim/util/ui.lua"):match("tetravim%.util%.notify"))
+  end)
+
+  it("util/notify.lua owns the telemetry sink", function()
+    assert.is_truthy(read("lua/tetravim/util/notify.lua"):match("telemetry"))
+  end)
+
+  it("health.check emits the Asynchronous LSP and Headless Setup sections", function()
+    local sections = {}
+    local orig = {
+      start = vim.health.start,
+      ok = vim.health.ok,
+      info = vim.health.info,
+      warn = vim.health.warn,
+      error = vim.health.error,
+    }
+    vim.health.start = function(name)
+      table.insert(sections, tostring(name))
+    end
+    vim.health.ok, vim.health.info, vim.health.warn, vim.health.error =
+      function() end, function() end, function() end, function() end
+    pcall(require("tetravim.health").check)
+    vim.health.start, vim.health.ok, vim.health.info, vim.health.warn, vim.health.error =
+      orig.start, orig.ok, orig.info, orig.warn, orig.error
+
+    local joined = table.concat(sections, "\n")
+    assert.is_truthy(joined:match("Asynchronous LSP"))
+    assert.is_truthy(joined:match("Headless Setup"))
+  end)
+end)

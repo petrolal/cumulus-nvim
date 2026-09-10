@@ -149,41 +149,13 @@ map("n", "<leader>ada", "<cmd>DBUIAddConnection<cr>", { desc = "Add DB Connectio
 -- tetravim.util.openapi / tetravim.util.http. Response/generated-template
 -- output always renders in a persistent split, never a floating window,
 -- per this epic's established UX pattern.
+-- Thin wrapper over the shared persistent-split renderer (util/split.lua),
+-- kept for the historical call-site signature (text, filetype, name_hint).
+-- Vertical split matches tools-http.lua's kulala.nvim `split_direction =
+-- "right"` so generated-template / jq-filtered output opens in the same
+-- orientation as kulala's own response split.
 local function tetravim_http_open_in_split(text, filetype, name_hint)
-  -- Reuse a result window from a previous invocation -- its buffer name
-  -- starts with "<name_hint>-" -- instead of stacking a fresh split on every
-  -- call.
-  local target_win
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    local buf = vim.api.nvim_win_get_buf(win)
-    local ok_name, bufname = pcall(vim.api.nvim_buf_get_name, buf)
-    if ok_name and vim.fs.basename(bufname):match("^" .. vim.pesc(name_hint) .. "%-") then
-      target_win = win
-      break
-    end
-  end
-
-  if target_win and vim.api.nvim_win_is_valid(target_win) then
-    vim.api.nvim_set_current_win(target_win)
-  else
-    -- Vertical, matching tools-http.lua's kulala.nvim `split_direction = "right"`
-    -- so generated-template/jq-filtered output opens in the same orientation
-    -- as kulala's own response split.
-    vim.cmd("botright vsplit")
-  end
-
-  -- Unlisted scratch buffer: buftype=nofile + bufhidden=wipe + noswapfile so
-  -- a stray `:w` can never dump this helper output into the repo and the
-  -- buffer is discarded when its window goes away.
-  local bufnr = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_win_set_buf(0, bufnr)
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(text, "\n", { plain = true }))
-  vim.bo[bufnr].buftype = "nofile"
-  vim.bo[bufnr].bufhidden = "wipe"
-  vim.bo[bufnr].swapfile = false
-  vim.bo[bufnr].filetype = filetype
-  vim.bo[bufnr].modified = false
-  pcall(vim.api.nvim_buf_set_name, bufnr, name_hint .. "-" .. tostring(bufnr))
+  require("tetravim.util.split").open(text, { filetype = filetype, name_hint = name_hint })
 end
 
 map("n", "<leader>ahr", function()

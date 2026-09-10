@@ -109,8 +109,9 @@ function M.detect(path)
     end
   end
 
-  -- 3. Check attached LSP clients
-  local get_clients = vim.lsp.get_clients or vim.lsp.buf_get_clients
+  -- 3. Check attached LSP clients (vim.lsp.get_clients is guaranteed on the
+  -- Neovim >= 0.11 floor this distribution targets).
+  local get_clients = vim.lsp.get_clients
   if get_clients then
     local ok_clients, clients = pcall(get_clients, { bufnr = 0 })
     if ok_clients and clients then

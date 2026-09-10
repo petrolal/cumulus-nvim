@@ -253,3 +253,66 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost" }, {
     end
   end,
 })
+
+-- Archive & decompiled URI reader for JAR, ZIP, and virtual LSP URIs (e.g. jar://, jar:file://, zipfile://).
+-- Enables seamless navigation ("Go to Definition", "Go to Implementation") into dependency JARs and .class files.
+local function parse_archive_uri(uri)
+  local jar, entry = uri:match("jar:[^/]*//(.-)!/(.*)$")
+  if not jar then
+    jar, entry = uri:match("jar:(.-)!/(.*)$")
+  end
+  if not jar then
+    jar, entry = uri:match("zipfile://(.-)::(.*)$")
+  end
+  if not jar then
+    jar, entry = uri:match("^(.-%.[jJ][aA][rR])!/(.*)$")
+  end
+  if not jar then
+    jar, entry = uri:match("^(.-%.[zZ][iI][pP])!/(.*)$")
+  end
+  if not jar then
+    jar, entry = uri:match("^(.-%.[jJ][aA][rR])::(.*)$")
+  end
+  if jar and jar:sub(1, 1) ~= "/" and not jar:match("^%a:") then
+    jar = "/" .. jar
+  end
+  return jar, entry
+end
+
+vim.api.nvim_create_autocmd("BufReadCmd", {
+  group = augroup("archive_reader"),
+  pattern = { "jar://*", "*jar:file:/*", "zipfile://*", "*.jar!*", "*.zip!*" },
+  callback = function(args)
+    local raw_name = args.match
+    local jar_path, inner_path = parse_archive_uri(raw_name)
+    if not jar_path or not inner_path or vim.fn.filereadable(jar_path) ~= 1 then
+      return
+    end
+
+    local lines = {}
+    local is_class = inner_path:match("%.class$") ~= nil
+
+    if is_class and vim.fn.executable("javap") == 1 then
+      local classname = inner_path:gsub("%.class$", ""):gsub("/", ".")
+      lines = vim.fn.systemlist({ "javap", "-cp", jar_path, classname })
+    end
+
+    if #lines == 0 or (lines[1] and lines[1]:match("^Error:")) then
+      if vim.fn.executable("unzip") == 1 then
+        lines = vim.fn.systemlist({ "unzip", "-p", jar_path, inner_path })
+      end
+    end
+
+    vim.bo[args.buf].modifiable = true
+    vim.bo[args.buf].buftype = "nofile"
+    vim.bo[args.buf].swapfile = false
+    vim.api.nvim_buf_set_lines(args.buf, 0, -1, false, lines)
+    vim.bo[args.buf].modifiable = false
+    vim.bo[args.buf].readonly = true
+
+    local ft = is_class and "java" or vim.filetype.match({ filename = inner_path })
+    if ft then
+      vim.bo[args.buf].filetype = ft
+    end
+  end,
+})
