@@ -123,12 +123,18 @@ describe("JVM framework plugin specs (static shape)", function()
     assert.is_truthy(body:match('"properties"'))
   end)
 
-  it("lsp-quarkus.lua declares quarkus.nvim + microprofile.nvim, gated on readiness", function()
+  it("lsp-quarkus.lua declares quarkus.nvim + microprofile.nvim, gated on the opt-in toggle", function()
     local body = read("lua/tetravim/plugins/lsp-quarkus.lua")
     assert.is_truthy(body:match("JavaHello/quarkus%.nvim"))
     assert.is_truthy(body:match("JavaHello/microprofile%.nvim"))
-    assert.is_truthy(body:match("quarkus_paths"))
-    assert.is_truthy(body:match("microprofile_paths"))
+    -- Activation moved behind tetravim.util.jvm_lsp_toggle: it is opt-in
+    -- (persisted flag + RAM guard), not "on whenever the jars resolve".
+    assert.is_truthy(body:match("jvm_lsp_toggle"))
+    assert.is_truthy(body:match("should_autostart"))
+    -- The readiness path resolution still lives in the toggle module.
+    local toggle = read("lua/tetravim/util/jvm_lsp_toggle.lua")
+    assert.is_truthy(toggle:match("quarkus_paths"))
+    assert.is_truthy(toggle:match("microprofile_paths"))
   end)
 
   it("ftplugin/java.lua folds framework java_extensions() into the jdtls bundles", function()

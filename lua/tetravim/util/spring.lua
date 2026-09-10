@@ -964,10 +964,10 @@ function M.build_dap_config(root, cb)
   end)
 end
 
---- Find all REST endpoints in workspace asynchronously.
+--- Find all REST endpoints via the Tree-sitter + ripgrep source scan.
 ---@param root string
 ---@param cb fun(endpoints: table[]|nil)
-function M.find_endpoints(root, cb)
+function M._find_endpoints_scan(root, cb)
   if not M.has_parser("java") then
     vim.notify("Tree-sitter java parser not available", vim.log.levels.WARN)
     vim.schedule(function()
@@ -1021,10 +1021,10 @@ function M.find_endpoints(root, cb)
   end)
 end
 
---- Find all Spring beans in workspace asynchronously.
+--- Find all Spring beans via the Tree-sitter + ripgrep source scan.
 ---@param root string
 ---@param cb fun(beans: table[]|nil)
-function M.find_beans(root, cb)
+function M._find_beans_scan(root, cb)
   if not M.has_parser("java") then
     vim.notify("Tree-sitter java parser not available", vim.log.levels.WARN)
     vim.schedule(function()
@@ -1073,6 +1073,49 @@ function M.find_beans(root, cb)
 
     cb(all_beans)
   end)
+end
+
+--- Find all REST endpoints asynchronously.
+---
+--- Prefers the VMware Spring Boot Language Server's `workspace/symbol` model
+--- (`tetravim.util.spring_lsp`) when it is attached -- it is compiler-accurate
+--- and sees mappings the source scan cannot. Falls back to the Tree-sitter +
+--- ripgrep scan (`M._find_endpoints_scan`) when the server is absent or returns
+--- nothing.
+---@param root string
+---@param cb fun(endpoints: table[]|nil)
+function M.find_endpoints(root, cb)
+  local ok, sl = pcall(require, "tetravim.util.spring_lsp")
+  if ok and sl.available() then
+    sl.query_endpoints(function(list)
+      if list and #list > 0 then
+        cb(list)
+      else
+        M._find_endpoints_scan(root, cb)
+      end
+    end)
+    return
+  end
+  return M._find_endpoints_scan(root, cb)
+end
+
+--- Find all Spring beans asynchronously. Prefers the Spring Boot LS symbol model
+--- (`tetravim.util.spring_lsp`), falls back to `M._find_beans_scan`.
+---@param root string
+---@param cb fun(beans: table[]|nil)
+function M.find_beans(root, cb)
+  local ok, sl = pcall(require, "tetravim.util.spring_lsp")
+  if ok and sl.available() then
+    sl.query_beans(function(list)
+      if list and #list > 0 then
+        cb(list)
+      else
+        M._find_beans_scan(root, cb)
+      end
+    end)
+    return
+  end
+  return M._find_beans_scan(root, cb)
 end
 
 return M

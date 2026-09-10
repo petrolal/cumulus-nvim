@@ -47,12 +47,12 @@ Go, Rust, PHP, Ruby, C/C++, Dart, GraphQL, Perl, Elixir, Clojure, Haskell.
 
 | IDEA bundles | tetravim | Notes |
 | --- | --- | --- |
-| Spring / Spring Boot / Data / Security / Batch | 🔷 | `jdtls` + `tetravim.util.spring*` + Spring Boot LS (`lsp-spring-boot.lua`, `spring-boot.nvim` / `vscode-spring-boot-tools`); DAP via `ftplugin/java.lua` |
+| Spring / Spring Boot / Data / Security / Batch | 🔷 | `jdtls` + Spring Boot LS (`lsp-spring-boot.lua`, `spring-boot.nvim` / `vscode-spring-boot-tools`): `application.*` completion, and `tetravim.util.spring_lsp` drives endpoint/bean pickers off the STS4 `workspace/symbol` model when attached, falling back to the `tetravim.util.spring*` ripgrep + Tree-sitter scan otherwise; DAP via `ftplugin/java.lua` |
 | Jakarta EE / Java EE, Hibernate/JPA | 🔷 | `jdtls` semantic model |
-| Quarkus / MicroProfile | 🔷 | `lsp-quarkus.lua` → `quarkus.nvim` + `microprofile.nvim` (lsp4mp + Qute). Dormant until `:TetraVimFetchJvmLspJars` fetches the Red Hat `.vsix` bundles (not in Mason); each server is a separate ~1 GiB JVM, so activation is opt-in |
+| Quarkus / MicroProfile | 🔷 | `lsp-quarkus.lua` → `quarkus.nvim` + `microprofile.nvim` (lsp4mp + Qute). Dormant until `:TetraVimFetchJvmLspJars` fetches the Red Hat `.vsix` bundles (not in Mason); each server is a separate ~1 GiB JVM, so activation is opt-in via `<leader>jsq` (`tetravim.util.jvm_lsp_toggle`: persisted flag + `MemAvailable` guard, `< 3 GiB` free RAM refuses auto-activate). `:checkhealth tetravim` reports the flag and live per-server `VmRSS` |
 | Micronaut | ➖ | intentionally unsupported — no viable Neovim language server exists |
 | Ktor / Helidon | 🔷 | `jdtls` / Kotlin LSP semantic model — no framework-specific server |
-| JUnit / TestNG (JVM test UI) | 🔷 | `tools-test.lua`, `neotest-java` |
+| JUnit / TestNG (JVM test UI) | 🔷 | `tools-test.lua`: Java → `neotest-java`, Scala → `neotest-scala`; Kotlin/Groovy → `tetravim.util.jvm_test` (in-repo Gradle/Maven runner, nearest test via Tree-sitter, JUnit XML parsed to a pass/fail summary + quickfix) |
 | Node.js / React | 🔷 | `ts_ls` |
 | Angular | ✅ | `lsp-web-frameworks.lua` → `angularls` |
 | Vue | ✅ | `lsp-web-frameworks.lua` → `vue_ls` (Volar, hybrid off) |

@@ -216,7 +216,7 @@ describe("SPEC-1.3 test runner wiring (migrated from validate-test-coverage.sh)"
     return t
   end
 
-  it("tools-test declares neotest + neotest-java, ft-gated on java only", function()
+  it("tools-test declares neotest + neotest-java + neotest-scala, ft-gated on java/scala", function()
     assert.is_table(neotest_spec)
     assert.are.equal("nvim-neotest/neotest", neotest_spec[1])
 
@@ -225,14 +225,16 @@ describe("SPEC-1.3 test runner wiring (migrated from validate-test-coverage.sh)"
       dep_names[type(dep) == "table" and dep[1] or dep] = true
     end
     assert.is_true(dep_names["rcasia/neotest-java"], "missing rcasia/neotest-java dependency")
+    assert.is_true(dep_names["stevanmilic/neotest-scala"], "missing stevanmilic/neotest-scala dependency")
 
     local ft = {}
     for _, f in ipairs(neotest_spec.ft or {}) do
       ft[f] = true
     end
     assert.is_true(ft.java)
+    assert.is_true(ft.scala)
+    -- Kotlin is handled outside neotest (ftplugin/kotlin.lua -> jvm_test).
     assert.is_falsy(ft.kotlin)
-    assert.is_falsy(ft.scala)
   end)
 
   it("exposes <leader>tr/tf/ts/to/td as callable key handlers", function()

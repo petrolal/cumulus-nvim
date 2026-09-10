@@ -315,30 +315,38 @@ function M.setup_keymaps()
 
   -- 2. Test Runner (<leader>jt)
   map("n", "<leader>jta", function()
-    -- neotest only carries a Java adapter (neotest-java): pointing it at a
-    -- kotlin/scala/groovy test root just yields "No tests found". Use the
-    -- in-editor neotest tree only when every detected test root is Java;
-    -- otherwise run the build tool's `test` task, which covers all JVM
-    -- languages (and multi-module builds) in one go.
+    -- neotest carries adapters for Java (neotest-java) and Scala
+    -- (neotest-scala). Drive the in-editor tree when every detected test root
+    -- is one of those; a Kotlin-only project routes through the in-repo
+    -- Gradle/Maven runner (tetravim.util.jvm_test); anything mixed or Groovy
+    -- falls back to the build tool's `test` task, which covers every JVM
+    -- language (and multi-module builds) in one pass.
     local roots = detect_test_roots(vim.fn.getcwd())
-    local function is_java_root(p)
-      return p:match("/java$") ~= nil or p:match("/java/") ~= nil
-    end
-    local all_java = #roots > 0
+    local kinds = {}
     for _, r in ipairs(roots) do
-      if not is_java_root(r) then
-        all_java = false
-        break
+      local kind = "other"
+      if r:match("/java$") or r:match("/java/") then
+        kind = "java"
+      elseif r:match("/scala$") or r:match("/scala/") then
+        kind = "scala"
+      elseif r:match("/kotlin$") or r:match("/kotlin/") then
+        kind = "kotlin"
       end
+      kinds[kind] = true
     end
 
     local neotest_ok, neotest = pcall(require, "neotest")
-    if all_java and neotest_ok then
+    if #roots > 0 and not kinds.kotlin and not kinds.other and neotest_ok then
       for _, root in ipairs(roots) do
         pcall(function()
           neotest.run.run(root)
         end)
       end
+      return
+    end
+
+    if #roots > 0 and kinds.kotlin and not kinds.java and not kinds.scala and not kinds.other then
+      require("tetravim.util.jvm_test").run_all()
       return
     end
 
@@ -523,6 +531,10 @@ function M.setup_keymaps()
       notify_error("vim-dadbod-ui is not available")
     end
   end, { desc = "Database Explorer (Dadbod)" })
+
+  map("n", "<leader>jsq", function()
+    require("tetravim.util.jvm_lsp_toggle").toggle()
+  end, { desc = "Toggle Quarkus / MicroProfile LSP (~1 GiB JVM each)" })
 
   -- 5. Refactoring & JDTLS (<leader>jx)
   map("n", "<leader>jxo", optimize_imports_buffer, { desc = "Optimize Java/Kotlin Imports (JDTLS/LSP)" })

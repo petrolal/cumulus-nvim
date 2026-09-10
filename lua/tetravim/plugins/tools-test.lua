@@ -101,11 +101,15 @@ return {
           require("tetravim.util.neotest_java").ensure_blocking(true)
         end,
       },
+      -- Scala test tree. Kotlin/Groovy have no neotest adapter and route
+      -- through `tetravim.util.jvm_test` (in-repo Gradle/Maven runner) instead.
+      "stevanmilic/neotest-scala",
     },
-    -- Only `neotest-java` is registered as an adapter below, so there is no
-    -- runnable coverage for kotlin/scala buffers -- gate the plugin load on
-    -- java alone to avoid loading neotest where it can do nothing.
-    ft = { "java" },
+    -- Adapters registered below cover `.java` (neotest-java) and `.scala` /
+    -- `.sbt` (neotest-scala); gate the plugin load on those filetypes so
+    -- neotest never loads where it has no adapter. Kotlin is handled outside
+    -- neotest entirely (`ftplugin/kotlin.lua` -> `tetravim.util.jvm_test`).
+    ft = { "java", "scala", "sbt" },
     keys = {
       {
         "<leader>tr",
@@ -171,6 +175,17 @@ return {
 
         table.insert(adapters, adapter)
       end
+
+      local ok_scala, neotest_scala = pcall(require, "neotest-scala")
+      if ok_scala then
+        -- runner + framework auto-detect from the build (bloop/sbt, munit/
+        -- scalatest/specs2/utest); no config needed for the common case.
+        local ok_build, scala_adapter = pcall(neotest_scala, {})
+        if ok_build and scala_adapter then
+          table.insert(adapters, scala_adapter)
+        end
+      end
+
       return {
         adapters = adapters,
         status = { virtual_text = true },

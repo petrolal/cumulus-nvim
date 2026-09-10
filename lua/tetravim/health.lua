@@ -160,6 +160,20 @@ function M.check()
     vim.health.info("Spring Boot / JVM project root: not detected in current directory")
   end
 
+  local ok_sl, spring_lsp = pcall(require, "tetravim.util.spring_lsp")
+  if ok_sl and spring_lsp.available() then
+    vim.health.ok(
+      "Spring Boot LS symbol model: attached -- endpoint/bean discovery uses `workspace/symbol` (compiler-accurate)"
+    )
+  elseif ok_sl then
+    vim.health.info(
+      "Spring Boot LS symbol model: not attached -- endpoint/bean discovery falls back to the Tree-sitter + ripgrep "
+        .. "scan (open a Java buffer in a Spring project to attach the server)"
+    )
+  else
+    vim.health.warn("tetravim.util.spring_lsp: failed to load")
+  end
+
   vim.health.start("TetraVim JVM Framework Config LSP (Spring Boot / Quarkus / MicroProfile)")
 
   local frameworks = require("tetravim.util.jvm_frameworks")
@@ -210,6 +224,41 @@ function M.check()
     vim.health.ok("JVM framework servers will launch with: " .. frameworks.java_cmd())
   else
     vim.health.info("JVM framework servers will launch with 'java' on $PATH ($JAVA_HOME not resolved to a JDK 21)")
+  end
+
+  local ok_tog, toggle = pcall(require, "tetravim.util.jvm_lsp_toggle")
+  if ok_tog then
+    local ram = toggle.available_ram_mb()
+    if toggle.is_enabled() then
+      local blocked = toggle.reason_blocked()
+      if blocked then
+        vim.health.warn("Quarkus / MicroProfile LSP: opted in but blocked -- " .. blocked)
+      else
+        vim.health.ok("Quarkus / MicroProfile LSP: opted in (<leader>jsq to disable)")
+      end
+    else
+      vim.health.info(
+        "Quarkus / MicroProfile LSP: not opted in -- <leader>jsq (or create "
+          .. vim.fn.stdpath("state")
+          .. "/tetravim/jvm-lsp-active) to enable the ~1 GiB servers"
+      )
+    end
+    if ram then
+      local how = ram < toggle.LOW_RAM_MB and vim.health.warn or vim.health.ok
+      how(string.format("Free RAM (MemAvailable): %d MiB (auto-activate guard: %d MiB)", ram, toggle.LOW_RAM_MB))
+    end
+    local report = toggle.rss_report()
+    if #report > 0 then
+      local total = 0
+      for _, e in ipairs(report) do
+        local mb = e.rss_mb or 0
+        total = total + mb
+        vim.health.info(string.format("  %s (pid %d): %d MiB RSS", e.label, e.pid, mb))
+      end
+      vim.health.info(string.format("  -> %d JVM language server(s), %d MiB resident total", #report, total))
+    else
+      vim.health.info("  No JVM language servers currently running")
+    end
   end
 
   vim.health.start("AWS CloudFormation & SAM DevOps Tooling")
@@ -562,9 +611,34 @@ function M.check()
     else
       vim.health.info(
         "Current project: no .java sources found -- neotest-java stays inactive here (it is Java-only; "
-          .. "use the Gradle/Maven test tasks for Kotlin/Scala)"
+          .. "Kotlin/Groovy route through tetravim.util.jvm_test, Scala through neotest-scala)"
       )
     end
+  end
+
+  if pcall(require, "neotest-scala") then
+    vim.health.ok("neotest-scala: resolvable (Scala test tree discovery available)")
+  else
+    vim.health.info("neotest-scala: not resolvable -- open a scala buffer to lazy-load it, or run :Lazy sync")
+  end
+
+  -- Kotlin / Groovy have no neotest adapter here; tetravim.util.jvm_test runs
+  -- their tests straight through the build wrapper and parses the JUnit XML.
+  local jvmtest_ok = pcall(require, "tetravim.util.jvm_test")
+  if jvmtest_ok then
+    local cwd = vim.fn.getcwd()
+    local has_gradle = vim.fn.executable("gradle") == 1 or vim.fn.filereadable(cwd .. "/gradlew") == 1
+    local has_maven = vim.fn.executable("mvn") == 1 or vim.fn.filereadable(cwd .. "/mvnw") == 1
+    if has_gradle or has_maven then
+      vim.health.ok("tetravim.util.jvm_test: build wrapper reachable (Kotlin/Groovy test running available)")
+    else
+      vim.health.info(
+        "tetravim.util.jvm_test: loaded, but no gradle/mvn on $PATH and no wrapper in cwd -- "
+          .. "Kotlin/Groovy test running needs one"
+      )
+    end
+  else
+    vim.health.error("tetravim.util.jvm_test: failed to load")
   end
 
   vim.health.start("TetraVim JVM & Diagnostic Linting -- nvim-lint")
