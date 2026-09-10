@@ -1,9 +1,6 @@
 return {
   "stevearc/oil.nvim",
   cmd = "Oil",
-  keys = {
-    { "<leader>e", "<cmd>Oil<cr>", desc = "File Explorer" },
-  },
   init = function()
     local opened_dir = false
     for _, arg in

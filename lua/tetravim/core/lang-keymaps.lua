@@ -30,7 +30,7 @@ function M.setup()
   local sync_state = require("tetravim.util.build-sync-state")
 
   local function apply(buf)
-    if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype ~= "" then
+    if #stacks == 0 or not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype ~= "" then
       return
     end
     local ft = vim.bo[buf].filetype

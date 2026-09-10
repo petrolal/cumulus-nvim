@@ -818,6 +818,9 @@ function M.setup_keymaps(force)
   map("n", "<leader>odd", function()
     require("tetravim.util.docker").open()
   end, { desc = "Runtime Dashboard", silent = true })
+  map("n", "<leader>odD", function()
+    term.run_term("lazydocker", { title = "LazyDocker" })
+  end, { desc = "LazyDocker Terminal", silent = true })
 
   -- Helm & Kubernetes (<leader>ok) -- group label already reads "helm/k8s".
   map("n", "<leader>okl", M.helm_lint, { desc = "Lint Chart", silent = true })

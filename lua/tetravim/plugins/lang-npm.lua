@@ -36,25 +36,38 @@ return {
           or "npm",
       })
 
+      local function bind_keys(bufnr)
+        if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
+          return
+        end
+        local pi = require("package-info")
+        local ok_wk, wk = pcall(require, "which-key")
+        if ok_wk then
+          wk.add({ { "<leader>cp", group = "node/npm deps", icon = "󰎙 ", buffer = bufnr } })
+        end
+        local map = function(lhs, fn, desc)
+          vim.keymap.set("n", lhs, fn, { buffer = bufnr, desc = desc, silent = true })
+        end
+        map("<leader>cpt", pi.toggle, "Toggle Dependency Versions")
+        map("<leader>cps", pi.show, "Show Dependency Versions")
+        map("<leader>cph", pi.hide, "Hide Dependency Versions")
+        map("<leader>cpu", pi.update, "Update Dependency On Line")
+        map("<leader>cpd", pi.delete, "Delete Dependency On Line")
+        map("<leader>cpi", pi.install, "Install New Dependency")
+        map("<leader>cpc", pi.change_version, "Change Dependency Version")
+      end
+
+      -- Attach immediately to current buffer if package.json
+      local cur_buf = vim.api.nvim_get_current_buf()
+      if vim.fs.basename(vim.api.nvim_buf_get_name(cur_buf)) == "package.json" then
+        bind_keys(cur_buf)
+      end
+
       vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
         group = vim.api.nvim_create_augroup("tetravim_package_info_keys", { clear = true }),
         pattern = "package.json",
         callback = function(args)
-          local pi = require("package-info")
-          local ok_wk, wk = pcall(require, "which-key")
-          if ok_wk then
-            wk.add({ { "<leader>cn", group = "node deps", icon = "󰎙 ", buffer = args.buf } })
-          end
-          local map = function(lhs, fn, desc)
-            vim.keymap.set("n", lhs, fn, { buffer = args.buf, desc = desc, silent = true })
-          end
-          map("<leader>cnt", pi.toggle, "Toggle Dependency Versions")
-          map("<leader>cns", pi.show, "Show Dependency Versions")
-          map("<leader>cnh", pi.hide, "Hide Dependency Versions")
-          map("<leader>cnu", pi.update, "Update Dependency On Line")
-          map("<leader>cnd", pi.delete, "Delete Dependency On Line")
-          map("<leader>cni", pi.install, "Install New Dependency")
-          map("<leader>cnc", pi.change_version, "Change Dependency Version")
+          bind_keys(args.buf)
         end,
       })
     end,

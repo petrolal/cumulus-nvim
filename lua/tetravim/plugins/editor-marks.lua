@@ -21,7 +21,8 @@ return {
       { "<leader>mq", "<cmd>MarksQFListAll<cr>", desc = "Marks -> Quickfix" },
       { "<leader>mx", "<cmd>delmarks a-z<cr>", desc = "Delete All Lowercase Marks (Buffer)" },
       { "<leader>mX", "<cmd>delmarks!<cr>", desc = "Delete All Marks (Buffer)" },
-      { "<leader>mb", "<cmd>MarksListBuf<cr>", desc = "Bookmarks List (Buffer)" },
+      { "<leader>mb", "<cmd>BookmarksListAll<cr>", desc = "List Bookmarks (All Buffers)" },
+      { "<leader>mB", "<cmd>BookmarksQFListAll<cr>", desc = "Bookmarks -> Quickfix" },
       {
         "<leader>sm",
         function()

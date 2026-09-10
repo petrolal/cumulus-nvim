@@ -42,9 +42,9 @@ return {
     end,
     keys = {
       {
-        "<leader>mp",
+        "<leader>um",
         "<cmd>MarkdownPreviewToggle<cr>",
-        desc = "Markdown: Toggle Live Preview (Mermaid)",
+        desc = "Toggle Markdown Preview (Mermaid)",
         ft = "markdown",
       },
     },

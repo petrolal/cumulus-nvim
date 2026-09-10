@@ -509,13 +509,6 @@ return {
         desc = "References (Grep Fallback)",
       },
       {
-        "<leader>odd",
-        function()
-          Snacks.terminal("lazydocker")
-        end,
-        desc = "LazyDocker",
-      },
-      {
         "<leader>gg",
         function()
           Snacks.terminal("lazygit")
