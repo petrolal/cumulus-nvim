@@ -69,11 +69,14 @@ return {
         title = " ☁ Notifications ",
       })
 
-      opts.picker = opts.picker or {}
-      opts.picker.prompt = " ☁ >"
-      opts.picker.sources = vim.tbl_deep_extend("force", opts.picker.sources or {}, {
-        lsp_implementations = {
-          include_current = true,
+      opts.picker = vim.tbl_deep_extend("force", opts.picker or {}, {
+        enabled = true,
+        ui_select = true,
+        prompt = " ☁ >",
+        sources = {
+          lsp_implementations = {
+            include_current = true,
+          },
         },
       })
 
@@ -243,6 +246,39 @@ return {
       require("snacks").setup(opts)
       vim.notify = function(msg, level, notify_opts)
         Snacks.notifier.notify(msg, level, notify_opts)
+      end
+
+      -- Suppress false-positive healthcheck ERROR when terminal does not support
+      -- Kitty graphics protocol (e.g. Alacritty, GNOME Terminal, standard TTY, tmux)
+      -- and missing optional Tree-sitter parsers without upstream grammars (e.g. norg),
+      -- downgrading them to INFO since they are purely optional.
+      local ok_img, snacks_image = pcall(require, "snacks.image")
+      if ok_img and type(snacks_image.health) == "function" then
+        local orig_image_health = snacks_image.health
+        snacks_image.health = function()
+          local orig_error = Snacks.health.error
+          local orig_warn = Snacks.health.warn
+          Snacks.health.error = function(msg)
+            if type(msg) == "string" and msg:find("kitty graphics protocol") then
+              Snacks.health.info(msg .. " (optional -- supported: kitty, wezterm, ghostty)")
+            else
+              orig_error(msg)
+            end
+          end
+          Snacks.health.warn = function(msg)
+            if
+              type(msg) == "string"
+              and (msg:find("Missing Treesitter languages") or msg:find("missing treesitter parsers"))
+            then
+              Snacks.health.info(msg .. " (optional -- e.g. `norg` has no upstream nvim-treesitter parser)")
+            else
+              orig_warn(msg)
+            end
+          end
+          orig_image_health()
+          Snacks.health.error = orig_error
+          Snacks.health.warn = orig_warn
+        end
       end
 
       -- Guard Snacks picker jump action against "Invalid cursor line: out of range"

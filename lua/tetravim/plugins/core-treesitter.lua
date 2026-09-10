@@ -35,6 +35,8 @@ return {
         "latex", -- required by Snacks.image for LaTeX math expression rendering
         "scss", -- required by Snacks.image for SCSS image rendering
         "typst", -- required by Snacks.image for Typst document rendering
+        "yaml", -- required by render-markdown (frontmatter) and DevOps / CI/CD
+        "http", -- required for .http syntax highlighting
         -- NOTE: "norg" (Neorg) has no upstream nvim-treesitter grammar; install
         -- via the neorg plugin (if used) or skip -- Snacks.image falls back gracefully.
       },

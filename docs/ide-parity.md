@@ -6,7 +6,7 @@ tetravim.nvim covers it with native Neovim LSP / Tree-sitter / Mason tooling.
 Legend: ✅ full LSP + Tree-sitter · 🟡 Tree-sitter / syntax only (no OSS server)
 · ➖ not covered (no OSS equivalent) · 🔷 handled by an existing spec
 
-_Last reconciled with the code: 2026-09-10 (`lsp-kotlin.lua`, `lsp-quarkus.lua`, `util/endpoints_panel.lua`, `util/k8s.lua`, `util/docker.lua`)._
+_Last reconciled with the code: 2026-09-10 (`lsp-kotlin.lua`, `lsp-quarkus.lua`, `util/endpoints_panel.lua`, `util/k8s.lua`, `util/docker.lua`, `util/profiling.lua`, `syntax/freemarker.vim`, `syntax/velocity.vim`, `ftplugin/{freemarker,velocity,jsp}.lua`)._
 
 ## Languages
 
@@ -71,9 +71,9 @@ Go, Rust, PHP, Ruby, C/C++, Dart, GraphQL, Perl, Elixir, Clojure, Haskell.
 | EJS / ERB | 🟡 | `.ejs`→`eruby` ft + Tree-sitter `embedded_template` + emmet |
 | Jinja2 / Django | ✅ | `lang-templates.lua` → `htmldjango` ft + `djlint` (format + lint) + emmet |
 | Thymeleaf | 🔷 | plain `.html`: `html` LSP + emmet |
-| FreeMarker (`.ftl`) | 🟡 | `lang-templates.lua` registers `freemarker` ft (no OSS server/parser) |
-| Velocity (`.vm`) | 🟡 | `lang-templates.lua` registers `velocity` ft (no OSS server/parser) |
-| JSP / JSTL | ➖ | built-in `jsp` ft only — no OSS server or parser |
+| FreeMarker (`.ftl`, `.ftlh`, `.ftlx`) | 🟡 | `lang-templates.lua` ft + `syntax/freemarker.vim` (HTML base + `<#…>`/`<@…>` directives, `${…}`/`#{…}` interpolations, `<#-- -->` comments) + `ftplugin/freemarker.lua` (2-space, `<#-- %s -->` commentstring, matchit block pairs) + emmet. No OSS server/parser exists |
+| Velocity (`.vm`) | 🟡 | `lang-templates.lua` ft + `syntax/velocity.vim` (HTML base + `#…` directives, `$…` references, `##`/`#* *#` comments) + `ftplugin/velocity.lua` (2-space, `## %s` commentstring, matchit block pairs) + emmet. No OSS server/parser exists |
+| JSP / JSTL | 🟡 | built-in `jsp` syntax (HTML + embedded Java) + `ftplugin/jsp.lua` (2-space, `<%-- %s --%>` commentstring, matchit scriptlet/JSTL pairs) + emmet. No OSS server or parser |
 
 ## Databases (query tooling)
 
@@ -112,6 +112,7 @@ server, a workflow.
 | Bundled decompiler (source-less library `.class`) | 🔷 `lsp-java.lua` + `ftplugin/java.lua` → `dgileadi/vscode-java-decompiler` jars in the jdtls bundle list | `gd` |
 | npm dependency version inlays in `package.json` | 🔷 `lang-npm.lua` → package-info.nvim | `<leader>cp*` (in `package.json`) |
 | Run with Coverage | 🔷 native `tetravim.util.coverage` (JaCoCo XML overlay) | `<leader>jc*` |
+| Profiler tool window (interactive flamegraph / call tree) | 🔷 `tetravim.util.profiling` → `jps` process picker + timed `asprof -o collapsed` capture, parsed into a foldable call tree in `tetravim.util.panel` (`<CR>`/`o` expand, `E`/`C` expand/collapse-all, `g` raw stacks, `r` re-capture). External HTML flamegraph path stays on `<leader>jps`/`jpx`/`jpv` | `<leader>jpp` |
 | Endpoints tool window (project HTTP endpoint list) | 🔷 `tetravim.util.endpoints_panel` → `tetravim.util.panel` in the shared split (Spring `workspace/symbol` model + JSON OpenAPI specs) | `<leader>ae` |
 | Kubernetes tool window (cluster resource tree) | 🔷 `tetravim.util.k8s` → `tetravim.util.panel`; `kubectl`-driven Deployments/Pods/Services for the active context+namespace, describe / yaml / logs / exec / delete / ns+ctx switch | `<leader>oke` |
 | Services / Docker tool window (container + image runtime) | 🔷 `tetravim.util.docker` → `tetravim.util.panel`; `docker`-driven container/image list, inspect / logs / start-stop-restart / exec / rm / `docker compose up -d`+`down` | `<leader>odd` |

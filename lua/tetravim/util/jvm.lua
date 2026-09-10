@@ -561,6 +561,10 @@ function M.setup_keymaps()
     require("tetravim.util.profiling").view()
   end, { desc = "Profiler: View Flamegraph" })
 
+  map("n", "<leader>jpp", function()
+    require("tetravim.util.profiling").capture()
+  end, { desc = "Profiler: Capture -> Interactive Call Tree" })
+
   -- 7. Dependencies (<leader>jd)
   map("n", "<leader>jdu", function()
     with_jvm_project(function(tool, root)

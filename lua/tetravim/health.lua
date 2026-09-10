@@ -869,6 +869,55 @@ function M.check()
     )
   end
 
+  vim.health.start("TetraVim Template Engines (FreeMarker / Velocity / JSP)")
+
+  -- No OSS language server or Tree-sitter grammar exists for any of these three;
+  -- TetraVim covers them with filetype detection, a bundled/hand-rolled syntax
+  -- layer, ftplugin conventions and emmet. See docs/ide-parity.md
+  -- ("Template engines").
+  for _, t in ipairs({
+    { file = "x.ftl", want = "freemarker" },
+    { file = "x.ftlh", want = "freemarker" },
+    { file = "x.vm", want = "velocity" },
+    { file = "x.jsp", want = "jsp" },
+    { file = "x.jspf", want = "jsp" },
+  }) do
+    local got = vim.filetype.match({ filename = t.file })
+    if got == t.want then
+      vim.health.ok(("filetype: %s -> %s"):format(t.file, got))
+    else
+      vim.health.warn(
+        ("filetype: %s -> %s (expected %s) -- lang-templates.lua not loaded?"):format(t.file, tostring(got), t.want)
+      )
+    end
+  end
+
+  for _, name in ipairs({ "freemarker", "velocity" }) do
+    if #vim.api.nvim_get_runtime_file("syntax/" .. name .. ".vim", false) > 0 then
+      vim.health.ok(("syntax/%s.vim: on runtimepath (HTML-embedded directive highlighting)"):format(name))
+    else
+      vim.health.warn(("syntax/%s.vim: NOT on runtimepath -- .%s files fall back to plain text"):format(name, name))
+    end
+  end
+  if #vim.api.nvim_get_runtime_file("syntax/jsp.vim", false) > 0 then
+    vim.health.ok("syntax/jsp.vim: available (Neovim bundled -- HTML + embedded Java)")
+  else
+    vim.health.info("syntax/jsp.vim: not found (unexpected -- ships with Neovim)")
+  end
+
+  for _, name in ipairs({ "freemarker", "velocity", "jsp" }) do
+    if #vim.api.nvim_get_runtime_file("ftplugin/" .. name .. ".lua", false) > 0 then
+      vim.health.ok(("ftplugin/%s.lua: directive-aware commentstring + matchit block pairs"):format(name))
+    else
+      vim.health.warn(("ftplugin/%s.lua: missing -- no directive-aware comments for .%s"):format(name, name))
+    end
+  end
+
+  vim.health.info(
+    "No language server / Tree-sitter parser for FreeMarker / Velocity / JSP -- none exists in the "
+      .. "OSS ecosystem. Coverage is syntax + comments + matchit + emmet by design."
+  )
+
   vim.health.start("TetraVim JVM Continuous Profiling -- async-profiler")
 
   local profiler_ok, profiling = pcall(require, "tetravim.util.profiling")
@@ -886,6 +935,14 @@ function M.check()
         .. "Suggestion: run `bash bootstrap.sh`, or grab a release from "
         .. "https://github.com/async-profiler/async-profiler/releases"
     )
+  end
+
+  if profiler_ok and type(profiling.capture) == "function" then
+    if vim.fn.executable("jps") == 1 then
+      vim.health.ok("jps: available -- <leader>jpp picks a running JVM and renders an interactive flamegraph call tree")
+    else
+      vim.health.info("jps: NOT found on $PATH (ships with the JDK) -- <leader>jpp falls back to a manual PID prompt")
+    end
   end
 
   if vim.fn.has("mac") == 0 and vim.fn.filereadable("/proc/sys/kernel/perf_event_paranoid") == 1 then

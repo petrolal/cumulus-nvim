@@ -22,6 +22,9 @@ return {
     -- scope is the .http workflow, not kulala's JS/TS scripting surface.
     ft = { "http" },
     opts = {
+      treesitter = {
+        enable = false,
+      },
       ui = {
         -- Force a persistent split, never a floating window, per this
         -- epic's established response-display UX pattern. "split" is a

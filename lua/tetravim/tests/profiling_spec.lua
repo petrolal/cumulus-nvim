@@ -1,5 +1,12 @@
 local assert = require("luassert")
 
+local function read(path)
+  local fd = assert(io.open(path, "r"))
+  local body = fd:read("*a")
+  fd:close()
+  return body
+end
+
 describe("tetravim.util.profiling", function()
   it("should expose start, stop, and view API methods", function()
     local profiling = require("tetravim.util.profiling")
@@ -13,5 +20,27 @@ describe("tetravim.util.profiling", function()
     local profiling = require("tetravim.util.profiling")
     assert.is_nil(profiling.active_pid)
     assert.is_nil(profiling.last_flamegraph)
+  end)
+
+  it("should expose the interactive call-tree API", function()
+    local profiling = require("tetravim.util.profiling")
+    assert.is_function(profiling.pick_pid)
+    assert.is_function(profiling.capture)
+    assert.is_function(profiling._render_panel)
+    assert.is_function(profiling._toggle)
+    assert.is_table(profiling._collapsed)
+    assert.is_nil(profiling._tree)
+  end)
+
+  it("wires <leader>jpp to the interactive capture", function()
+    local body = read(vim.fn.getcwd() .. "/lua/tetravim/util/jvm.lua")
+    assert.is_truthy(body:find("<leader>jpp", 1, true))
+    assert.is_truthy(body:find('require("tetravim.util.profiling").capture()', 1, true))
+  end)
+
+  it("has a jps probe in the profiling health section", function()
+    local body = read(vim.fn.getcwd() .. "/lua/tetravim/health.lua")
+    assert.is_truthy(body:find("TetraVim JVM Continuous Profiling", 1, true))
+    assert.is_truthy(body:find('vim.fn.executable("jps")', 1, true))
   end)
 end)
