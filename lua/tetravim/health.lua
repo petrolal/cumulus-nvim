@@ -1094,7 +1094,7 @@ function M.check()
     { mod = "outline", desc = "Docked symbol tree (IDEA 'Structure') -- <leader>cs" },
     { mod = "grug-far", desc = "Project-wide find & replace (IDEA 'Replace in Path') -- <leader>sr" },
     { mod = "marks", desc = "Gutter marks + bookmarks (IDEA 'Bookmarks') -- m* / <leader>m" },
-    { mod = "package-info", desc = "package.json version lens (IDEA npm inlays) -- <leader>cn* in package.json" },
+    { mod = "package-info", desc = "package.json version lens (IDEA npm inlays) -- <leader>cp* in package.json" },
     {
       mod = "neogen",
       desc = "Javadoc / KDoc / docstring stub generator (IDEA 'Generate... > Javadoc') -- <leader>cg / <leader>cG",

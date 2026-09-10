@@ -127,6 +127,42 @@ map("n", "<leader>cy", function()
   })
 end, { desc = "Safe Delete / Inline" })
 
+-- Node / npm package.json dependency lens (package-info.nvim)
+local function npm_action(fn_name)
+  if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+    require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cp* operates on package.json")
+    return
+  end
+  local ok, pkg = pcall(require, "package-info")
+  if ok and pkg[fn_name] then
+    pkg[fn_name]()
+  else
+    require("tetravim.util.ui").notify_err("package-info.nvim is not loaded or action failed")
+  end
+end
+
+map("n", "<leader>cpt", function()
+  npm_action("toggle")
+end, { desc = "Toggle Dependency Versions" })
+map("n", "<leader>cps", function()
+  npm_action("show")
+end, { desc = "Show Dependency Versions" })
+map("n", "<leader>cph", function()
+  npm_action("hide")
+end, { desc = "Hide Dependency Versions" })
+map("n", "<leader>cpu", function()
+  npm_action("update")
+end, { desc = "Update Dependency On Line" })
+map("n", "<leader>cpd", function()
+  npm_action("delete")
+end, { desc = "Delete Dependency On Line" })
+map("n", "<leader>cpi", function()
+  npm_action("install")
+end, { desc = "Install New Dependency" })
+map("n", "<leader>cpc", function()
+  npm_action("change_version")
+end, { desc = "Change Dependency Version" })
+
 -- Per-language <leader>c* subgroups (Story 34.1): build/lint/format commands
 -- for a given language stack only appear as buffer-local keymaps while
 -- editing a matching filetype, so <leader>c no longer mixes e.g. Maven

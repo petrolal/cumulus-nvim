@@ -84,6 +84,14 @@ return {
         { "<leader>ck", desc = "Change Signature / Rewrite", icon = "󰑕 " },
         { "<leader>cy", desc = "Safe Delete / Inline", icon = "󰅖 " },
         { "<leader>ct", desc = "LSP References / Defs (Trouble)", icon = "󰋽 " },
+        { "<leader>cp", group = "node/npm deps", icon = "󰎙 " },
+        { "<leader>cpt", desc = "Toggle Dependency Versions", icon = "󰎙 " },
+        { "<leader>cps", desc = "Show Dependency Versions", icon = "󰎙 " },
+        { "<leader>cph", desc = "Hide Dependency Versions", icon = "󰎙 " },
+        { "<leader>cpu", desc = "Update Dependency On Line", icon = "󰎙 " },
+        { "<leader>cpd", desc = "Delete Dependency On Line", icon = "󰎙 " },
+        { "<leader>cpi", desc = "Install New Dependency", icon = "󰎙 " },
+        { "<leader>cpc", desc = "Change Dependency Version", icon = "󰎙 " },
       })
 
       -- Root Shortcuts

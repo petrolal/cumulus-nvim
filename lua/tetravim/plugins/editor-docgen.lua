@@ -12,7 +12,7 @@
 -- util/docgen so this spec stays a thin shim:
 --   <leader>cg  doc stub for the nearest function / method
 --   <leader>cG  doc stub for the enclosing class / type
--- (<leader>cj* / <leader>cn* are already claimed buffer-locally by the JVM
+-- (<leader>cj* / <leader>cp* are already claimed buffer-locally by the JVM
 --  build-sync and package.json version-lens namespaces respectively.)
 
 return {

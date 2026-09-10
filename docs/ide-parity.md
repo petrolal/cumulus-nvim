@@ -110,7 +110,7 @@ server, a workflow.
 | Bookmarks (mnemonic, gutter, list) | 🔷 `editor-marks.lua` → marks.nvim | `m*`, `<leader>m`, `<leader>sm` |
 | Grazie (grammar / spell / style for prose) | 🔷 `lsp-markdown.lua` → `ltex-ls` | via `<leader>ca` |
 | Bundled decompiler (source-less library `.class`) | 🔷 `lsp-java.lua` + `ftplugin/java.lua` → `dgileadi/vscode-java-decompiler` jars in the jdtls bundle list | `gd` |
-| npm dependency version inlays in `package.json` | 🔷 `lang-npm.lua` → package-info.nvim | `<leader>cn*` (buffer-local in `package.json`) |
+| npm dependency version inlays in `package.json` | 🔷 `lang-npm.lua` → package-info.nvim | `<leader>cp*` (in `package.json`) |
 | Run with Coverage | 🔷 native `tetravim.util.coverage` (JaCoCo XML overlay) | `<leader>jc*` |
 | Endpoints tool window (project HTTP endpoint list) | 🔷 `tetravim.util.endpoints_panel` → `tetravim.util.panel` in the shared split (Spring `workspace/symbol` model + JSON OpenAPI specs) | `<leader>ae` |
 | Kubernetes tool window (cluster resource tree) | 🔷 `tetravim.util.k8s` → `tetravim.util.panel`; `kubectl`-driven Deployments/Pods/Services for the active context+namespace, describe / yaml / logs / exec / delete / ns+ctx switch | `<leader>oke` |

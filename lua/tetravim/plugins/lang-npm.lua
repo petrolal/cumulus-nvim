@@ -8,68 +8,112 @@
 -- behind), plus change-version / update / delete actions driven by the
 -- detected package manager (npm | pnpm | yarn).
 --
--- All keymaps are buffer-local and only bound in a `package.json` buffer, so
--- they never leak into other JSON files. Namespace: <leader>cn ("code /
--- node deps"). Degrades to nothing if no package manager binary is present.
+-- All keymaps operate when inside a `package.json` buffer. Namespace:
+-- <leader>cp ("code / package / npm deps"). Degrades cleanly if no package
+-- manager binary is present.
 
 return {
   {
     "vuki656/package-info.nvim",
     dependencies = { "MunifTanjim/nui.nvim" },
-    event = { "BufRead package.json" },
-    config = function()
-      require("package-info").setup({
-        colors = {
-          up_to_date = "#3C4048",
-          outdated = "#d19a66",
-        },
-        icons = {
-          enable = true,
-          style = { up_to_date = "|  ", outdated = "|  " },
-        },
-        autostart = true,
-        hide_up_to_date = false,
-        hide_unstable_versions = false,
-        -- Auto-detect: falls back to npm if pnpm/yarn aren't found.
-        package_manager = (vim.fn.executable("pnpm") == 1 and "pnpm")
-          or (vim.fn.executable("yarn") == 1 and "yarn")
-          or "npm",
-      })
-
-      local function bind_keys(bufnr)
-        if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
-          return
-        end
-        local pi = require("package-info")
-        local ok_wk, wk = pcall(require, "which-key")
-        if ok_wk then
-          wk.add({ { "<leader>cp", group = "node/npm deps", icon = "󰎙 ", buffer = bufnr } })
-        end
-        local map = function(lhs, fn, desc)
-          vim.keymap.set("n", lhs, fn, { buffer = bufnr, desc = desc, silent = true })
-        end
-        map("<leader>cpt", pi.toggle, "Toggle Dependency Versions")
-        map("<leader>cps", pi.show, "Show Dependency Versions")
-        map("<leader>cph", pi.hide, "Hide Dependency Versions")
-        map("<leader>cpu", pi.update, "Update Dependency On Line")
-        map("<leader>cpd", pi.delete, "Delete Dependency On Line")
-        map("<leader>cpi", pi.install, "Install New Dependency")
-        map("<leader>cpc", pi.change_version, "Change Dependency Version")
-      end
-
-      -- Attach immediately to current buffer if package.json
-      local cur_buf = vim.api.nvim_get_current_buf()
-      if vim.fs.basename(vim.api.nvim_buf_get_name(cur_buf)) == "package.json" then
-        bind_keys(cur_buf)
-      end
-
-      vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-        group = vim.api.nvim_create_augroup("tetravim_package_info_keys", { clear = true }),
-        pattern = "package.json",
-        callback = function(args)
-          bind_keys(args.buf)
+    event = { "BufReadPost", "BufNewFile" },
+    keys = {
+      {
+        "<leader>cpt",
+        function()
+          if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+            require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cpt operates on package.json")
+            return
+          end
+          require("package-info").toggle()
         end,
-      })
+        desc = "Toggle Dependency Versions",
+      },
+      {
+        "<leader>cps",
+        function()
+          if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+            require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cps operates on package.json")
+            return
+          end
+          require("package-info").show()
+        end,
+        desc = "Show Dependency Versions",
+      },
+      {
+        "<leader>cph",
+        function()
+          if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+            require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cph operates on package.json")
+            return
+          end
+          require("package-info").hide()
+        end,
+        desc = "Hide Dependency Versions",
+      },
+      {
+        "<leader>cpu",
+        function()
+          if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+            require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cpu operates on package.json")
+            return
+          end
+          require("package-info").update()
+        end,
+        desc = "Update Dependency On Line",
+      },
+      {
+        "<leader>cpd",
+        function()
+          if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+            require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cpd operates on package.json")
+            return
+          end
+          require("package-info").delete()
+        end,
+        desc = "Delete Dependency On Line",
+      },
+      {
+        "<leader>cpi",
+        function()
+          if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+            require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cpi operates on package.json")
+            return
+          end
+          require("package-info").install()
+        end,
+        desc = "Install New Dependency",
+      },
+      {
+        "<leader>cpc",
+        function()
+          if vim.fs.basename(vim.api.nvim_buf_get_name(0)) ~= "package.json" then
+            require("tetravim.util.ui").notify_warn("Open package.json first -- <leader>cpc operates on package.json")
+            return
+          end
+          require("package-info").change_version()
+        end,
+        desc = "Change Dependency Version",
+      },
+    },
+    opts = {
+      colors = {
+        up_to_date = "#3C4048",
+        outdated = "#d19a66",
+      },
+      icons = {
+        enable = true,
+        style = { up_to_date = "|  ", outdated = "|  " },
+      },
+      autostart = true,
+      hide_up_to_date = false,
+      hide_unstable_versions = false,
+      package_manager = (vim.fn.executable("pnpm") == 1 and "pnpm")
+        or (vim.fn.executable("yarn") == 1 and "yarn")
+        or "npm",
+    },
+    config = function(_, opts)
+      require("package-info").setup(opts)
     end,
   },
 }
