@@ -27,7 +27,7 @@ end
 local augroup = vim.api.nvim_create_augroup("tetravim_lang_keymaps", { clear = true })
 
 function M.setup()
-  local sync_state = require("tetravim.util.build-sync-state")
+  local sync_state = require("tetravim.util.build_sync_state")
 
   local function apply(buf)
     if #stacks == 0 or not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype ~= "" then
@@ -38,7 +38,7 @@ function M.setup()
     for _, stack in ipairs(stacks) do
       -- Stacks marked ready_gate (java/kotlin/maven build & refactor)
       -- stay hidden until the one-time Maven/Gradle dependency sync
-      -- finishes -- see lua/tetravim/util/build-sync-state.lua.
+      -- finishes -- see lua/tetravim/util/build_sync_state.lua.
       if not (stack.ready_gate and not sync_state.ready) then
         local matches_ft = false
         if stack.filetypes then
@@ -67,7 +67,7 @@ function M.setup()
             -- fresh toast per invocation. Give it a stable per-stack id so
             -- repeats replace the previous toast instead of stacking.
             vim.notify(
-              "TetraVim: lang-keymaps condition for " .. tostring(stack.group) .. " failed: " .. tostring(res),
+              "TetraVim: lang_keymaps condition for " .. tostring(stack.group) .. " failed: " .. tostring(res),
               vim.log.levels.WARN,
               { id = "tetravim_lang_keymaps_condition_" .. tostring(stack.group) }
             )

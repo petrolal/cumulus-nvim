@@ -2,7 +2,7 @@
 -- Pure-Lua + Tree-sitter Spring Boot discovery, bean extraction, REST endpoint parsing,
 -- and DAP configuration generation. Replaces legacy Scala engine Spring features.
 
-local refactor_ts = require("tetravim.util.refactor-treesitter")
+local refactor_ts = require("tetravim.util.refactor_treesitter")
 
 local M = {}
 

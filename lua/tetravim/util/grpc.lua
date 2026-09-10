@@ -262,4 +262,146 @@ function M.request_skeleton(describe_json)
   return render(decoded, 0)
 end
 
+-- ---------------------------------------------------------------------------
+-- Interactive flows (<leader>ag*). These orchestrate the pure helpers above
+-- with `vim.ui` prompts and the shared persistent-split renderer; the keymap
+-- file only binds keys to them. Every gRPC output renders in a reused
+-- unlisted split via util/split.lua, never a floating window.
+-- ---------------------------------------------------------------------------
+
+--- Render `text` into a reused persistent split. Vertical, matching
+--- tools-http.lua's kulala.nvim `split_direction = "right"`.
+---@param text string
+---@param filetype string
+---@param name_hint string
+local function open_split(text, filetype, name_hint)
+  require("tetravim.util.split").open(text, { filetype = filetype, name_hint = name_hint })
+end
+
+--- Prompt for a `host:port` and call `cb(addr)` with the trimmed value.
+--- A blank / cancelled prompt is a no-op.
+---@param cb fun(addr: string)
+function M.prompt_addr(cb)
+  vim.ui.input({ prompt = "gRPC server (host:port): ", default = "localhost:50051" }, function(addr)
+    if not addr or vim.trim(addr) == "" then
+      return
+    end
+    cb(vim.trim(addr))
+  end)
+end
+
+--- Open the editable JSON request skeleton in a persistent "grpc-request"
+--- split and bind a buffer-local <CR> that reads it back, refuses malformed
+--- JSON (never handing it to grpcurl), invokes the RPC async and renders the
+--- response in a persistent "grpc-response" json split.
+---@param addr string
+---@param method string
+---@param skeleton_text string
+function M.open_request(addr, method, skeleton_text)
+  open_split(skeleton_text, "json", "grpc-request")
+  local bufnr = vim.api.nvim_get_current_buf()
+  vim.keymap.set("n", "<CR>", function()
+    local payload = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), "\n")
+    if not require("tetravim.util.http").looks_like_json(payload) then
+      ui.notify_err("gRPC request buffer is not valid JSON -- fix it before pressing <CR> (nothing sent)")
+      return
+    end
+    M.invoke(addr, method, payload, function(response)
+      open_split(response, "json", "grpc-response")
+    end)
+  end, { buffer = bufnr, desc = "Invoke RPC with this payload" })
+  ui.notify_info("Edit the payload, then press <CR> in this buffer to invoke " .. method)
+end
+
+--- Given a fully-qualified method ("pkg.Service/Method" or
+--- "pkg.Service.Method"), resolve its request message type via `grpcurl
+--- describe`, then a second `describe -msg-template` for that type, and open
+--- the generated skeleton for editing.
+---@param addr string
+---@param method string
+function M.build_request(addr, method)
+  M.describe(addr, (method:gsub("/", ".")), function(method_desc)
+    local parsed = M.parse_methods(method_desc)
+    if #parsed == 0 or parsed[1].request_type == "" then
+      ui.notify_err("Could not determine the request type for " .. method)
+      return
+    end
+    M.describe(addr, parsed[1].request_type, function(type_desc)
+      local template = M.extract_msg_template(type_desc)
+      local skeleton = M.request_skeleton(template or "")
+      if not skeleton then
+        return -- request_skeleton already warned
+      end
+      M.open_request(addr, method, skeleton)
+    end)
+  end)
+end
+
+--- Full interactive browser: prompt for a server, list its services, let the
+--- user pick a service then a method, and open the request skeleton for it.
+--- A service with no parseable RPCs falls back to rendering its raw
+--- `describe` output.
+function M.browse_services()
+  M.prompt_addr(function(addr)
+    M.list_services(addr, function(out)
+      local services = M.parse_service_list(out)
+      if #services == 0 then
+        ui.notify_warn("No gRPC services reported by " .. addr)
+        return
+      end
+      vim.ui.select(services, { prompt = "gRPC service:" }, function(service)
+        if not service then
+          return
+        end
+        M.describe(addr, service, function(service_desc)
+          local methods = M.parse_methods(service_desc)
+          if #methods == 0 then
+            open_split(service_desc, "proto", "grpc-describe")
+            return
+          end
+          local labels = {}
+          for _, m in ipairs(methods) do
+            table.insert(labels, m.name)
+          end
+          vim.ui.select(labels, { prompt = service .. " method:" }, function(choice, idx)
+            if not choice or not idx then
+              return
+            end
+            M.build_request(addr, service .. "/" .. methods[idx].name)
+          end)
+        end)
+      end)
+    end)
+  end)
+end
+
+--- Prompt for a symbol (defaulting to <cword>) and a server, then render its
+--- `grpcurl describe` output in a persistent split.
+function M.describe_symbol()
+  local default_symbol = vim.fn.expand("<cword>")
+  vim.ui.input({ prompt = "gRPC symbol to describe: ", default = default_symbol }, function(symbol)
+    if not symbol or vim.trim(symbol) == "" then
+      return
+    end
+    M.prompt_addr(function(addr)
+      M.describe(addr, vim.trim(symbol), function(desc)
+        open_split(desc, "proto", "grpc-describe")
+      end)
+    end)
+  end)
+end
+
+--- Prompt for a fully-qualified method and a server, then build and open the
+--- editable request skeleton for it.
+function M.generate_request()
+  vim.ui.input({ prompt = "gRPC method (pkg.Service/Method): " }, function(method)
+    if not method or vim.trim(method) == "" then
+      return
+    end
+    M.prompt_addr(function(addr)
+      M.build_request(addr, vim.trim(method))
+    end)
+  end)
+end
+
 return M

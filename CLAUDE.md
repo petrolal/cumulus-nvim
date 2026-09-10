@@ -62,9 +62,9 @@ file returns a lazy.nvim spec (single spec table or a list of them). `defaults.l
 
 | Path                    | Role                                                                                                                                                                                                                                                                                                 |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lua/tetravim/core/`    | Editor bootstrap: `options`, global `keymaps`, `autocmds`, `diagnostics`, `health`, `devops` keymap engine, `lang-keymaps`, `setup` (headless provisioning pipeline)                                                                                                                                   |
+| `lua/tetravim/core/`    | Editor bootstrap: `options`, global `keymaps`, `autocmds`, `diagnostics`, `health`, `devops` keymap engine, `lang_keymaps`, `setup` (headless provisioning pipeline)                                                                                                                                   |
 | `lua/tetravim/plugins/` | One lazy.nvim spec file per concern. Prefixes: `lsp-*`, `tools-*`, `editor-*`, `ui-*`, `cloud-*`, `core-*`, `lang-*`                                                                                                                                                                                   |
-| `lua/tetravim/util/`    | Pure Lua logic modules (`jvm`, `spring`, `spring-picker`, `refactor`, `refactor-treesitter`, `extract`, `filetemplate`, `db`, `http`, `grpc`, `openapi`, `cve`, `sonar`, `forge`, `lsp_async`, `lsp_resilience`, `lsp_capabilities`, `lsp_attach`, `format`, `lint`, `git`, `build`, `coverage`, `session`, `term`, `split`, …). Keymaps call into these; business logic lives here, not in the keymap files |
+| `lua/tetravim/util/`    | Pure Lua logic modules (`jvm`, `spring`, `spring_picker`, `refactor`, `refactor_treesitter`, `extract`, `filetemplate`, `db`, `http`, `grpc`, `openapi`, `cve`, `sonar`, `forge`, `lsp_async`, `lsp_resilience`, `lsp_capabilities`, `lsp_attach`, `format`, `lint`, `git`, `build`, `coverage`, `session`, `term`, `split`, …). Keymaps call into these; business logic lives here, not in the keymap files |
 | `lua/tetravim/theme/`   | `tetris.lua` = canonical palette + highlight table; `init.lua` = loader/persistence shim                                                                                                                                                                                                              |
 | `colors/tetravim.lua`   | `:colorscheme tetravim` entry point                                                                                                                                                                                                                                                                  |
 | `lua/tetravim/tests/`   | `*_spec.lua` plenary busted specs                                                                                                                                                                                                                                                                    |
@@ -84,11 +84,11 @@ keys relevant to the current buffer:
 3. **DevOps/infra** — `<leader>o`, registered globally via
    `require("tetravim.core.devops").setup_keymaps()`; which-key groups come from
    `devops.whichkey_spec()`.
-4. **Language-scoped** — `core/lang-keymaps.lua`. Each language stack calls
+4. **Language-scoped** — `core/lang_keymaps.lua`. Each language stack calls
    `M.register{ filetypes=…, group=…, keys=… }`; a `FileType` autocmd installs the
    keys **buffer-local** only for matching filetypes, so `<leader>c` never mixes
    e.g. Maven keys into a Terraform buffer. Java/Kotlin build stacks are gated
-   behind `util/build-sync-state` until the first Maven/Gradle dependency sync
+   behind `util/build_sync_state` until the first Maven/Gradle dependency sync
    completes.
 
 ### LSP
@@ -157,9 +157,11 @@ theme switcher" was removed — do not reintroduce provider palette tables.
 
 ### Health & headless
 
-- `:checkhealth tetravim` → `lua/tetravim/health.lua` (per-feature dependency
-  probes).
-- `:CheckHealthJson` / `require("tetravim.core.health").json()` → one-line JSON
+- `:checkhealth tetravim` → `lua/tetravim/health/` (per-feature dependency probes).
+  `health/init.lua` is the orchestrator; the actual probes are grouped one concern
+  per file (`platform`, `jvm`, `devops`, `clients`, `quality`, `editor`) and run in
+  that order so the report reads top-to-bottom unchanged.
+- `:CheckHealthJson` / `require("tetravim.core.health_json").json()` → one-line JSON
   (`neovim_version`, `lsp_clients`, `plugin_count`, `pending_async_tasks`,
   `telemetry_enabled`) for CI gating.
 - `TETRAVIM_HEADLESS=1` → `vim.g.tetravim_headless` (bridged in `core/options.lua`).
@@ -179,5 +181,5 @@ theme switcher" was removed — do not reintroduce provider palette tables.
 - New user-facing logic: put the implementation in a `util/` module and keep the
   keymap file a thin dispatcher; guard every optional binary/plugin with a
   `pcall`/`executable` check that degrades to a single `ui.notify_*` call.
-- Every feature that touches an external tool should add a probe to
-  `lua/tetravim/health.lua`.
+- Every feature that touches an external tool should add a probe to the relevant
+  `lua/tetravim/health/<group>.lua` section.

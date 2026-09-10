@@ -180,8 +180,8 @@ describe("Endpoints panel -- static wiring", function()
     assert.is_truthy(read("lua/tetravim/plugins/ui-whichkey.lua"):match('"<leader>ae".-Endpoints Panel'))
   end)
 
-  it("health.lua has the Endpoints Panel section", function()
-    assert.is_truthy(read("lua/tetravim/health.lua"):match("TetraVim Endpoints Panel"))
+  it("the healthcheck has the Endpoints Panel section", function()
+    assert.is_truthy(require("tetravim.tests.helpers").health_source():match("TetraVim Endpoints Panel"))
   end)
 
   it("docs/ide-parity.md lists the Endpoints tool window with <leader>ae", function()

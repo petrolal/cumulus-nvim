@@ -272,8 +272,8 @@ describe("tetravim.util.filetemplate", function()
       assert.is_truthy(km:match("<leader>fn"))
     end)
 
-    it("health.lua carries the New File from Template section", function()
-      assert.is_truthy(read("lua/tetravim/health.lua"):match("New File from Template"))
+    it("the healthcheck carries the New File from Template section", function()
+      assert.is_truthy(require("tetravim.tests.helpers").health_source():match("New File from Template"))
     end)
   end)
 

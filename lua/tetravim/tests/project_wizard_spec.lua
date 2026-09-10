@@ -1,7 +1,7 @@
--- Tests for TetraVim Project Generator Wizard (tetravim.util.project-wizard)
+-- Tests for TetraVim Project Generator Wizard (tetravim.util.project_wizard)
 
-describe("tetravim.util.project-wizard", function()
-  local wizard = require("tetravim.util.project-wizard")
+describe("tetravim.util.project_wizard", function()
+  local wizard = require("tetravim.util.project_wizard")
 
   it("exposes expected public wizard API functions", function()
     assert.is_function(wizard.create_project)

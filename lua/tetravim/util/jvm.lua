@@ -306,7 +306,7 @@ function M.setup_keymaps()
   end, { desc = "Toggle Offline Mode (-o / --offline)" })
 
   local function resync_dependencies()
-    local sync_state = require("tetravim.util.build-sync-state")
+    local sync_state = require("tetravim.util.build_sync_state")
     sync_state.reset()
     sync_state.run()
   end
@@ -508,20 +508,20 @@ function M.setup_keymaps()
   end, { desc = "Groovy: Run Current Script" })
 
   map("n", "<leader>jrd", function()
-    require("tetravim.util.springboot-debug").launch_debug()
+    require("tetravim.util.springboot_debug").launch_debug()
   end, { desc = "Debug: Launch Spring Boot (DAP)" })
 
   -- 4. Spring Boot & Frameworks (<leader>js)
   map("n", "<leader>jse", function()
-    require("tetravim.util.spring-picker").pick_endpoint()
+    require("tetravim.util.spring_picker").pick_endpoint()
   end, { desc = "Spring: Select REST Endpoint" })
 
   map("n", "<leader>jsb", function()
-    require("tetravim.util.spring-picker").pick_bean()
+    require("tetravim.util.spring_picker").pick_bean()
   end, { desc = "Spring: Select Bean Dependency" })
 
   map("n", "<leader>jsd", function()
-    require("tetravim.util.spring-picker").detect_app()
+    require("tetravim.util.spring_picker").detect_app()
   end, { desc = "Spring: Detect Boot App" })
 
   map("n", "<leader>jsm", function()
@@ -603,28 +603,28 @@ function M.setup_keymaps()
 
   -- 9. New Project Wizard (<leader>jn)
   map("n", "<leader>jnn", function()
-    require("tetravim.util.project-wizard").create_project()
+    require("tetravim.util.project_wizard").create_project()
   end, { desc = "New JVM Project Wizard" })
 
   map("n", "<leader>jns", function()
-    require("tetravim.util.project-wizard").new_spring_boot()
+    require("tetravim.util.project_wizard").new_spring_boot()
   end, { desc = "New Spring Boot Project (Initializr)" })
 
   map("n", "<leader>jnm", function()
-    require("tetravim.util.project-wizard").new_maven_project()
+    require("tetravim.util.project_wizard").new_maven_project()
   end, { desc = "New Maven Project (Archetype)" })
 
   map("n", "<leader>jng", function()
-    require("tetravim.util.project-wizard").new_gradle_project()
+    require("tetravim.util.project_wizard").new_gradle_project()
   end, { desc = "New Gradle Project (gradle init)" })
 
   -- Global user commands
   vim.api.nvim_create_user_command("TetraVimNewProject", function()
-    require("tetravim.util.project-wizard").create_project()
+    require("tetravim.util.project_wizard").create_project()
   end, { desc = "Open TetraVim New JVM Project Wizard" })
 
   vim.api.nvim_create_user_command("JVMNewProject", function()
-    require("tetravim.util.project-wizard").create_project()
+    require("tetravim.util.project_wizard").create_project()
   end, { desc = "Open TetraVim New JVM Project Wizard" })
 
   -- WhichKey group specs are registered once, by the aggregator

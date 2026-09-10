@@ -38,7 +38,7 @@ describe("Code Reviews Plugin Configuration", function()
     local opts_func = wk_spec[1].opts
     assert.is_function(opts_func)
 
-    package.loaded["tetravim.core.lang-keymaps"] = {
+    package.loaded["tetravim.core.lang_keymaps"] = {
       whichkey_spec = function()
         return {}
       end,

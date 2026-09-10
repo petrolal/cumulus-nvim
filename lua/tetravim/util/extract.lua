@@ -1,7 +1,7 @@
 local M = {}
 
 local refactor = require("tetravim.util.refactor")
-local action_lock = require("tetravim.util.action-lock")
+local action_lock = require("tetravim.util.action_lock")
 
 M.ACTION_TIMEOUT_MS = 10000
 
@@ -239,7 +239,7 @@ local function do_action(action_name, kind_prefix, title_substring, is_visual)
   -- Everything from here to the buf_request_all registration runs
   -- synchronously; a throw in make_range_params / the visual-mark block /
   -- character_offset / vim.diagnostic.get would otherwise strand the shared
-  -- action-lock (disabling every extract AND project-rename for the
+  -- action_lock (disabling every extract AND project-rename for the
   -- session). pcall it and release on any failure.
   local setup_ok, setup_err = pcall(function()
     local params = vim.lsp.util.make_range_params(win, jvm_client.offset_encoding)

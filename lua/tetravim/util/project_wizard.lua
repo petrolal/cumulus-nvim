@@ -280,7 +280,7 @@ local function open_and_init_project(target_dir, project_type)
   ui.notify_info(string.format("✔ %s project created at %s", project_type, target_dir), "TetraVim Wizard")
 
   -- Trigger dependency sync if available
-  local ok_sync, sync_state = pcall(require, "tetravim.util.build-sync-state")
+  local ok_sync, sync_state = pcall(require, "tetravim.util.build_sync_state")
   if ok_sync and type(sync_state.reset) == "function" and type(sync_state.run) == "function" then
     vim.defer_fn(function()
       sync_state.reset()

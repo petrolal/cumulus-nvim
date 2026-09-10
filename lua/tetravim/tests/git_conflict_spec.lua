@@ -102,11 +102,11 @@ describe("SPEC-4.1 Advanced Git Conflict Resolution", function()
     )
   end)
 
-  it("health.lua registers the Advanced Git Conflict Resolution section", function()
-    local src = read_file("lua/tetravim/health.lua")
+  it("the healthcheck registers the Advanced Git Conflict Resolution section", function()
+    local src = require("tetravim.tests.helpers").health_source(REPO_ROOT)
     assert.truthy(
       src:find("Advanced Git Conflict Resolution", 1, true),
-      "health.lua must start an 'Advanced Git Conflict Resolution' section"
+      "the healthcheck must start an 'Advanced Git Conflict Resolution' section"
     )
     assert.truthy(src:find("diffview", 1, true), "the health section must cover diffview.nvim")
     assert.truthy(src:find('executable("git")', 1, true), "the health section must check for the git binary")

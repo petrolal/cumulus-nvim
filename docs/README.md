@@ -15,7 +15,7 @@ Welcome to the **TetraVim** documentation repository.
 
 - **Core**: `lua/tetravim/core/` (Options, keymaps, autocmds, devops, lazy bootstrap)
 - **Plugins**: `lua/tetravim/plugins/` (Lazy.nvim plugin specifications)
-- **JVM Utilities**: `lua/tetravim/util/jvm.lua`, `lua/tetravim/util/spring.lua`, `lua/tetravim/util/spring-picker.lua`, `lua/tetravim/util/refactor.lua`, `lua/tetravim/util/extract.lua`, `lua/tetravim/util/db.lua`, `lua/tetravim/util/http.lua`, `lua/tetravim/util/openapi.lua`, `lua/tetravim/util/git.lua`, `lua/tetravim/util/forge.lua`, `lua/tetravim/util/sonar.lua`, `lua/tetravim/util/cve.lua`
+- **JVM Utilities**: `lua/tetravim/util/jvm.lua`, `lua/tetravim/util/spring.lua`, `lua/tetravim/util/spring_picker.lua`, `lua/tetravim/util/refactor.lua`, `lua/tetravim/util/extract.lua`, `lua/tetravim/util/db.lua`, `lua/tetravim/util/http.lua`, `lua/tetravim/util/openapi.lua`, `lua/tetravim/util/git.lua`, `lua/tetravim/util/forge.lua`, `lua/tetravim/util/sonar.lua`, `lua/tetravim/util/cve.lua`
 
 ## Enterprise Operability (Epic 5)
 
@@ -35,7 +35,7 @@ nvim --headless -u init.lua -c "lua require('tetravim.core.setup').run()" -c "qa
 ```
 *(Or inside Neovim: `:TetraVimSetup`)*
 
-The healthcheck is also available as machine-readable JSON for compliance gating — `:CheckHealthJson`, or `require('tetravim.core.health').json()` — emitting one JSON object with `neovim_version`, `lsp_clients`, `plugin_count`, `pending_async_tasks`, and `telemetry_enabled`.
+The healthcheck is also available as machine-readable JSON for compliance gating — `:CheckHealthJson`, or `require('tetravim.core.health_json').json()` — emitting one JSON object with `neovim_version`, `lsp_clients`, `plugin_count`, `pending_async_tasks`, and `telemetry_enabled`.
 
 Telemetry is opt-in and local-only. Toggle it with:
 

@@ -172,7 +172,7 @@ local function make_config()
         jdtls_dap.setup_dap_main_class_configs()
       end
       -- Setup Spring Boot DAP configurations (SPEC-006)
-      local ok_sb, springboot_debug = pcall(require, "tetravim.util.springboot-debug")
+      local ok_sb, springboot_debug = pcall(require, "tetravim.util.springboot_debug")
       if ok_sb and springboot_debug.setup_springboot_dap then
         springboot_debug.setup_springboot_dap(root_dir)
       end

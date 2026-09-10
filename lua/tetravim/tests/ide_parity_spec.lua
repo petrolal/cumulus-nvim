@@ -51,8 +51,8 @@ describe("IDE-parity server lists stay in sync", function()
     mason_set[pkg] = true
   end
 
-  -- Bins from the "IDE-Parity Language Servers" block of health.lua.
-  local health_src = read("lua/tetravim/health.lua")
+  -- Bins from the "IDE-Parity Language Servers" block of the healthcheck.
+  local health_src = require("tetravim.tests.helpers").health_source()
   local parity_block = health_src:match(
     'vim%.health%.start%("TetraVim IDE%-Parity Language Servers.-vim%.health%.start%('
   ) or ""

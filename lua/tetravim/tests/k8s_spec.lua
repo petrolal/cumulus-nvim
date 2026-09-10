@@ -52,8 +52,8 @@ describe("Kubernetes cluster explorer -- static wiring", function()
     assert.is_truthy(body:match('desc = "Cluster Explorer"'))
   end)
 
-  it("health.lua has the Kubernetes Cluster Explorer section", function()
-    assert.is_truthy(read("lua/tetravim/health.lua"):match("TetraVim Kubernetes Cluster Explorer"))
+  it("the healthcheck has the Kubernetes Cluster Explorer section", function()
+    assert.is_truthy(require("tetravim.tests.helpers").health_source():match("TetraVim Kubernetes Cluster Explorer"))
   end)
 
   it("docs/ide-parity.md documents the cluster explorer with <leader>oke", function()

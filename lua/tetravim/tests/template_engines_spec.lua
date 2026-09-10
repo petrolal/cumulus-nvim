@@ -46,7 +46,7 @@ describe("template engines (FreeMarker / Velocity / JSP)", function()
   end)
 
   it("has a checkhealth section for the template engines", function()
-    local body = read(vim.fn.getcwd() .. "/lua/tetravim/health.lua")
+    local body = require("tetravim.tests.helpers").health_source()
     assert.is_truthy(body:find("TetraVim Template Engines (FreeMarker / Velocity / JSP)", 1, true))
   end)
 end)

@@ -11,7 +11,7 @@
 --      see RENAME_TIMEOUT_MS -- so a non-responding server doesn't hang the
 --      flow silently forever).
 --   2. Merge in Tree-sitter/text-assisted Spring reference matches from
---      refactor-treesitter.lua (XML <bean class="...">, @Autowired fields,
+--      refactor_treesitter.lua (XML <bean class="...">, @Autowired fields,
 --      stereotype-annotated classes), dropping any that overlap a location
 --      the LSP's own WorkspaceEdit already covers (filter_overlapping_
 --      spring_items) so nothing gets double-applied.
@@ -25,16 +25,16 @@
 --      full success.
 --
 -- Everything here is async (vim.system/vim.schedule, matching the
--- convention in sync-runner.lua) and nothing is ever applied without an
+-- convention in sync_runner.lua) and nothing is ever applied without an
 -- explicit confirm. Only one rename can be in flight at a time (shared with
--- extract.lua via action-lock.lua) -- a second <leader>cr while one is
+-- extract.lua via action_lock.lua) -- a second <leader>cr while one is
 -- still running is rejected with a notify, rather than allowed to produce
 -- overlapping previews. File-move handling is out of scope (deferred
 -- separately); Scala/Metals/sbt are never touched.
 
 local M = {}
 
-local action_lock = require("tetravim.util.action-lock")
+local action_lock = require("tetravim.util.action_lock")
 
 --- How long to wait for a textDocument/rename response before giving up
 --- and notifying the user, rather than leaving the flow silently hanging
@@ -145,7 +145,7 @@ function M.filter_overlapping_spring_items(lsp_items, spring_items)
   return filtered
 end
 
---- Convert refactor-treesitter.lua's classified Spring-reference hits into
+--- Convert refactor_treesitter.lua's classified Spring-reference hits into
 --- vim.quickfix.entry-shaped items, tagged with a human-readable kind so
 --- the preview distinguishes them from LSP-provided locations.
 ---@param spring_items table[]
@@ -353,7 +353,7 @@ end
 --- Internal: runs once new_name is known and a JVM client is confirmed
 --- attached. Split out from project_rename so tests can call it directly
 --- with an already-known name (see project_rename's doc comment). Marks
---- the rename in-flight (action-lock.lua) and guards the request with a
+--- the rename in-flight (action_lock.lua) and guards the request with a
 --- timeout so a non-responding server can't hang the flow silently forever.
 ---@param bufnr integer
 ---@param win integer
@@ -448,7 +448,7 @@ function M._on_rename_response(bufnr, jvm_client, old_name, new_name, responses)
   local lsp_items = vim.lsp.util.locations_to_items(locations, jvm_client.offset_encoding)
 
   local root = jvm_client.config.root_dir
-  local refactor_ts = require("tetravim.util.refactor-treesitter")
+  local refactor_ts = require("tetravim.util.refactor_treesitter")
   local old_package = refactor_ts.file_package(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false))
 
   if not root then

@@ -149,7 +149,7 @@ local SYSTEM_CMD = { maven = "mvn", gradle = "gradle" }
 --- wrapper (`mvnw` / `gradlew`) over the system tool. If the wrapper exists but
 --- is not executable, its executable bit is set once via a non-blocking
 --- `vim.uv.fs_chmod` (never shells out to `chmod`). Shared by
---- `util.jvm`, `util.build-sync-state` and `util.project-wizard` so wrapper
+--- `util.jvm`, `util.build_sync_state` and `util.project_wizard` so wrapper
 --- resolution lives in exactly one place.
 ---@param tool "maven"|"gradle"
 ---@param root? string project root (defaults to cwd)

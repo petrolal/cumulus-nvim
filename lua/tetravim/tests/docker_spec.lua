@@ -51,8 +51,9 @@ describe("Docker runtime dashboard -- static wiring", function()
     assert.is_truthy(body:match('desc = "Runtime Dashboard"'))
   end)
 
-  it("health.lua has the Docker Runtime Dashboard section", function()
-    assert.is_truthy(read("lua/tetravim/health.lua"):match("TetraVim Docker Runtime Dashboard"))
+  it("the healthcheck has the Docker Runtime Dashboard section", function()
+    local health = require("tetravim.tests.helpers").health_source()
+    assert.is_truthy(health:match("TetraVim Docker Runtime Dashboard"))
   end)
 
   it("docs/ide-parity.md documents the dashboard with <leader>odd", function()

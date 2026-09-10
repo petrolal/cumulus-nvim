@@ -82,7 +82,7 @@ function M.run(opts)
 
   -- 5. Health Snapshot
   log("5/5 Generating health snapshot...")
-  local health_ok, health_mod = pcall(require, "tetravim.core.health")
+  local health_ok, health_mod = pcall(require, "tetravim.core.health_json")
   local health_snapshot = {}
   if health_ok and health_mod.json then
     pcall(function()

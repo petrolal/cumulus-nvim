@@ -166,8 +166,8 @@ end, { desc = "Change Dependency Version" })
 -- Per-language <leader>c* subgroups (Story 34.1): build/lint/format commands
 -- for a given language stack only appear as buffer-local keymaps while
 -- editing a matching filetype, so <leader>c no longer mixes e.g. Maven
--- keymaps into a Python or Terraform buffer's popup. See lang-keymaps.lua.
-local lang_keymaps = require("tetravim.core.lang-keymaps")
+-- keymaps into a Python or Terraform buffer's popup. See lang_keymaps.lua.
+local lang_keymaps = require("tetravim.core.lang_keymaps")
 
 -- Shared by many keymap callbacks below; hoisted so we don't re-require per press.
 local ui = require("tetravim.util.ui")
@@ -309,121 +309,14 @@ end, { desc = "jq-Filter JSON Response/Buffer" })
 -- (protols), Tree-sitter parser and `buf` formatter are wired in
 -- lsp-proto.lua / core-treesitter.lua / tools-formatting.lua; the two
 -- custom pieces this story adds -- reflection-driven service/method
--- browsing and structured RPC execution -- live in tetravim.util.grpc.
--- Every gRPC output renders in the shared persistent split via
--- tetravim_http_open_in_split, never a floating window.
-local function tetravim_grpc_prompt_addr(cb)
-  vim.ui.input({ prompt = "gRPC server (host:port): ", default = "localhost:50051" }, function(addr)
-    if not addr or vim.trim(addr) == "" then
-      return
-    end
-    cb(vim.trim(addr))
-  end)
-end
-
--- Open the editable JSON request skeleton in a persistent "grpc-request"
--- split and bind a buffer-local <CR> that reads it back, refuses malformed
--- JSON (never handing it to grpcurl), invokes the RPC async and renders the
--- response in a persistent "grpc-response" json split.
-local function tetravim_grpc_open_request(addr, method, skeleton_text)
-  tetravim_http_open_in_split(skeleton_text, "json", "grpc-request")
-  local bufnr = vim.api.nvim_get_current_buf()
-  vim.keymap.set("n", "<CR>", function()
-    local payload = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), "\n")
-    if not require("tetravim.util.http").looks_like_json(payload) then
-      ui.notify_err("gRPC request buffer is not valid JSON -- fix it before pressing <CR> (nothing sent)")
-      return
-    end
-    grpc.invoke(addr, method, payload, function(response)
-      tetravim_http_open_in_split(response, "json", "grpc-response")
-    end)
-  end, { buffer = bufnr, desc = "Invoke RPC with this payload" })
-  ui.notify_info("Edit the payload, then press <CR> in this buffer to invoke " .. method)
-end
-
--- Given a fully-qualified method ("pkg.Service/Method" or
--- "pkg.Service.Method"), resolve its request message type via `grpcurl
--- describe`, then a second `describe -msg-template` for that type, and open
--- the generated skeleton for editing.
-local function tetravim_grpc_build_request(addr, method)
-  grpc.describe(addr, (method:gsub("/", ".")), function(method_desc)
-    local parsed = grpc.parse_methods(method_desc)
-    if #parsed == 0 or parsed[1].request_type == "" then
-      ui.notify_err("Could not determine the request type for " .. method)
-      return
-    end
-    grpc.describe(addr, parsed[1].request_type, function(type_desc)
-      local template = grpc.extract_msg_template(type_desc)
-      local skeleton = grpc.request_skeleton(template or "")
-      if not skeleton then
-        return -- request_skeleton already warned
-      end
-      tetravim_grpc_open_request(addr, method, skeleton)
-    end)
-  end)
-end
-
+-- browsing and structured RPC execution -- live in tetravim.util.grpc,
+-- which renders every gRPC output in the shared persistent split.
 map("n", "<leader>agg", function()
   require("grpcui").open()
 end, { desc = "UI (grpcurl)" })
-map("n", "<leader>agl", function()
-  tetravim_grpc_prompt_addr(function(addr)
-    grpc.list_services(addr, function(out)
-      local services = grpc.parse_service_list(out)
-      if #services == 0 then
-        ui.notify_warn("No gRPC services reported by " .. addr)
-        return
-      end
-      vim.ui.select(services, { prompt = "gRPC service:" }, function(service)
-        if not service then
-          return
-        end
-        grpc.describe(addr, service, function(service_desc)
-          local methods = grpc.parse_methods(service_desc)
-          if #methods == 0 then
-            tetravim_http_open_in_split(service_desc, "proto", "grpc-describe")
-            return
-          end
-          local labels = {}
-          for _, m in ipairs(methods) do
-            table.insert(labels, m.name)
-          end
-          vim.ui.select(labels, { prompt = service .. " method:" }, function(choice, idx)
-            if not choice or not idx then
-              return
-            end
-            tetravim_grpc_build_request(addr, service .. "/" .. methods[idx].name)
-          end)
-        end)
-      end)
-    end)
-  end)
-end, { desc = "List Services & Methods" })
-
-map("n", "<leader>agm", function()
-  local default_symbol = vim.fn.expand("<cword>")
-  vim.ui.input({ prompt = "gRPC symbol to describe: ", default = default_symbol }, function(symbol)
-    if not symbol or vim.trim(symbol) == "" then
-      return
-    end
-    tetravim_grpc_prompt_addr(function(addr)
-      grpc.describe(addr, vim.trim(symbol), function(desc)
-        tetravim_http_open_in_split(desc, "proto", "grpc-describe")
-      end)
-    end)
-  end)
-end, { desc = "Describe Symbol" })
-
-map("n", "<leader>agi", function()
-  vim.ui.input({ prompt = "gRPC method (pkg.Service/Method): " }, function(method)
-    if not method or vim.trim(method) == "" then
-      return
-    end
-    tetravim_grpc_prompt_addr(function(addr)
-      tetravim_grpc_build_request(addr, vim.trim(method))
-    end)
-  end)
-end, { desc = "Generate Request Skeleton" })
+map("n", "<leader>agl", grpc.browse_services, { desc = "List Services & Methods" })
+map("n", "<leader>agm", grpc.describe_symbol, { desc = "Describe Symbol" })
+map("n", "<leader>agi", grpc.generate_request, { desc = "Generate Request Skeleton" })
 
 map("n", "<leader>agf", function()
   if vim.bo.filetype ~= "proto" then

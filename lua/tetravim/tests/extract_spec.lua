@@ -13,9 +13,9 @@ describe("Extract (SPEC-2.2)", function()
       assert.is_number(extract.ACTION_TIMEOUT_MS)
     end)
 
-    it("should reject a second action while one is already in flight (shared action-lock.lua)", function()
+    it("should reject a second action while one is already in flight (shared action_lock.lua)", function()
       local extract = require("tetravim.util.extract")
-      local action_lock = require("tetravim.util.action-lock")
+      local action_lock = require("tetravim.util.action_lock")
       local notified = {}
       local orig_notify = vim.notify
       vim.notify = function(msg, level)
@@ -205,7 +205,7 @@ describe("Extract (SPEC-2.2)", function()
         for name, fn in pairs(orig) do
           extract[name] = fn
         end
-        require("tetravim.util.action-lock").release()
+        require("tetravim.util.action_lock").release()
         if not ok then
           error(err, 0)
         end
@@ -220,7 +220,7 @@ describe("Extract (SPEC-2.2)", function()
   -- they run in the plenary child. The real textDocument/codeAction round-trip
   -- and the :copen preview contents stay manual per spec-2-2's Verification.
   describe("code-action flows (mocked JDTLS seam)", function()
-    local action_lock = require("tetravim.util.action-lock")
+    local action_lock = require("tetravim.util.action_lock")
 
     local function make_fixture()
       local root = vim.fn.tempname()
@@ -497,7 +497,7 @@ describe("Extract (SPEC-2.2)", function()
       extract.extract_variable(true)
 
       vim.lsp.get_clients, vim.lsp.buf_request_all = orig_get_clients, orig_bra
-      require("tetravim.util.action-lock").release()
+      require("tetravim.util.action_lock").release()
 
       assert.is_truthy(captured_range, "do_action never reached vim.lsp.buf_request_all")
       local expected_start = vim.lsp.util.character_offset(bufnr, 0, after_e_byte_col, "utf-16")
@@ -512,10 +512,10 @@ describe("Extract (SPEC-2.2)", function()
     end)
   end)
 
-  -- Migrated from scripts/validate-extract.sh step [1/7]: the action-lock
+  -- Migrated from scripts/validate-extract.sh step [1/7]: the action_lock
   -- surface the extraction + rename modules share.
-  it("util/action-lock exposes is_busy / acquire / release", function()
-    local action_lock = require("tetravim.util.action-lock")
+  it("util/action_lock exposes is_busy / acquire / release", function()
+    local action_lock = require("tetravim.util.action_lock")
     assert.is_function(action_lock.is_busy)
     assert.is_function(action_lock.acquire)
     assert.is_function(action_lock.release)

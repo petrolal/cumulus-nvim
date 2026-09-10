@@ -25,13 +25,8 @@ describe("Startup smoke (validate.sh stage 1.1)", function()
     assert.is_truthy(src:find("async-profiler", 1, true), "bootstrap.sh does not provision async-profiler")
     assert.is_truthy(src:match("ripgrep") or src:match("[^a%-z]rg[^a%-z]"), "bootstrap.sh does not provision ripgrep")
 
-    local health_path = root .. "/lua/tetravim/health.lua"
-    local f2 = io.open(health_path, "r")
-    assert.is_truthy(f2, "Could not open health.lua")
-    local src2 = f2:read("*a")
-    f2:close()
-
-    assert.is_truthy(src2:find("async-profiler", 1, true), "health.lua has no async-profiler probe")
+    local src2 = require("tetravim.tests.helpers").health_source(root)
+    assert.is_truthy(src2:find("async-profiler", 1, true), "the healthcheck has no async-profiler probe")
   end)
 end)
 

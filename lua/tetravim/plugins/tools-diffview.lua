@@ -285,7 +285,7 @@ return {
       require("diffview").setup(opts)
 
       -- Register the <leader>gx / <leader>gX which-key groups BUFFER-LOCALLY,
-      -- for diffview buffers only (following lang-keymaps.lua's buffer = true
+      -- for diffview buffers only (following lang_keymaps.lua's buffer = true
       -- pattern) -- they are meaningless outside a merge view, and <leader>gc
       -- stays the only global git-conflict group.
       local grp = vim.api.nvim_create_augroup("TetraVimDiffviewWhichKey", { clear = true })

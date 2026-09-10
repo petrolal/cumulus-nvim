@@ -41,7 +41,7 @@ describe("TETRAVIM_HEADLESS env bridge (Story 5.2)", function()
 end)
 
 describe("machine-readable health JSON (Story 5.2)", function()
-  local health = require("tetravim.core.health")
+  local health = require("tetravim.core.health_json")
 
   it("json() returns valid JSON carrying the documented keys", function()
     local decoded = vim.json.decode(health.json())

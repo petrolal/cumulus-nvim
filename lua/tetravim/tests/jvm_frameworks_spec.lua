@@ -149,8 +149,8 @@ describe("JVM framework plugin specs (static shape)", function()
     assert.is_truthy(read("lua/tetravim/plugins/tools-mason.lua"):match("vscode%-spring%-boot%-tools"))
   end)
 
-  it("health.lua has the JVM Framework Config LSP section", function()
-    assert.is_truthy(read("lua/tetravim/health.lua"):match("JVM Framework Config LSP"))
+  it("the healthcheck has the JVM Framework Config LSP section", function()
+    assert.is_truthy(require("tetravim.tests.helpers").health_source():match("JVM Framework Config LSP"))
   end)
 
   it("lsp-quarkus.lua declares TetraVimFetchJvmLspJars command", function()

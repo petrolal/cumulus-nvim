@@ -39,7 +39,7 @@ describe("tetravim.util.profiling", function()
   end)
 
   it("has a jps probe in the profiling health section", function()
-    local body = read(vim.fn.getcwd() .. "/lua/tetravim/health.lua")
+    local body = require("tetravim.tests.helpers").health_source()
     assert.is_truthy(body:find("TetraVim JVM Continuous Profiling", 1, true))
     assert.is_truthy(body:find('vim.fn.executable("jps")', 1, true))
   end)

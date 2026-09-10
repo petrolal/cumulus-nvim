@@ -10,7 +10,7 @@ local M = {}
 
 -- Cold local-repo/offline-mirror resolution can legitimately take a while,
 -- but a stuck mvn/gradle process (hung proxy auth, dead network) must not
--- hide the gated java/kotlin/maven keymaps (lang-keymaps.lua) forever.
+-- hide the gated java/kotlin/maven keymaps (lang_keymaps.lua) forever.
 local SYNC_TIMEOUT_MS = 120000
 
 -- How often the heartbeat timer refreshes the "syncing..." toast so a
@@ -29,7 +29,7 @@ local HEARTBEAT_INTERVAL_MS = 5000
 ---   base_cmd   string the resolved binary/wrapper, used only in the
 ---                     spawn-failure message
 function M.run(opts)
-  local sync_state = require("tetravim.util.build-sync-state")
+  local sync_state = require("tetravim.util.build_sync_state")
 
   vim.notify(opts.tool_label .. ": syncing dependencies...", vim.log.levels.INFO, { id = opts.notify_id })
   local timed_out = false
@@ -88,7 +88,7 @@ function M.run(opts)
       return
     end
     vim.schedule(function()
-      -- The java/kotlin/maven-related keymaps (lang-keymaps.lua) stay
+      -- The java/kotlin/maven-related keymaps (lang_keymaps.lua) stay
       -- hidden until sync finishes -- mark ready on both success and
       -- failure so a broken/offline sync doesn't hide them forever.
       sync_state.mark_ready()

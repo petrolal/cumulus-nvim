@@ -24,16 +24,16 @@ describe("Spring Boot Discovery", function()
       assert.is_function(spring._beans_in_content)
     end)
 
-    it("should expose public API on tetravim.util.spring-picker", function()
-      local picker = require("tetravim.util.spring-picker")
+    it("should expose public API on tetravim.util.spring_picker", function()
+      local picker = require("tetravim.util.spring_picker")
       assert.is_table(picker)
       assert.is_function(picker.pick_endpoint)
       assert.is_function(picker.pick_bean)
       assert.is_function(picker.detect_app)
     end)
 
-    it("should expose dedup_insert on tetravim.util.springboot-debug", function()
-      local sb = require("tetravim.util.springboot-debug")
+    it("should expose dedup_insert on tetravim.util.springboot_debug", function()
+      local sb = require("tetravim.util.springboot_debug")
       assert.is_table(sb)
       assert.is_function(sb.launch_debug)
       assert.is_function(sb.setup_springboot_dap)
@@ -190,7 +190,7 @@ class KotlinService(
   end)
 
   describe("DAP configuration deduplication", function()
-    local sb = require("tetravim.util.springboot-debug")
+    local sb = require("tetravim.util.springboot_debug")
 
     it("should deduplicate configs by non-nil name and allow multiple nil-named configs", function()
       local configs = {}
@@ -287,7 +287,7 @@ class KotlinService(
   -- Migrated from scripts/validate-2-3.sh (steps [2/4], [3/4], [4/4]). Needs rg
   -- and the Tree-sitter java parser, both present in the plenary busted child.
   describe("Native discovery -- behavioral (DAP config + keymaps)", function()
-    local spring_pkg = "tetravim.util.springboot-debug"
+    local spring_pkg = "tetravim.util.springboot_debug"
     local fixture, saved_cwd
 
     local function make_fixture()

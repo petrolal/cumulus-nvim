@@ -13,7 +13,7 @@
 -- Design:
 --   1. Fast, async candidate search via `rg`/`grep` (vim.system, never the
 --      main loop) -- mirrors the vim.system + vim.schedule convention in
---      sync-runner.lua. This narrows a whole-project scan down to just the
+--      sync_runner.lua. This narrows a whole-project scan down to just the
 --      handful of *lines* that mention the symbol at all (deduped per
 --      (file, line) -- `rg` reports one hit per occurrence, so a line with
 --      the symbol twice would otherwise produce two raw hits).
@@ -354,13 +354,13 @@ local LANG_BY_EXT = {
 
 -- Upper bound on the `rg`/`grep` candidate search. refactor.lua's
 -- RENAME_TIMEOUT_MS only guards the textDocument/rename request; without
--- this a stuck scanner would hold the shared action-lock with no preview
+-- this a stuck scanner would hold the shared action_lock with no preview
 -- and no feedback until Neovim restarts. A non-0/1 exit (which a timeout
 -- kill produces) already routes to the grep fallback / warn_scan_unavailable.
 local SCAN_TIMEOUT_MS = 15000
 
 -- Stable vim.notify id so the "scanning..." toast collapses in place rather
--- than stacking, mirroring sync-runner.lua's heartbeat-notify convention.
+-- than stacking, mirroring sync_runner.lua's heartbeat-notify convention.
 local SCAN_NOTIFY_ID = "tetravim_refactor_spring_scan"
 
 local SCAN_UNAVAILABLE_MSG =
@@ -549,7 +549,7 @@ function M.scan_root_async(root, symbol, old_package, callback)
     -- Heartbeat toast for a scan large enough to be perceptible: the
     -- per-chunk readfile + Tree-sitter parse is synchronous work between
     -- vim.schedule ticks, so on a big monorepo this can take a beat.
-    -- Collapses in place via SCAN_NOTIFY_ID (sync-runner.lua's convention).
+    -- Collapses in place via SCAN_NOTIFY_ID (sync_runner.lua's convention).
     local HEARTBEAT_THRESHOLD = 40
     local show_heartbeat = #unique_files >= HEARTBEAT_THRESHOLD
     if show_heartbeat then

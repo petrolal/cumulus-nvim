@@ -110,7 +110,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
   once = true,
   callback = function()
     vim.schedule(function()
-      require("tetravim.util.build-sync-state").run()
+      require("tetravim.util.build_sync_state").run()
     end)
   end,
 })
@@ -118,7 +118,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 -- Re-sync Maven/Gradle dependencies whenever the project's build file is
 -- saved -- mirrors IntelliJ's "auto-reload changed Maven/Gradle projects"
 -- behavior instead of requiring a full Neovim restart to pick up new
--- dependencies. build-sync-state.lua's M.syncing guard (see M.run()) makes
+-- dependencies. build_sync_state.lua's M.syncing guard (see M.run()) makes
 -- this safe against overlapping saves -- a save that lands while a sync is
 -- already in flight is a no-op, not a second process.
 --
@@ -142,7 +142,7 @@ vim.api.nvim_create_autocmd("BufWritePost", {
       2500,
       0,
       vim.schedule_wrap(function()
-        local sync_state = require("tetravim.util.build-sync-state")
+        local sync_state = require("tetravim.util.build_sync_state")
         sync_state.reset()
         sync_state.run()
       end)

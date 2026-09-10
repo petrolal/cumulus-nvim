@@ -303,8 +303,8 @@ return {
       -- Line Diagnostics keymap), Helm...). These are registered with buffer = true,
       -- so which-key only surfaces them while the current buffer's
       -- filetype actually owns matching buffer-local keymaps -- see
-      -- lua/tetravim/core/lang-keymaps.lua.
-      vim.list_extend(opts.spec, require("tetravim.core.lang-keymaps").whichkey_spec())
+      -- lua/tetravim/core/lang_keymaps.lua.
+      vim.list_extend(opts.spec, require("tetravim.core.lang_keymaps").whichkey_spec())
 
       -- DevOps & Infrastructure Tooling Suite (<leader>o). The group and its
       -- five subgroups come from devops.whichkey_spec() -- the module that also

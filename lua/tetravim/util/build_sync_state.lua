@@ -4,7 +4,7 @@
 -- lua/tetravim/core/autocmds.lua's "build_sync" VimEnter autocmd and
 -- maven.sync_dependencies()/gradle.sync_dependencies()) has finished for
 -- this session, so the java/kotlin/maven-related keymaps in
--- lua/tetravim/core/lang-keymaps.lua can stay hidden until dependencies are
+-- lua/tetravim/core/lang_keymaps.lua can stay hidden until dependencies are
 -- actually resolved -- matching the "keybindings only show after sync
 -- completes" behavior.
 
@@ -13,7 +13,7 @@ local M = {}
 M.ready = false
 
 -- True while a sync spawned by run() is in flight. apply() in
--- lang-keymaps.lua only ever ADDS keymaps, never removes them, so a
+-- lang_keymaps.lua only ever ADDS keymaps, never removes them, so a
 -- ready_gate keymap already bound to a buffer (e.g. <leader>cjS itself)
 -- stays pressable even while `ready == false` -- only the which-key popup
 -- hides it. Without this guard, pressing it twice in quick succession would
@@ -40,7 +40,7 @@ function M.mark_ready()
   for _, cb in ipairs(listeners) do
     local ok, err = pcall(cb)
     if not ok then
-      vim.notify("TetraVim: build-sync-state on_ready listener failed: " .. tostring(err), vim.log.levels.WARN)
+      vim.notify("TetraVim: build_sync_state on_ready listener failed: " .. tostring(err), vim.log.levels.WARN)
     end
   end
 end
@@ -58,7 +58,7 @@ end
 --- Re-arm the state for a manual resync (see keymaps.lua's <leader>cjS).
 --- Deliberately does NOT touch `listeners` -- mark_ready() iterates that
 --- table without draining it, so every callback already registered via
---- on_ready() (e.g. lang-keymaps.lua's which-key refresh) fires again on
+--- on_ready() (e.g. lang_keymaps.lua's which-key refresh) fires again on
 --- the next mark_ready() with no need to re-register.
 function M.reset()
   M.ready = false
@@ -91,12 +91,12 @@ function M.run()
 
   if not tool then
     -- Nothing to sync -- don't leave the gated java/kotlin/maven keymaps
-    -- (lang-keymaps.lua) hidden forever waiting on a sync that will never run.
+    -- (lang_keymaps.lua) hidden forever waiting on a sync that will never run.
     M.mark_ready()
     return
   end
   root = root or cwd
-  local sync_runner = require("tetravim.util.sync-runner")
+  local sync_runner = require("tetravim.util.sync_runner")
 
   if tool == "maven" then
     local base_cmd = require("tetravim.util.build").wrapper_cmd("maven", root)
