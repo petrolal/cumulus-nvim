@@ -164,6 +164,26 @@ local ok, err = pcall(function()
     name = 'jdtls',
     offset_encoding = 'utf-16',
     config = { root_dir = fixture },
+    request = function(_, method, _, handler)
+      if method ~= 'textDocument/rename' then
+        return false
+      end
+      handler(nil, {
+        changes = {
+          ['file://' .. java_file] = {
+            {
+              range = {
+                start = { line = 5, character = 13 },
+                ['end'] = { line = 5, character = 23 },
+              },
+              newText = 'BarService',
+            },
+          },
+        },
+      })
+      return true, 1
+    end,
+    cancel_request = function() end,
   }
 
   -- Mock the LSP seam: get_clients reports the fake jdtls client attached;
@@ -314,6 +334,23 @@ local ok, err = pcall(function()
     name = 'jdtls',
     offset_encoding = 'utf-16',
     config = { root_dir = fixture },
+    request = function(_, method, _, handler)
+      if method ~= 'textDocument/rename' then
+        return false
+      end
+      handler(nil, {
+        changes = {
+          ['file://' .. java_file] = {
+            {
+              range = { start = { line = 5, character = 13 }, ['end'] = { line = 5, character = 23 } },
+              newText = 'ShouldNotApply',
+            },
+          },
+        },
+      })
+      return true, 1
+    end,
+    cancel_request = function() end,
   }
   local orig_get_clients = vim.lsp.get_clients
   local orig_buf_request_all = vim.lsp.buf_request_all
@@ -372,6 +409,14 @@ local ok, err = pcall(function()
     name = 'jdtls',
     offset_encoding = 'utf-16',
     config = { root_dir = fixture },
+    request = function(_, method, _, handler)
+      if method ~= 'textDocument/rename' then
+        return false
+      end
+      handler({ message = 'Element already exists: Consumer' }, nil)
+      return true, 1
+    end,
+    cancel_request = function() end,
   }
   local orig_get_clients = vim.lsp.get_clients
   local orig_buf_request_all = vim.lsp.buf_request_all

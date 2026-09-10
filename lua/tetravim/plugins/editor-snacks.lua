@@ -10,6 +10,50 @@ local banner = [[
                JVM & CLOUD-NATIVE ECOSYSTEM           
 ]]
 
+-- Short commit hash for the dashboard footer, resolved at most once per
+-- session. The previous implementation shelled out via io.popen("git
+-- rev-parse ...") inside the dashboard section closure, which runs on every
+-- dashboard render -- a synchronous subprocess spawn at the most
+-- latency-sensitive moment of startup -- and io.popen is compiled out or
+-- disabled in some locked-down enterprise builds. Read .git directly
+-- instead: no subprocess, and a missing/unreadable repo just yields "".
+local _git_sha_cache
+local function git_short_sha()
+  if _git_sha_cache ~= nil then
+    return _git_sha_cache
+  end
+  _git_sha_cache = ""
+
+  local git_dir = vim.fn.stdpath("config") .. "/.git"
+  local head = (vim.fn.filereadable(git_dir .. "/HEAD") == 1) and vim.fn.readfile(git_dir .. "/HEAD")[1] or nil
+  if not head then
+    return _git_sha_cache
+  end
+
+  local full
+  local ref = head:match("^ref:%s+(.+)$")
+  if ref then
+    if vim.fn.filereadable(git_dir .. "/" .. ref) == 1 then
+      full = vim.fn.readfile(git_dir .. "/" .. ref)[1]
+    end
+    if not full and vim.fn.filereadable(git_dir .. "/packed-refs") == 1 then
+      for _, line in ipairs(vim.fn.readfile(git_dir .. "/packed-refs")) do
+        local sha, name = line:match("^(%x+)%s+(.+)$")
+        if name == ref then
+          full = sha
+          break
+        end
+      end
+    end
+  else
+    -- Detached HEAD: the file holds the raw commit hash.
+    full = head:match("^(%x+)")
+  end
+
+  _git_sha_cache = (full and full:sub(1, 7)) or ""
+  return _git_sha_cache
+end
+
 return {
   {
     "folke/snacks.nvim",
@@ -36,6 +80,15 @@ return {
       opts.image.enabled = true
       opts.image.doc = { inline = true }
 
+      -- Disable code insight (Tree-sitter, LSP, folds, syntax) for very large
+      -- buffers -- the native equivalent of IntelliJ's "file too large" guard.
+      opts.bigfile = vim.tbl_deep_extend("force", opts.bigfile or {}, { enabled = true })
+
+      -- Animations are the classic latency complaint over SSH / tmux / mosh,
+      -- and this distro is explicitly "used on real work" -- often remote.
+      -- Keep the visuals, drop the motion when we detect a remote session.
+      local remote = (vim.env.SSH_TTY or vim.env.SSH_CONNECTION) ~= nil
+
       -- Indent guides + an animated highlight of the scope the cursor is
       -- currently inside, so nesting is readable at a glance.
       opts.indent = vim.tbl_deep_extend("force", opts.indent or {}, {
@@ -50,14 +103,14 @@ return {
           hl = "SnacksIndentScope",
         },
         animate = {
-          enabled = true,
+          enabled = not remote,
           duration = { step = 15, total = 300 },
         },
       })
 
       -- Smooth cursor-relative scrolling and a rounded `vim.ui.input` prompt
       -- that matches the rest of the floating-window chrome.
-      opts.scroll = vim.tbl_deep_extend("force", opts.scroll or {}, { enabled = true })
+      opts.scroll = vim.tbl_deep_extend("force", opts.scroll or {}, { enabled = not remote })
       opts.input = vim.tbl_deep_extend("force", opts.input or {}, { enabled = true })
 
       opts.dashboard = opts.dashboard or {}
@@ -76,20 +129,19 @@ return {
         { section = "keys", gap = 1, padding = 2 },
         { section = "startup", padding = 2, align = "center" },
         function()
-          local commit = ""
-          local handle = io.popen("git rev-parse --short HEAD 2>/dev/null")
-          if handle then
-            local raw = handle:read("*a")
-            commit = (raw or ""):gsub("%s+", "")
-            handle:close()
-          end
+          local commit = git_short_sha()
           local date = os.date("%d/%m/%y")
           local version = "v1.0.0"
+          local parts = { "TETRAVIM", version }
+          if commit ~= "" then
+            parts[#parts + 1] = commit
+          end
+          parts[#parts + 1] = date
           return {
             align = "center",
             text = {
               {
-                "TETRAVIM • " .. version .. " • " .. commit .. " • " .. date,
+                table.concat(parts, " • "),
                 hl = "SnacksDashboardFooter",
               },
             },

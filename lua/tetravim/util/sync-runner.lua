@@ -53,9 +53,23 @@ function M.run(opts)
     heartbeat:close()
   end
 
-  local function stop_timers()
+  -- Same double-close guard for the timeout-kill timer. `timer` used to be
+  -- closed only from stop_timers(), which only runs from the process exit
+  -- callback -- but the timeout branch below documents that that callback may
+  -- never fire (an orphaned grandchild keeps the pipes open), so on every
+  -- timed-out sync the handle leaked for the rest of the session. Close it in
+  -- the timeout branch too, via this guard so the (possibly late) exit
+  -- callback's stop_timers() doesn't double-close.
+  local function close_timer()
+    if timer:is_closing() then
+      return
+    end
     timer:stop()
     timer:close()
+  end
+
+  local function stop_timers()
+    close_timer()
     close_heartbeat()
   end
 
@@ -116,6 +130,7 @@ function M.run(opts)
       -- also runs, producing two contradictory notifications.
       timed_out = true
       close_heartbeat()
+      close_timer()
       pcall(handle.kill, handle, "sigterm")
       vim.schedule(function()
         -- Don't wait for the exit callback to fire before unhiding the

@@ -19,7 +19,11 @@ function M.notify(msg, level, title, opts)
   if vim.g.tetravim_telemetry_enabled then
     local log_path = vim.fn.stdpath("config") .. "/telemetry.log"
     local entry = vim.json.encode({
-      timestamp = os.time(os.date("!*t")),
+      -- os.time() already returns epoch seconds in UTC. The old
+      -- os.time(os.date("!*t")) fed a UTC calendar table back through
+      -- os.time(), which reads its argument as *local* time -- skewing
+      -- every logged timestamp by the machine's UTC offset.
+      timestamp = os.time(),
       level = (function(lvl)
         if lvl == vim.log.levels.INFO then
           return "info"
@@ -36,6 +40,10 @@ function M.notify(msg, level, title, opts)
     })
     -- Bounded log: roll over to a single `.1` backup once the file passes
     -- ~1 MiB so an always-on session cannot grow telemetry.log without limit.
+    -- The rotation (a stat + two metadata ops, only when actually over the
+    -- limit) stays synchronous so it is guaranteed to happen before the
+    -- append; the append itself -- the part that runs on every notification
+    -- -- is handed to libuv so the main thread never blocks on disk I/O.
     local MAX_BYTES = 1024 * 1024
     local uv = vim.uv or vim.loop
     local stat = uv.fs_stat(log_path)
@@ -43,11 +51,14 @@ function M.notify(msg, level, title, opts)
       os.remove(log_path .. ".1")
       os.rename(log_path, log_path .. ".1")
     end
-    local f = io.open(log_path, "a")
-    if f then
-      f:write(entry .. "\n")
-      f:close()
-    end
+    uv.fs_open(log_path, "a", tonumber("644", 8), function(err, fd)
+      if err or not fd then
+        return
+      end
+      uv.fs_write(fd, entry .. "\n", -1, function()
+        uv.fs_close(fd, function() end)
+      end)
+    end)
   end
 end
 

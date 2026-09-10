@@ -90,6 +90,11 @@ jobs:
           restore-keys: |
             nvim-test-${{ matrix.neovim }}-
 
+      - name: Link Neovim config
+        run: |
+          mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}"
+          ln -sf "$GITHUB_WORKSPACE" "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+
       - name: Sync plugins
         run: nvim --headless -u init.lua "+Lazy! sync" +qa
 
@@ -150,6 +155,11 @@ jobs:
           key: nvim-smoke-${{ hashFiles('lazy-lock.json') }}-v1
           restore-keys: |
             nvim-smoke-
+
+      - name: Link Neovim config
+        run: |
+          mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}"
+          ln -sf "$GITHUB_WORKSPACE" "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 
       - name: Headless provisioning (best-effort, DEGRADED-tolerant)
         run: bash scripts/headless-setup.sh

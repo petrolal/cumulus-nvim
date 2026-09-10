@@ -19,8 +19,15 @@ end
 -- Enable 24-bit true color support for theme highlights (Story 5.1)
 vim.opt.termguicolors = true
 
--- Sync yank/paste with the OS clipboard (fixes y/p not reaching system clipboard)
-vim.opt.clipboard = "unnamedplus"
+-- Sync yank/paste with the OS clipboard (fixes y/p not reaching system
+-- clipboard). Deferred, and skipped entirely in headless mode: setting this
+-- at load time makes the first yank probe for xclip/xsel/wl-copy, which on a
+-- bare SSH / CI session with no provider is wasted work (and noise).
+vim.schedule(function()
+  if not vim.g.tetravim_headless then
+    vim.opt.clipboard = "unnamedplus"
+  end
+end)
 
 -- Visual polish -------------------------------------------------------------
 -- One consistent rounded frame around every plugin-agnostic floating window

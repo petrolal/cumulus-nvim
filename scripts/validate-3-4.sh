@@ -52,7 +52,9 @@ local ok, err = pcall(function()
   assert(fmt_src:match('proto%s*=%s*{%s*\"buf\"%s*}'), 'tools-formatting.lua must map proto -> buf')
 
   local mason_src = io.open('lua/tetravim/plugins/tools-mason.lua', 'r'):read('*a')
-  for _, t in ipairs({ 'buf', 'protols', 'grpcurl' }) do
+  -- grpcurl is intentionally NOT here -- it was dropped from mason-registry;
+  -- listing it makes mason-tool-installer throw on every VimEnter.
+  for _, t in ipairs({ 'buf', 'protols' }) do
     assert(mason_src:match('\"' .. t .. '\"'), 'tools-mason.lua must ensure_installed ' .. t)
   end
 

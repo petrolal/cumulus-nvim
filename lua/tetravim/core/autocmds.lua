@@ -114,6 +114,13 @@ vim.api.nvim_create_autocmd("VimEnter", {
 -- dependencies. build-sync-state.lua's M.syncing guard (see M.run()) makes
 -- this safe against overlapping saves -- a save that lands while a sync is
 -- already in flight is a no-op, not a second process.
+--
+-- Debounced: a "Save All" that writes the root pom.xml plus several module
+-- poms, or repeated :w while editing the build file, should trigger one
+-- re-sync a few seconds after the last write -- not one `mvn
+-- dependency:resolve` (a 120s-timeout process) per save. One reusable timer,
+-- restarted on each save.
+local build_sync_timer = assert((vim.uv or vim.loop).new_timer())
 vim.api.nvim_create_autocmd("BufWritePost", {
   group = augroup("build_sync_on_save"),
   -- The first three are bare filenames -- Neovim matches those against just
@@ -123,9 +130,16 @@ vim.api.nvim_create_autocmd("BufWritePost", {
   -- matches that file at any project root, not just one directory up.
   pattern = { "pom.xml", "build.gradle", "build.gradle.kts", "*/gradle/libs.versions.toml" },
   callback = function()
-    local sync_state = require("tetravim.util.build-sync-state")
-    sync_state.reset()
-    sync_state.run()
+    build_sync_timer:stop()
+    build_sync_timer:start(
+      2500,
+      0,
+      vim.schedule_wrap(function()
+        local sync_state = require("tetravim.util.build-sync-state")
+        sync_state.reset()
+        sync_state.run()
+      end)
+    )
   end,
 })
 
@@ -137,13 +151,23 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   end,
 })
 
--- Resize splits if window got resized
+-- Re-equalize splits when the terminal window is resized. `tabdo` walks
+-- every tabpage, which normally fires BufLeave/BufEnter/WinEnter for each one
+-- (re-triggering LSP/lint/statusline churn just from a resize); suppress that
+-- with `eventignore` for the duration. `wincmd =` already leaves panels that
+-- set `winfixwidth`/`winfixheight` (dap-ui, outline, dadbod, terminal) at
+-- their size.
 vim.api.nvim_create_autocmd({ "VimResized" }, {
   group = augroup("resize_splits"),
   callback = function()
     local current_tab = vim.fn.tabpagenr()
-    vim.cmd("tabdo wincmd =")
-    vim.cmd("tabnext " .. current_tab)
+    local save_ei = vim.o.eventignore
+    vim.o.eventignore = "all"
+    pcall(function()
+      vim.cmd("tabdo wincmd =")
+      vim.cmd("tabnext " .. current_tab)
+    end)
+    vim.o.eventignore = save_ei
   end,
 })
 
@@ -212,14 +236,17 @@ vim.api.nvim_create_autocmd("BufNewFile", {
 -- Disable entirely with `vim.g.tetravim_new_file_prompt = false`.
 require("tetravim.util.filetemplate").setup_new_file_prompt()
 
--- Native LSP CodeLens auto-refresh for Java & Kotlin buffers
-vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
+-- Native LSP CodeLens auto-refresh for Java & Kotlin buffers.
+-- Deliberately NOT on InsertLeave: that fires on every exit from insert mode
+-- and each refresh is a codeLens round-trip to jdtls -- on a large class
+-- that's a steady stream of requests for no visible benefit between saves.
+-- BufEnter + BufWritePost is what actually changes the lenses.
+vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost" }, {
   group = augroup("lsp_codelens"),
   pattern = { "*.java", "*.kt" },
   callback = function(event)
-    local clients = vim.lsp.get_clients({ bufnr = event.buf })
-    for _, client in ipairs(clients) do
-      if client.supports_method("textDocument/codeLens") then
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = event.buf })) do
+      if client:supports_method("textDocument/codeLens") then
         pcall(vim.lsp.codelens.refresh, { bufnr = event.buf })
         break
       end

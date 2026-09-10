@@ -63,8 +63,9 @@ return {
       end
 
       local notified_clients = {}
+      local notify_group = vim.api.nvim_create_augroup("tetravim_lsp_attach_notify", { clear = true })
       vim.api.nvim_create_autocmd("LspAttach", {
-        group = vim.api.nvim_create_augroup("tetravim_lsp_attach_notify", { clear = true }),
+        group = notify_group,
         callback = function(args)
           local client = vim.lsp.get_client_by_id(args.data.client_id)
           if not client or notified_clients[client.id] then
@@ -72,6 +73,15 @@ return {
           end
           notified_clients[client.id] = true
           vim.notify(attach_messages[client.name] or (client.name .. " attached"), vim.log.levels.INFO)
+        end,
+      })
+      -- Drop the dedupe entry when a server process detaches, so a client id
+      -- reused after a server restart/crash notifies again (and the table
+      -- doesn't accumulate stale ids for a long-lived session).
+      vim.api.nvim_create_autocmd("LspDetach", {
+        group = notify_group,
+        callback = function(args)
+          notified_clients[args.data.client_id] = nil
         end,
       })
     end,

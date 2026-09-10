@@ -94,9 +94,11 @@ return {
         "rcasia/neotest-java",
         -- Upstream ships the JUnit Platform Console Standalone jar only via the
         -- interactive `:NeotestJava setup`; fetch it non-interactively so a
-        -- fresh clone can run tests without a manual step.
+        -- fresh clone can run tests without a manual step. This runs during
+        -- `:Lazy sync` (off the UI thread), so the blocking variant is fine
+        -- and preferable -- the jar is guaranteed present when sync returns.
         build = function()
-          require("tetravim.util.neotest_java").ensure(true)
+          require("tetravim.util.neotest_java").ensure_blocking(true)
         end,
       },
     },
@@ -178,6 +180,9 @@ return {
     config = function(_, opts)
       -- `build` covers install/update; guard here too for clones synced before
       -- this spec landed, or a build step that ran without network access.
+      -- This fires on the first Java file open, so it must NOT block the UI --
+      -- the async variant downloads the ~15 MB jar off the main thread and
+      -- the next `<leader>tr` picks it up once it lands.
       pcall(function()
         require("tetravim.util.neotest_java").ensure(true)
       end)

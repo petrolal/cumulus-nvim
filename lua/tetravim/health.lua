@@ -401,7 +401,8 @@ function M.check()
     {
       name = "grpcurl",
       desc = "grpcurl (required for the <leader>ag list/describe/invoke keymaps)",
-      install = "Install via :MasonInstall grpcurl / brew install grpcurl / "
+      -- Not in mason-registry (removed upstream) -- install it out of band.
+      install = "Install via brew install grpcurl / your distro's package / "
         .. "go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest",
     },
     {

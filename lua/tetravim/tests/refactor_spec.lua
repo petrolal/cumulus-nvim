@@ -141,6 +141,19 @@ describe("Refactor (SPEC-2.1)", function()
             name = "jdtls",
             offset_encoding = "utf-16",
             config = {}, -- no root_dir
+            request = function(_, _, _, handler)
+              handler(nil, {
+                changes = {
+                  ["file://" .. java_file] = {
+                    {
+                      range = { start = { line = 0, character = 13 }, ["end"] = { line = 0, character = 16 } },
+                      newText = "Bar",
+                    },
+                  },
+                },
+              })
+              return true, 1
+            end,
           }
 
           local orig_get_clients = vim.lsp.get_clients

@@ -1,6 +1,11 @@
 # TetraVim Project Knowledge & Documentation
 
-Welcome to the **TetraVim** documentation repository. This directory serves as the project knowledge base configured for BMAD (`project_knowledge: "{project-root}/docs"`).
+Welcome to the **TetraVim** documentation repository.
+
+> **Note:** This distribution was originally scaffolded with a BMAD planning tree
+> (`_bmad-output/*`). That tree has since been removed from the repo — code
+> comments citing `Story X.Y` / `SPEC-N.M` / `Epic N` are kept only as historical
+> tags. For the current architecture, see [`../CLAUDE.md`](../CLAUDE.md).
 
 ## Architecture Overview
 
@@ -70,7 +75,8 @@ Both tools are optional: `:checkhealth tetravim` reports their availability, `bo
 - **Agent Guidelines & Policy**: [`AGENTS.md`](../AGENTS.md)
 - **Installation Guide**: [`INSTALL.md`](../INSTALL.md)
 - **Quickstart & Commands**: [`README.md`](../README.md)
-- **Architecture Specification**: [`_bmad-output/planning-artifacts/architecture/architecture-tetravim.nvim-2026-08-25/ARCHITECTURE-SPINE.md`](../_bmad-output/planning-artifacts/architecture/architecture-tetravim.nvim-2026-08-25/ARCHITECTURE-SPINE.md)
-- **Features Specification**: [`_bmad-output/planning-artifacts/FEATURES_SPEC.md`](../_bmad-output/planning-artifacts/FEATURES_SPEC.md)
-- **Epics & Stories Breakdown**: [`_bmad-output/planning-artifacts/epics.md`](../_bmad-output/planning-artifacts/epics.md)
-- **Sprint Status**: [`_bmad-output/implementation-artifacts/sprint-status.yaml`](../_bmad-output/implementation-artifacts/sprint-status.yaml)
+- **Architecture & Conventions**: [`CLAUDE.md`](../CLAUDE.md)
+- **In-editor health**: `:checkhealth tetravim`
+
+The former `_bmad-output/planning-artifacts/*` specs (architecture spine, features
+spec, epics/stories, sprint status) are no longer part of the repo.

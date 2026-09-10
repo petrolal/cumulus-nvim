@@ -175,7 +175,11 @@ return {
       -- keystroke can never silently discard a side.
       local function confirm_then(action, prompt)
         return function()
-          if vim.fn.confirm(prompt, "&Yes\n&No", 2) == 1 then
+          if
+            vim.g.tetravim_headless
+            or #vim.api.nvim_list_uis() == 0
+            or vim.fn.confirm(prompt, "&Yes\n&No", 2) == 1
+          then
             action()
           end
         end

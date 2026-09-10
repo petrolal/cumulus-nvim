@@ -59,9 +59,9 @@ else
 	warn "Plugin sync had warnings (run :Lazy in nvim to check)"
 fi
 
-# Ensure Mason tools (including grpcurl) are installed
+# Ensure Mason tools are installed (grpcurl is not a Mason package -- see below)
 if nvim --headless +'MasonToolsInstall' +'qa!' 2>/dev/null; then
-	pass "Mason tools installed (grpcurl, etc.)"
+	pass "Mason tools installed (jdtls, linters, etc.)"
 else
 	warn "Mason tools install failed – you may need to run :MasonToolsInstall manually"
 fi

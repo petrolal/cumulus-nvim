@@ -126,12 +126,18 @@ describe("telemetry export sink (Story 5.2)", function()
     ui.notify_warn(marker)
     notify.disable_telemetry()
 
+    -- The telemetry append is handed to libuv (non-blocking); wait for the
+    -- marker line to actually land before reading it back.
     local hit
-    for _, line in ipairs(vim.fn.filereadable(log_path) == 1 and vim.fn.readfile(log_path) or {}) do
-      if line:find(marker, 1, true) then
-        hit = vim.json.decode(line)
+    local function scan()
+      for _, line in ipairs(vim.fn.filereadable(log_path) == 1 and vim.fn.readfile(log_path) or {}) do
+        if line:find(marker, 1, true) then
+          hit = vim.json.decode(line)
+        end
       end
+      return hit ~= nil
     end
+    vim.wait(2000, scan)
 
     assert.is_truthy(hit)
     assert.equals("warn", hit.level)

@@ -83,14 +83,23 @@ function M.has_java_sources(dir, max_depth)
   return false
 end
 
-local function file_sha256(path)
+-- Which local hashing tool to use, if any. Resolved once.
+local function sha_cmd(path)
   if vim.fn.executable("sha256sum") == 1 then
-    return (vim.fn.system({ "sha256sum", path }):match("^(%x+)"))
+    return { "sha256sum", path }
   end
   if vim.fn.executable("shasum") == 1 then
-    return (vim.fn.system({ "shasum", "-a", "256", path }):match("^(%x+)"))
+    return { "shasum", "-a", "256", path }
   end
   return nil
+end
+
+local function file_sha256(path)
+  local cmd = sha_cmd(path)
+  if not cmd then
+    return nil
+  end
+  return (vim.fn.system(cmd):match("^(%x+)"))
 end
 
 local function warn(enabled, msg)
@@ -99,10 +108,36 @@ local function warn(enabled, msg)
   end
 end
 
---- Ensure the JUnit standalone jar is present, downloading it if missing.
---- @param notify boolean|nil emit a single user-facing message on download/failure
---- @return boolean available true when the jar is on disk after the call
-function M.ensure(notify)
+local function info(enabled, msg)
+  if enabled then
+    require("tetravim.util.notify").notify_info(msg, "TetraVim Test")
+  end
+end
+
+-- curl flags shared by both paths: fail on HTTP errors, follow redirects,
+-- stay quiet, and -- crucially -- bound how long a dead network / hung
+-- proxy can stall the download.
+local CURL_ARGS = { "-fsSL", "--connect-timeout", "10", "--max-time", "120", "--create-dirs" }
+
+--- Validate a freshly downloaded jar against the pinned checksum, deleting it
+--- and warning on mismatch. `got` is the hex digest already computed by the
+--- caller (nil when no hashing tool is available -- treated as "can't verify,
+--- keep it").
+local function check_or_discard(path, got, notify)
+  if got and got:lower() ~= M.sha256 then
+    vim.fn.delete(path)
+    warn(notify, "neotest-java: JUnit jar checksum mismatch -- download discarded")
+    return false
+  end
+  info(notify, "neotest-java: downloaded JUnit Platform Console Standalone " .. M.version)
+  return true
+end
+
+--- Blocking download + verify. Used only from the lazy.nvim `build` step,
+--- which already runs off the UI thread during `:Lazy sync`.
+--- @param notify boolean|nil
+--- @return boolean available
+function M.ensure_blocking(notify)
   if M.is_installed() then
     return true
   end
@@ -113,27 +148,75 @@ function M.ensure(notify)
 
   local path = M.jar_path()
   vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
-  local out = vim.fn.system({ "curl", "-fsSL", "--create-dirs", "--output", path, url() })
+  local args = vim.list_extend({ "curl" }, vim.deepcopy(CURL_ARGS))
+  vim.list_extend(args, { "--output", path, url() })
+  local out = vim.fn.system(args)
   if vim.v.shell_error ~= 0 then
     vim.fn.delete(path)
     warn(notify, "neotest-java: failed to download the JUnit jar (" .. vim.trim(out) .. ")")
     return false
   end
 
-  local got = file_sha256(path)
-  if got and got:lower() ~= M.sha256 then
-    vim.fn.delete(path)
-    warn(notify, "neotest-java: JUnit jar checksum mismatch -- download discarded")
+  return check_or_discard(path, file_sha256(path), notify)
+end
+
+--- Ensure the JUnit standalone jar is present, downloading it if missing.
+--- Non-blocking: the download and checksum both run through `vim.system`
+--- (libuv, off the UI thread), so opening the first Java file never freezes
+--- Neovim while ~15 MB comes down from Maven Central. Returns immediately;
+--- the optional callback fires with the eventual availability.
+--- @param notify boolean|nil emit a single user-facing message on download/failure
+--- @param callback fun(available: boolean)|nil
+--- @return boolean available_now true only when the jar was already on disk
+function M.ensure(notify, callback)
+  local function done(ok)
+    if callback then
+      callback(ok)
+    end
+  end
+
+  if M.is_installed() then
+    done(true)
+    return true
+  end
+  if vim.fn.executable("curl") ~= 1 then
+    warn(notify, "neotest-java: curl not found -- run :NeotestJava setup to download the JUnit jar")
+    done(false)
     return false
   end
 
-  if notify then
-    require("tetravim.util.notify").notify_info(
-      "neotest-java: downloaded JUnit Platform Console Standalone " .. M.version,
-      "TetraVim Test"
-    )
-  end
-  return true
+  local path = M.jar_path()
+  vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+  local args = vim.list_extend({ "curl" }, vim.deepcopy(CURL_ARGS))
+  vim.list_extend(args, { "--output", path, url() })
+
+  vim.system(args, { text = true }, function(res)
+    if res.code ~= 0 then
+      vim.fn.delete(path)
+      vim.schedule(function()
+        warn(notify, "neotest-java: failed to download the JUnit jar (" .. vim.trim(res.stderr or "") .. ")")
+        done(false)
+      end)
+      return
+    end
+
+    local cmd = sha_cmd(path)
+    if not cmd then
+      vim.schedule(function()
+        done(check_or_discard(path, nil, notify))
+      end)
+      return
+    end
+
+    vim.system(cmd, { text = true }, function(sha_res)
+      local got = (sha_res.code == 0) and (sha_res.stdout or ""):match("^(%x+)") or nil
+      vim.schedule(function()
+        done(check_or_discard(path, got, notify))
+      end)
+    end)
+  end)
+
+  return false
 end
 
 return M

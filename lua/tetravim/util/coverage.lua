@@ -23,6 +23,13 @@ M.is_loading = false
 -- whenever coverage is (re)loaded or cleared so BufWinEnter re-applies once.
 local applied_bufs = {}
 
+-- Bumped on every apply_to_all_buffers() run and on clear(). The chunked
+-- schedule_apply() walk captures the value current when it started and bails
+-- as soon as it no longer matches, so a second load()/toggle() (or a clear)
+-- landing mid-walk cleanly supersedes the in-flight chain instead of leaving
+-- two overlapping chains racing to flip M.is_loading.
+local apply_generation = 0
+
 local function ensure_signs_defined()
   local hl_ok = vim.fn.hlexists("DiagnosticSignOk") == 1 and "DiagnosticSignOk" or "DiffAdd"
   local hl_err = vim.fn.hlexists("DiagnosticSignError") == 1 and "DiagnosticSignError" or "DiffDelete"
@@ -336,7 +343,13 @@ end
 
 -- Recursively apply the overlay to a list of buffers, yielding to the
 -- event loop between each one so the UI stays responsive on large reports.
-local function schedule_apply(bufs, idx, on_done)
+local function schedule_apply(bufs, idx, on_done, generation)
+  -- A newer apply_to_all_buffers() run (or a clear()) superseded this walk;
+  -- stop without touching M.is_loading -- the current generation owns it.
+  if generation ~= apply_generation then
+    return
+  end
+
   if idx > #bufs then
     M.is_loading = false
     if on_done then
@@ -351,7 +364,7 @@ local function schedule_apply(bufs, idx, on_done)
   end
 
   vim.schedule(function()
-    schedule_apply(bufs, idx + 1, on_done)
+    schedule_apply(bufs, idx + 1, on_done, generation)
   end)
 end
 
@@ -368,8 +381,9 @@ function M.apply_to_all_buffers(on_done)
 
   ensure_signs_defined()
   applied_bufs = {}
+  apply_generation = apply_generation + 1
   M.is_loading = true
-  schedule_apply(vim.api.nvim_list_bufs(), 1, on_done)
+  schedule_apply(vim.api.nvim_list_bufs(), 1, on_done, apply_generation)
 end
 
 --- Load JaCoCo coverage report from file path (or auto-discover)
@@ -444,6 +458,9 @@ function M.clear(reset_data)
   M.is_visible = false
   M.is_loading = false
   applied_bufs = {}
+  -- Supersede any chunked apply walk still in flight so it stops on its next
+  -- tick instead of re-placing signs we just unplaced.
+  apply_generation = apply_generation + 1
 
   if reset_data ~= false then
     M.last_coverage = nil
@@ -503,6 +520,17 @@ vim.api.nvim_create_autocmd({ "BufReadPost", "BufWinEnter" }, {
     if M.is_visible and M.last_coverage and not applied_bufs[args.buf] then
       M.apply_to_buffer(args.buf)
     end
+  end,
+})
+
+-- Drop a buffer's "already applied" marker when it goes away. Without this
+-- applied_bufs grows for the life of the session, and -- because Neovim
+-- reuses buffer numbers -- a fresh buffer landing on a retired number would
+-- be wrongly treated as already overlaid and skipped by the guard above.
+vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
+  group = group,
+  callback = function(args)
+    applied_bufs[args.buf] = nil
   end,
 })
 

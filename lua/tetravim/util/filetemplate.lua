@@ -1107,7 +1107,7 @@ end
 --- Register the BufNewFile hook behind the skeleton prompt. Disabled in
 --- headless sessions and when `vim.g.tetravim_new_file_prompt == false`.
 function M.setup_new_file_prompt()
-  if vim.g.tetravim_headless then
+  if vim.g.tetravim_headless or vim.g.tetravim_new_file_prompt == false or #vim.api.nvim_list_uis() == 0 then
     return
   end
   local grp = vim.api.nvim_create_augroup("tetravim_filetemplate_newfile", { clear = true })

@@ -69,6 +69,11 @@ describe("tetravim.util.notify", function()
 
     notify.notify("rotation probe")
 
+    -- The append is now handed to libuv (non-blocking); wait for it to land.
+    vim.wait(2000, function()
+      return vim.fn.filereadable(log_path) == 1
+    end)
+
     vim.g.tetravim_telemetry_enabled = saved_flag
     vim.fn.stdpath = saved_stdpath
 

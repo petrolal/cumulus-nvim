@@ -107,7 +107,12 @@ local function reopen_explorer_if_needed()
   if vim.fn.filereadable(path) == 1 then
     pcall(vim.fn.delete, path)
     vim.schedule(function()
-      Snacks.explorer()
+      -- Guard: a scheduled callback has no autocmd frame to absorb an error,
+      -- so an unguarded call here (e.g. Snacks failed to load) surfaces as a
+      -- raw traceback on session restore.
+      pcall(function()
+        Snacks.explorer()
+      end)
     end)
   end
 end

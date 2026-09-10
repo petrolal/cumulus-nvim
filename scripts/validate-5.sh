@@ -145,9 +145,13 @@ local ok, err = pcall(function()
   ui.notify_warn(marker)
   notify.disable_telemetry()
   local hit
-  for _, l in ipairs(vim.fn.filereadable(log_path) == 1 and vim.fn.readfile(log_path) or {}) do
-    if l:find(marker, 1, true) then hit = vim.json.decode(l) end
-  end
+  -- The telemetry append is non-blocking (libuv); poll for the line to land.
+  vim.wait(2000, function()
+    for _, l in ipairs(vim.fn.filereadable(log_path) == 1 and vim.fn.readfile(log_path) or {}) do
+      if l:find(marker, 1, true) then hit = vim.json.decode(l) end
+    end
+    return hit ~= nil
+  end)
   assert(hit and hit.level == 'warn', 'util.ui notification must be captured as a warn telemetry line')
 
   vim.notify = orig_notify

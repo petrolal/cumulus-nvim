@@ -27,6 +27,13 @@ INIT_LUA="$SCRIPT_DIR/init.lua"
 
 export TETRAVIM_HEADLESS=1
 
+# Ensure ~/.config/nvim points to this repo if not already configured
+NVIM_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+if [ ! -e "$NVIM_CONFIG" ] && [ ! -L "$NVIM_CONFIG" ]; then
+	mkdir -p "$(dirname "$NVIM_CONFIG")"
+	ln -sf "$SCRIPT_DIR" "$NVIM_CONFIG"
+fi
+
 # Best-effort steps that logged a WARNING rather than aborting are tallied
 # here so the run ends with an honest degraded-vs-clean summary.
 DEGRADED=()

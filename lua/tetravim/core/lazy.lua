@@ -26,9 +26,12 @@ require("lazy").setup({
     lazy = false,
     version = false,
   },
+  -- No implicit update checks. An enterprise setup wants a deterministic,
+  -- proxy-friendly startup: `lazy-lock.json` is the source of truth and
+  -- updates happen on purpose via `:Lazy update`. `version = false` above
+  -- only means "no per-plugin semver pin" -- the lockfile still pins commits.
   checker = {
-    enabled = true,
-    notify = true,
+    enabled = false,
   },
   performance = {
     rtp = {
