@@ -480,7 +480,7 @@ function M.sweep(root, cb, opts)
   -- timeout elapses, then aggregate and clean up.
   local timeout_ms = opts.timeout_ms or M.SWEEP_TIMEOUT_MS
   local elapsed, last_count, stable = 0, -1, 0
-  local timer = assert((vim.uv or vim.loop).new_timer())
+  local timer = assert(vim.uv.new_timer())
 
   local function finish()
     if timer:is_closing() then

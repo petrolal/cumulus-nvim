@@ -294,7 +294,7 @@ end
 ---@param target string
 ---@return string[]
 function M.scan_command(target)
-  local stat = (vim.uv or vim.loop).fs_stat(target)
+  local stat = vim.uv.fs_stat(target)
   if stat and stat.type == "directory" then
     return { "osv-scanner", "--format", "json", "-r", target }
   end

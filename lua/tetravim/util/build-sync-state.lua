@@ -99,22 +99,7 @@ function M.run()
   local sync_runner = require("tetravim.util.sync-runner")
 
   if tool == "maven" then
-    local mvnw = root .. "/mvnw"
-    local base_cmd = "mvn"
-    if vim.fn.filereadable(mvnw) == 1 then
-      if vim.fn.executable(mvnw) == 0 then
-        local ok, err = pcall(function()
-          local result = vim.fn.system({ "chmod", "+x", mvnw })
-          if vim.v.shell_error ~= 0 then
-            vim.notify("Failed to chmod mvnw: " .. tostring(result), vim.log.levels.WARN)
-          end
-        end)
-        if not ok then
-          vim.notify("chmod mvnw error: " .. tostring(err), vim.log.levels.WARN)
-        end
-      end
-      base_cmd = "./mvnw"
-    end
+    local base_cmd = require("tetravim.util.build").wrapper_cmd("maven", root)
     sync_runner.run({
       cmd = { base_cmd, "-q", "dependency:resolve" },
       notify_id = "tetravim_maven_sync",
@@ -123,22 +108,7 @@ function M.run()
       cwd = root,
     })
   elseif tool == "gradle" then
-    local gradlew = root .. "/gradlew"
-    local base_cmd = "gradle"
-    if vim.fn.filereadable(gradlew) == 1 then
-      if vim.fn.executable(gradlew) == 0 then
-        local ok, err = pcall(function()
-          local result = vim.fn.system({ "chmod", "+x", gradlew })
-          if vim.v.shell_error ~= 0 then
-            vim.notify("Failed to chmod gradlew: " .. tostring(result), vim.log.levels.WARN)
-          end
-        end)
-        if not ok then
-          vim.notify("chmod gradlew error: " .. tostring(err), vim.log.levels.WARN)
-        end
-      end
-      base_cmd = "./gradlew"
-    end
+    local base_cmd = require("tetravim.util.build").wrapper_cmd("gradle", root)
     sync_runner.run({
       cmd = { base_cmd, "-q", "dependencies" },
       notify_id = "tetravim_gradle_sync",

@@ -45,7 +45,7 @@ function M.notify(msg, level, title, opts)
     -- append; the append itself -- the part that runs on every notification
     -- -- is handed to libuv so the main thread never blocks on disk I/O.
     local MAX_BYTES = 1024 * 1024
-    local uv = vim.uv or vim.loop
+    local uv = vim.uv
     local stat = uv.fs_stat(log_path)
     if stat and stat.size and stat.size > MAX_BYTES then
       os.remove(log_path .. ".1")

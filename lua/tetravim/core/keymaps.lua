@@ -96,6 +96,10 @@ map("n", "<leader>cl", "<cmd>checkhealth vim.lsp<cr>", { desc = "Lsp Info" })
 -- keymaps into a Python or Terraform buffer's popup. See lang-keymaps.lua.
 local lang_keymaps = require("tetravim.core.lang-keymaps")
 
+-- Shared by many keymap callbacks below; hoisted so we don't re-require per press.
+local ui = require("tetravim.util.ui")
+local grpc = require("tetravim.util.grpc")
+
 -- ==============================================================================
 -- ⭐ JVM PLATFORM KEYMAP SUITE (<leader>j) - Unconditionally Registered
 -- ==============================================================================
@@ -184,21 +188,19 @@ end
 
 map("n", "<leader>ahr", function()
   if vim.bo.filetype ~= "http" then
-    require("tetravim.util.ui").notify_err(
-      "Open a .http file first -- <leader>ahr only runs requests from a .http buffer"
-    )
+    ui.notify_err("Open a .http file first -- <leader>ahr only runs requests from a .http buffer")
     return
   end
   local ok, kulala = pcall(require, "kulala")
   if not ok then
-    require("tetravim.util.ui").notify_err("kulala.nvim is not available -- open a .http file first")
+    ui.notify_err("kulala.nvim is not available -- open a .http file first")
     return
   end
   -- Guard kulala.run() so a malformed .http buffer surfaces a clean
   -- notification instead of a raw Lua stack trace.
   local run_ok, run_err = pcall(kulala.run)
   if not run_ok then
-    require("tetravim.util.ui").notify_err("Failed to run HTTP request: " .. tostring(run_err))
+    ui.notify_err("Failed to run HTTP request: " .. tostring(run_err))
   end
 end, { desc = "Run HTTP Request" })
 
@@ -212,12 +214,11 @@ map("n", "<leader>aho", function()
       return -- tetravim.util.openapi already warned via ui.notify_warn
     end
     tetravim_http_open_in_split(http_text, "http", "generated")
-    require("tetravim.util.ui").notify_info("Generated .http request template from " .. spec_path)
+    ui.notify_info("Generated .http request template from " .. spec_path)
   end)
 end, { desc = "Generate .http from OpenAPI Spec" })
 
 map("n", "<leader>ahj", function()
-  local ui = require("tetravim.util.ui")
   local ft = vim.bo.filetype
 
   -- A .http source buffer is not a response -- jq has nothing useful to do
@@ -276,11 +277,9 @@ end
 -- JSON (never handing it to grpcurl), invokes the RPC async and renders the
 -- response in a persistent "grpc-response" json split.
 local function tetravim_grpc_open_request(addr, method, skeleton_text)
-  local ui = require("tetravim.util.ui")
   tetravim_http_open_in_split(skeleton_text, "json", "grpc-request")
   local bufnr = vim.api.nvim_get_current_buf()
   vim.keymap.set("n", "<CR>", function()
-    local grpc = require("tetravim.util.grpc")
     local payload = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), "\n")
     if not require("tetravim.util.http").looks_like_json(payload) then
       ui.notify_err("gRPC request buffer is not valid JSON -- fix it before pressing <CR> (nothing sent)")
@@ -298,8 +297,6 @@ end
 -- describe`, then a second `describe -msg-template` for that type, and open
 -- the generated skeleton for editing.
 local function tetravim_grpc_build_request(addr, method)
-  local grpc = require("tetravim.util.grpc")
-  local ui = require("tetravim.util.ui")
   grpc.describe(addr, (method:gsub("/", ".")), function(method_desc)
     local parsed = grpc.parse_methods(method_desc)
     if #parsed == 0 or parsed[1].request_type == "" then
@@ -321,8 +318,6 @@ map("n", "<leader>agg", function()
   require("grpcui").open()
 end, { desc = "UI (grpcurl)" })
 map("n", "<leader>agl", function()
-  local grpc = require("tetravim.util.grpc")
-  local ui = require("tetravim.util.ui")
   tetravim_grpc_prompt_addr(function(addr)
     grpc.list_services(addr, function(out)
       local services = grpc.parse_service_list(out)
@@ -357,7 +352,6 @@ map("n", "<leader>agl", function()
 end, { desc = "List Services & Methods" })
 
 map("n", "<leader>agm", function()
-  local grpc = require("tetravim.util.grpc")
   local default_symbol = vim.fn.expand("<cword>")
   vim.ui.input({ prompt = "gRPC symbol to describe: ", default = default_symbol }, function(symbol)
     if not symbol or vim.trim(symbol) == "" then
@@ -383,7 +377,6 @@ map("n", "<leader>agi", function()
 end, { desc = "Generate Request Skeleton" })
 
 map("n", "<leader>agf", function()
-  local ui = require("tetravim.util.ui")
   if vim.bo.filetype ~= "proto" then
     ui.notify_err("<leader>agf formats a .proto buffer -- open one first")
     return
@@ -506,7 +499,6 @@ end, { desc = "Fix All Code (Project)" })
 -- that feeds every Java/Kotlin/Scala source to the SonarLint LS and dumps
 -- every finding into the quickfix list. See tetravim.util.sonar.project_scan.
 map("n", "<leader>xsb", function()
-  local ui = require("tetravim.util.ui")
   if not pcall(require, "sonarlint") then
     ui.notify_err("sonarlint.nvim is not available -- run :Lazy sync / :MasonInstall sonarlint-language-server")
     return
@@ -530,7 +522,6 @@ end, { desc = "Scan Whole Project" })
 -- on each vulnerable dependency line. Project: `osv-scanner -r` over the
 -- whole tree, rendered in a persistent split (findings span many files).
 map("n", "<leader>xvb", function()
-  local ui = require("tetravim.util.ui")
   local cve = require("tetravim.util.cve")
   local bufnr = vim.api.nvim_get_current_buf()
   local path = vim.api.nvim_buf_get_name(bufnr)
@@ -542,7 +533,7 @@ map("n", "<leader>xvb", function()
     ui.notify_err("<leader>xvb scans a Maven/Gradle build file -- open pom.xml or a *.gradle script first")
     return
   end
-  if path == "" or not (vim.uv or vim.loop).fs_stat(path) then
+  if path == "" or not vim.uv.fs_stat(path) then
     ui.notify_err("<leader>xvb: this buffer is not backed by a file on disk yet -- save it first")
     return
   end
@@ -577,5 +568,5 @@ end, { desc = "Scan Whole Project" })
 map("n", "<leader>xvc", function()
   local bufnr = vim.api.nvim_get_current_buf()
   require("tetravim.util.cve").clear_diagnostics(bufnr)
-  require("tetravim.util.ui").notify_info("Cleared CVE diagnostics for this buffer")
+  ui.notify_info("Cleared CVE diagnostics for this buffer")
 end, { desc = "Clear Scan Diagnostics" })

@@ -137,42 +137,14 @@ function M.setup_keymaps()
     return base_cmd
   end
 
-  -- Helper function to get mvnw or system mvn
+  -- Wrapper resolution (./mvnw|./gradlew -> upward wrapper -> system tool) lives
+  -- in one place: tetravim.util.build.wrapper_cmd.
   local function get_mvn_cmd(root)
-    local cwd = root or vim.fn.getcwd()
-    if vim.fn.filereadable(cwd .. "/mvnw") == 1 then
-      if vim.fn.executable(cwd .. "/mvnw") == 0 then
-        vim.fn.system({ "chmod", "+x", cwd .. "/mvnw" })
-      end
-      return "./mvnw"
-    end
-    local mvnw = vim.fs.find({ "mvnw" }, { upward = true, path = cwd, type = "file" })[1]
-    if mvnw and vim.fn.filereadable(mvnw) == 1 then
-      if vim.fn.executable(mvnw) == 0 then
-        vim.fn.system({ "chmod", "+x", mvnw })
-      end
-      return mvnw
-    end
-    return "mvn"
+    return build.wrapper_cmd("maven", root)
   end
 
-  -- Helper function to get gradlew or system gradle
   local function get_gradle_cmd(root)
-    local cwd = root or vim.fn.getcwd()
-    if vim.fn.filereadable(cwd .. "/gradlew") == 1 then
-      if vim.fn.executable(cwd .. "/gradlew") == 0 then
-        vim.fn.system({ "chmod", "+x", cwd .. "/gradlew" })
-      end
-      return "./gradlew"
-    end
-    local gradlew = vim.fs.find({ "gradlew" }, { upward = true, path = cwd, type = "file" })[1]
-    if gradlew and vim.fn.filereadable(gradlew) == 1 then
-      if vim.fn.executable(gradlew) == 0 then
-        vim.fn.system({ "chmod", "+x", gradlew })
-      end
-      return gradlew
-    end
-    return "gradle"
+    return build.wrapper_cmd("gradle", root)
   end
 
   --- Resolve JVM project context (tool, root), prompting if multiple subprojects exist.

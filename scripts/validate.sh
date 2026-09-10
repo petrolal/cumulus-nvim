@@ -313,18 +313,18 @@ local ok, err = pcall(function()
   assert(devops.find_helm_root(empty_proj) == nil, 'find_helm_root should be nil for empty workspace')
   assert(devops.find_tf_root(999999) == nil or type(devops.find_tf_root(999999)) == 'string', 'find_tf_root invalid buffer must not error')
 
-  -- JVM project detection (native vim.fs marker scan)
+  -- JVM project detection (native vim.fs marker scan -- tetravim.util.build)
   local jvm = require('tetravim.util.jvm')
-  local maven_util = require('tetravim.util.maven')
-  local gradle_util = require('tetravim.util.gradle')
+  local build_util = require('tetravim.util.build')
   assert(type(jvm.is_jvm_project) == 'function', 'jvm.is_jvm_project not found')
 
   local jvm_proj = tmp_root .. '/jvm_proj'
   vim.fn.mkdir(jvm_proj, 'p')
   vim.fn.writefile({'<project></project>'}, jvm_proj .. '/pom.xml')
   assert(jvm.is_jvm_project(jvm_proj) == true, 'is_jvm_project should return true for maven repo')
-  assert(maven_util.find_pom(jvm_proj) == true, 'find_pom should return true for maven repo')
-  assert(gradle_util.find_gradle(jvm_proj) == false, 'find_gradle should return false for maven repo')
+  local detected_tool = build_util.detect(jvm_proj)
+  assert(detected_tool == 'maven', 'build.detect should return "maven" for a pom.xml repo')
+  assert(build_util.detect(empty_proj) == nil, 'build.detect should return nil for empty repo')
   assert(jvm.is_jvm_project(empty_proj) == false, 'is_jvm_project should return false for empty repo')
 
   -- 7. Verify Root Adoption in Runner Execution & Warning Toasts

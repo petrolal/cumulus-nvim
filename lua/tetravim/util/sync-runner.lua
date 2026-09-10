@@ -33,11 +33,11 @@ function M.run(opts)
 
   vim.notify(opts.tool_label .. ": syncing dependencies...", vim.log.levels.INFO, { id = opts.notify_id })
   local timed_out = false
-  local timer = (vim.uv or vim.loop).new_timer()
+  local timer = vim.uv.new_timer()
   -- Independent from `timer` (the timeout-kill timer) above -- this one only
   -- ever updates the notification toast and never touches the process.
-  local heartbeat = (vim.uv or vim.loop).new_timer()
-  local started = (vim.uv or vim.loop).now()
+  local heartbeat = vim.uv.new_timer()
+  local started = vim.uv.now()
 
   -- The timeout branch below and the process exit callback can both want to
   -- close `heartbeat` (timeout closes it immediately so it stops updating
@@ -112,7 +112,7 @@ function M.run(opts)
       HEARTBEAT_INTERVAL_MS,
       HEARTBEAT_INTERVAL_MS,
       vim.schedule_wrap(function()
-        local elapsed_seconds = math.floor(((vim.uv or vim.loop).now() - started) / 1000)
+        local elapsed_seconds = math.floor((vim.uv.now() - started) / 1000)
         vim.notify(
           opts.tool_label .. ": syncing dependencies... (" .. elapsed_seconds .. "s)",
           vim.log.levels.INFO,

@@ -38,7 +38,7 @@ function M.check()
 
   vim.health.start("Gradle Wrapper & Build Lock")
 
-  local uv = vim.uv or vim.loop
+  local uv = vim.uv
   local cwd = vim.fn.getcwd()
   local is_gradle = uv.fs_stat(cwd .. "/build.gradle") ~= nil
     or uv.fs_stat(cwd .. "/build.gradle.kts") ~= nil
@@ -87,7 +87,7 @@ function M.check()
     end
   end
 
-  vim.health.start("TetraVim Project-Wide Safe Rename (SPEC-2.1)")
+  vim.health.start("TetraVim Project-Wide Safe Rename")
 
   if vim.fn.executable("rg") == 1 then
     vim.health.ok("rg (ripgrep): installed and executable (Spring XML/@Autowired/stereotype reference scan)")
@@ -102,7 +102,7 @@ function M.check()
     )
   end
 
-  vim.health.start("TetraVim Spring Boot Discovery (Story 2.3)")
+  vim.health.start("TetraVim Spring Boot Discovery")
   local spring = require("tetravim.util.spring")
 
   if spring.has_parser("java") then
@@ -185,7 +185,7 @@ function M.check()
     vim.health.info("JVM framework servers will launch with 'java' on $PATH ($JAVA_HOME not resolved to a JDK 21)")
   end
 
-  vim.health.start("AWS CloudFormation & SAM DevOps Tooling (Story 8.2)")
+  vim.health.start("AWS CloudFormation & SAM DevOps Tooling")
 
   local cfn_tools = {
     {
@@ -218,7 +218,7 @@ function M.check()
     end
   end
 
-  vim.health.start("Ansible Automation Tooling (Story 8.3)")
+  vim.health.start("Ansible Automation Tooling")
 
   local ansible_tools = {
     {
@@ -256,7 +256,7 @@ function M.check()
     end
   end
 
-  vim.health.start("TetraVim CI/CD YAML -- GitHub Actions & GitLab CI (Epic 39)")
+  vim.health.start("TetraVim CI/CD YAML -- GitHub Actions & GitLab CI")
 
   if pcall(require, "schemastore") then
     vim.health.ok("SchemaStore.nvim: resolvable (JSON Schema Store catalog feeds yamlls/jsonls)")
@@ -344,7 +344,7 @@ function M.check()
     end
   end
 
-  vim.health.start("TetraVim Embedded Database Explorer (SPEC-3.1)")
+  vim.health.start("TetraVim Embedded Database Explorer")
 
   local dadbod_completion_ok = pcall(require, "vim_dadbod_completion")
   if dadbod_completion_ok then
@@ -365,7 +365,7 @@ function M.check()
     vim.health.info("sql Tree-sitter parser: NOT installed. Suggestion: :TSInstall sql")
   end
 
-  vim.health.start("TetraVim HTTP Client & REST API Explorer (Story 3.2)")
+  vim.health.start("TetraVim HTTP Client & REST API Explorer")
 
   local http_tools = {
     {
@@ -395,7 +395,7 @@ function M.check()
     vim.health.warn("kulala.nvim: not resolvable -- open a .http file to lazy-load it, or run :Lazy sync")
   end
 
-  vim.health.start("TetraVim gRPC & Protobufs (Story 3.4)")
+  vim.health.start("TetraVim gRPC & Protobufs")
 
   local grpc_tools = {
     {
@@ -434,7 +434,7 @@ function M.check()
     vim.health.warn("proto Tree-sitter parser: NOT installed. Suggestion: :TSInstall proto")
   end
 
-  vim.health.start("TetraVim Advanced Git Conflict Resolution (Story 4.1)")
+  vim.health.start("TetraVim Advanced Git Conflict Resolution")
 
   if vim.fn.executable("git") == 1 then
     local git_ok, git_res = pcall(function()
@@ -489,7 +489,7 @@ function M.check()
     vim.health.warn("plenary.nvim: not resolvable -- diffview's hard dependency; run :Lazy sync")
   end
 
-  vim.health.start("TetraVim Code Reviews (GitHub/GitLab) (Story 4.2)")
+  vim.health.start("TetraVim Code Reviews (GitHub/GitLab)")
   if vim.fn.executable("gh") == 1 then
     vim.health.ok("gh: installed and executable (GitHub PR review support available)")
   else
@@ -501,7 +501,7 @@ function M.check()
     vim.health.info("glab: NOT found on $PATH (GitLab PR review support unavailable). Suggestion: install glab")
   end
 
-  vim.health.start("TetraVim Visual Test Runner -- neotest-java (SPEC-1.3)")
+  vim.health.start("TetraVim Visual Test Runner -- neotest-java")
 
   if pcall(require, "neotest-java") then
     vim.health.ok("neotest-java: resolvable (JVM test tree discovery available)")
@@ -540,7 +540,7 @@ function M.check()
     end
   end
 
-  vim.health.start("TetraVim JVM & Diagnostic Linting -- nvim-lint (Story 3.x)")
+  vim.health.start("TetraVim JVM & Diagnostic Linting -- nvim-lint")
 
   if pcall(require, "lint") then
     vim.health.ok("nvim-lint: loaded (auto-lint on BufWritePost/BufEnter; toggle with <leader>ul / <leader>uL)")
@@ -605,7 +605,7 @@ function M.check()
     end
   end
 
-  vim.health.start("TetraVim Code Quality & Security -- SonarLint (Story 6.1)")
+  vim.health.start("TetraVim Code Quality & Security -- SonarLint")
 
   local sonar = require("tetravim.util.sonar")
   if sonar.has_language_server() then
@@ -664,7 +664,7 @@ function M.check()
 
   vim.health.info("Scala SonarLint rules require SonarQube connected mode -- no standalone Scala analyzer is bundled")
 
-  vim.health.start("TetraVim Code Quality & Security -- CVE Scanning (Story 6.2)")
+  vim.health.start("TetraVim Code Quality & Security -- CVE Scanning")
 
   if vim.fn.executable("osv-scanner") == 1 then
     vim.health.ok(
@@ -677,16 +677,10 @@ function M.check()
     )
   end
 
-  vim.health.start("TetraVim JVM Continuous Profiling -- async-profiler (Story 1.2)")
+  vim.health.start("TetraVim JVM Continuous Profiling -- async-profiler")
 
-  local profiler_bins = { "asprof", "async-profiler", "profiler.sh" }
-  local profiler_found
-  for _, bin in ipairs(profiler_bins) do
-    if vim.fn.executable(bin) == 1 then
-      profiler_found = bin
-      break
-    end
-  end
+  local profiler_ok, profiling = pcall(require, "tetravim.util.profiling")
+  local profiler_found = profiler_ok and profiling.profiler_cmd()
   if profiler_found then
     vim.health.ok(
       ("%s: installed and executable (<leader>jps start / <leader>jpx stop / <leader>jpv view available)"):format(
@@ -695,7 +689,7 @@ function M.check()
     )
   else
     vim.health.info(
-      "async-profiler: NOT found on $PATH (looked for 'asprof', 'async-profiler', 'profiler.sh'). "
+      "async-profiler: NOT found on $PATH (looked for 'asprof', 'profiler.sh', 'async-profiler'). "
         .. "The <leader>jp profiling keymaps error until it is installed. "
         .. "Suggestion: run `bash bootstrap.sh`, or grab a release from "
         .. "https://github.com/async-profiler/async-profiler/releases"
@@ -714,7 +708,7 @@ function M.check()
     end
   end
 
-  vim.health.start("TetraVim Asynchronous LSP & Resilience (Story 5.1)")
+  vim.health.start("TetraVim Asynchronous LSP & Resilience")
 
   local resilience_ok, resilience = pcall(require, "tetravim.util.lsp_resilience")
   if resilience_ok and type(resilience.health) == "function" then
@@ -723,7 +717,7 @@ function M.check()
     vim.health.error("tetravim.util.lsp_resilience: failed to load (" .. tostring(resilience) .. ")")
   end
 
-  vim.health.start("TetraVim Headless Setup & Telemetry (Story 5.2)")
+  vim.health.start("TetraVim Headless Setup & Telemetry")
 
   local setup_script = vim.fn.stdpath("config") .. "/scripts/headless-setup.sh"
   if vim.fn.executable(setup_script) == 1 then

@@ -272,7 +272,7 @@ function M.fix_now(buf)
   end
 
   local path = vim.api.nvim_buf_get_name(buf)
-  if path == "" or not (vim.uv or vim.loop).fs_stat(path) then
+  if path == "" or not vim.uv.fs_stat(path) then
     ui.notify_err("Lint autofix: this buffer is not backed by a file on disk yet -- save it first")
     return
   end

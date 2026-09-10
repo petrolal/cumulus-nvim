@@ -141,4 +141,47 @@ function M.detect(path)
   return nil, nil
 end
 
+local WRAPPERS = { maven = "mvnw", gradle = "gradlew" }
+local SYSTEM_CMD = { maven = "mvn", gradle = "gradle" }
+
+--- Resolve the build command for a JVM project, preferring the checked-in
+--- wrapper (`mvnw` / `gradlew`) over the system tool. If the wrapper exists but
+--- is not executable, its executable bit is set once via a non-blocking
+--- `vim.uv.fs_chmod` (never shells out to `chmod`). Shared by
+--- `util.jvm`, `util.build-sync-state` and `util.project-wizard` so wrapper
+--- resolution lives in exactly one place.
+---@param tool "maven"|"gradle"
+---@param root? string project root (defaults to cwd)
+---@return string cmd `"./mvnw"` | `"./gradlew"` | an absolute wrapper path | `"mvn"` | `"gradle"`
+function M.wrapper_cmd(tool, root)
+  local wrapper_name = WRAPPERS[tool]
+  local system_cmd = SYSTEM_CMD[tool]
+  if not wrapper_name then
+    return system_cmd or ""
+  end
+  local cwd = root or vim.fn.getcwd()
+
+  local function ensure_exec(path)
+    if vim.fn.executable(path) == 0 then
+      -- rwxr-xr-x -- the correct mode for a build wrapper script. Non-blocking;
+      -- never shells out to `chmod`.
+      pcall(vim.uv.fs_chmod, path, tonumber("755", 8))
+    end
+  end
+
+  local local_wrapper = cwd .. "/" .. wrapper_name
+  if vim.fn.filereadable(local_wrapper) == 1 then
+    ensure_exec(local_wrapper)
+    return "./" .. wrapper_name
+  end
+
+  local upward = vim.fs.find({ wrapper_name }, { upward = true, path = cwd, type = "file" })[1]
+  if upward and vim.fn.filereadable(upward) == 1 then
+    ensure_exec(upward)
+    return upward
+  end
+
+  return system_cmd
+end
+
 return M

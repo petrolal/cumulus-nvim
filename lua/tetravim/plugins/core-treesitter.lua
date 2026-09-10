@@ -49,7 +49,7 @@ return {
           -- way IntelliJ's "file too large, code insight disabled" guards
           -- against. snacks.bigfile also covers this, but keep the guard here
           -- so it holds even if snacks is unavailable.
-          local ok_stat, stat = pcall((vim.uv or vim.loop).fs_stat, vim.api.nvim_buf_get_name(event.buf))
+          local ok_stat, stat = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(event.buf))
           if ok_stat and stat and stat.size > 1024 * 1024 then
             return
           end

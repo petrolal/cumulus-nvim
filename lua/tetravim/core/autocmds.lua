@@ -120,7 +120,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 -- re-sync a few seconds after the last write -- not one `mvn
 -- dependency:resolve` (a 120s-timeout process) per save. One reusable timer,
 -- restarted on each save.
-local build_sync_timer = assert((vim.uv or vim.loop).new_timer())
+local build_sync_timer = assert(vim.uv.new_timer())
 vim.api.nvim_create_autocmd("BufWritePost", {
   group = augroup("build_sync_on_save"),
   -- The first three are bare filenames -- Neovim matches those against just

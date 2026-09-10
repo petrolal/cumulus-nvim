@@ -1,18 +1,14 @@
--- TetraVim UI Utilities (moved from engine.lua)
+-- TetraVim notification frontend
 --
--- Notification dispatchers and terminal orchestration.
--- This module is NOT part of the IPC bridge; it provides UI layer helpers.
+-- This is TetraVim's primary notifier (~30 call sites). It is a thin facade
+-- over `tetravim.util.notify`, which owns the default title/level vocabulary
+-- *and* the opt-in telemetry sink -- routing through here means every
+-- subsystem notification is captured in `telemetry.log` when telemetry is on.
+-- Interactive terminals live in `tetravim.util.term`, not here.
 
 local M = {}
 
 --- Standardized notification dispatcher with default title and level mapping.
----
---- Story 5.2: this is TetraVim's primary notifier (~20 call sites), so it
---- delegates to `tetravim.util.notify`, which owns the default title/level
---- vocabulary *and* the opt-in telemetry sink. Routing through it here means
---- every subsystem notification is captured in `telemetry.log` when
---- telemetry is enabled -- not just the handful that call `util.notify`
---- directly.
 ---@param msg string Message text
 ---@param level? number vim.log.levels level (default: INFO)
 ---@param title? string Notification title (default: "TetraVim")
@@ -50,26 +46,6 @@ end
 ---@param opts? table Additional notification options
 function M.notify_err(msg, title, opts)
   M.notify(msg, vim.log.levels.ERROR, title, opts)
-end
-
---- Run a command in an interactive, non-blocking terminal session.
---- Requires Snacks.terminal plugin to be loaded.
----@param cmd string|string[] Command string or command argv list to execute
----@param opts? { cwd?: string, timeout?: number, title?: string, on_exit?: fun(code: number), on_stdout?: fun(data: string[]), on_stderr?: fun(data: string[]) }
----@error Raises error if Snacks plugin is not loaded
-function M.run_term(cmd, opts)
-  opts = opts or {}
-  local snacks = _G.Snacks or package.loaded["snacks"]
-
-  if not snacks or not snacks.terminal then
-    local err_msg = "Snacks plugin (terminal feature) is required for this operation. "
-      .. "Install it via your plugin manager or disable terminal commands."
-    M.notify_err(err_msg)
-    error(err_msg)
-  end
-
-  local term_cwd = opts.cwd or vim.fn.getcwd()
-  snacks.terminal(cmd, { cwd = term_cwd })
 end
 
 return M

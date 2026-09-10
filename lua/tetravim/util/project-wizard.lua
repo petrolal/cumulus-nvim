@@ -243,15 +243,11 @@ local function open_and_init_project(target_dir, project_type)
   target_dir = vim.fn.fnamemodify(target_dir, ":p"):gsub("/$", "")
   vim.cmd("cd " .. vim.fn.fnameescape(target_dir))
 
-  -- Ensure wrappers are executable if present
-  local mvnw = target_dir .. "/mvnw"
-  local gradlew = target_dir .. "/gradlew"
-  if vim.fn.filereadable(mvnw) == 1 and vim.fn.executable(mvnw) == 0 then
-    pcall(vim.fn.system, { "chmod", "+x", mvnw })
-  end
-  if vim.fn.filereadable(gradlew) == 1 and vim.fn.executable(gradlew) == 0 then
-    pcall(vim.fn.system, { "chmod", "+x", gradlew })
-  end
+  -- Ensure wrappers are executable if present (wrapper_cmd sets the exec bit as
+  -- a side effect via a non-blocking vim.uv.fs_chmod).
+  local build = require("tetravim.util.build")
+  build.wrapper_cmd("maven", target_dir)
+  build.wrapper_cmd("gradle", target_dir)
 
   -- Initialize Git repository if git is available and target_dir is not already in a git repo (IntelliJ style)
   if vim.fn.executable("git") == 1 then
