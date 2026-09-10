@@ -10,49 +10,11 @@ local banner = [[
                JVM & CLOUD-NATIVE ECOSYSTEM           
 ]]
 
--- Short commit hash for the dashboard footer, resolved at most once per
--- session. The previous implementation shelled out via io.popen("git
--- rev-parse ...") inside the dashboard section closure, which runs on every
--- dashboard render -- a synchronous subprocess spawn at the most
--- latency-sensitive moment of startup -- and io.popen is compiled out or
--- disabled in some locked-down enterprise builds. Read .git directly
--- instead: no subprocess, and a missing/unreadable repo just yields "".
-local _git_sha_cache
-local function git_short_sha()
-  if _git_sha_cache ~= nil then
-    return _git_sha_cache
-  end
-  _git_sha_cache = ""
-
-  local git_dir = vim.fn.stdpath("config") .. "/.git"
-  local head = (vim.fn.filereadable(git_dir .. "/HEAD") == 1) and vim.fn.readfile(git_dir .. "/HEAD")[1] or nil
-  if not head then
-    return _git_sha_cache
-  end
-
-  local full
-  local ref = head:match("^ref:%s+(.+)$")
-  if ref then
-    if vim.fn.filereadable(git_dir .. "/" .. ref) == 1 then
-      full = vim.fn.readfile(git_dir .. "/" .. ref)[1]
-    end
-    if not full and vim.fn.filereadable(git_dir .. "/packed-refs") == 1 then
-      for _, line in ipairs(vim.fn.readfile(git_dir .. "/packed-refs")) do
-        local sha, name = line:match("^(%x+)%s+(.+)$")
-        if name == ref then
-          full = sha
-          break
-        end
-      end
-    end
-  else
-    -- Detached HEAD: the file holds the raw commit hash.
-    full = head:match("^(%x+)")
-  end
-
-  _git_sha_cache = (full and full:sub(1, 7)) or ""
-  return _git_sha_cache
-end
+-- Dashboard git-sha reader + footer section builder, and the snacks.nvim
+-- runtime patches / <leader>u state toggles, live in util/ so this spec stays a
+-- declarative list of opts/keys.
+local dashboard = require("tetravim.util.dashboard")
+local snacks_ext = require("tetravim.util.snacks_ext")
 
 return {
   {
@@ -136,25 +98,7 @@ return {
         { section = "header", padding = 2, align = "center" },
         { section = "keys", gap = 1, padding = 2 },
         { section = "startup", padding = 2, align = "center" },
-        function()
-          local commit = git_short_sha()
-          local date = os.date("%d/%m/%y")
-          local version = "v1.0.0"
-          local parts = { "TETRAVIM", version }
-          if commit ~= "" then
-            parts[#parts + 1] = commit
-          end
-          parts[#parts + 1] = date
-          return {
-            align = "center",
-            text = {
-              {
-                table.concat(parts, " • "),
-                hl = "SnacksDashboardFooter",
-              },
-            },
-          }
-        end,
+        dashboard.footer_section,
       }
       opts.dashboard.preset = opts.dashboard.preset or {}
       opts.dashboard.preset.header = banner
@@ -248,169 +192,9 @@ return {
         Snacks.notifier.notify(msg, level, notify_opts)
       end
 
-      -- Suppress false-positive healthcheck ERROR when terminal does not support
-      -- Kitty graphics protocol (e.g. Alacritty, GNOME Terminal, standard TTY, tmux)
-      -- and missing optional Tree-sitter parsers without upstream grammars (e.g. norg),
-      -- downgrading them to INFO since they are purely optional.
-      local ok_img, snacks_image = pcall(require, "snacks.image")
-      if ok_img and type(snacks_image.health) == "function" then
-        local orig_image_health = snacks_image.health
-        snacks_image.health = function()
-          local orig_error = Snacks.health.error
-          local orig_warn = Snacks.health.warn
-          Snacks.health.error = function(msg)
-            if type(msg) == "string" and msg:find("kitty graphics protocol") then
-              Snacks.health.info(msg .. " (optional -- supported: kitty, wezterm, ghostty)")
-            else
-              orig_error(msg)
-            end
-          end
-          Snacks.health.warn = function(msg)
-            if
-              type(msg) == "string"
-              and (msg:find("Missing Treesitter languages") or msg:find("missing treesitter parsers"))
-            then
-              Snacks.health.info(msg .. " (optional -- e.g. `norg` has no upstream nvim-treesitter parser)")
-            else
-              orig_warn(msg)
-            end
-          end
-          orig_image_health()
-          Snacks.health.error = orig_error
-          Snacks.health.warn = orig_warn
-        end
-      end
-
-      -- Guard Snacks picker jump action against "Invalid cursor line: out of range"
-      -- (folke/snacks.nvim#2939) when target position exceeds buffer line count.
-      local ok_actions, actions = pcall(require, "snacks.picker.actions")
-      if ok_actions and actions and actions.jump then
-        local orig_jump = actions.jump
-        actions.jump = function(picker, item_arg, action)
-          local orig_set_cursor = vim.api.nvim_win_set_cursor
-          vim.api.nvim_win_set_cursor = function(win, pos)
-            local buf = vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win)
-            if buf and vim.api.nvim_buf_is_valid(buf) then
-              local line_count = vim.api.nvim_buf_line_count(buf)
-              if line_count > 0 then
-                pos[1] = math.max(1, math.min(pos[1], line_count))
-                local lines = vim.api.nvim_buf_get_lines(buf, pos[1] - 1, pos[1], false)
-                local line_len = lines[1] and #lines[1] or 0
-                pos[2] = math.max(0, math.min(pos[2] or 0, line_len))
-              end
-            end
-            local ok, err = pcall(orig_set_cursor, win, pos)
-            if not ok then
-              return nil
-            end
-          end
-          local ok_j, res = pcall(orig_jump, picker, item_arg, action)
-          vim.api.nvim_win_set_cursor = orig_set_cursor
-          if not ok_j then
-            error(res)
-          end
-          return res
-        end
-      end
-
-      -- State toggles under <leader>u. Snacks.toggle gives each one a
-      -- get/set-backed on/off notification and, via which-key, a filled/empty
-      -- icon that mirrors the live state -- so these replace the hand-rolled
-      -- vim.keymap.set + vim.notify blocks that used to sit in
-      -- core/keymaps.lua. The buffer-scoped pair reads the *effective* state
-      -- (buffer override, else global) and writes only vim.b; the global pair
-      -- writes vim.g and clears the buffer override so it stops shadowing.
-      Snacks.toggle
-        .new({
-          id = "tetravim_autoformat_buffer",
-          name = "Autoformat (Buffer)",
-          get = function()
-            return require("tetravim.util.format").enabled(0)
-          end,
-          set = function(state)
-            vim.b.autoformat = state
-          end,
-        })
-        :map("<leader>uf")
-      Snacks.toggle
-        .new({
-          id = "tetravim_autoformat_global",
-          name = "Autoformat (Global)",
-          get = function()
-            return vim.g.autoformat ~= false
-          end,
-          set = function(state)
-            vim.g.autoformat = state
-            vim.b.autoformat = nil
-          end,
-        })
-        :map("<leader>uF")
-      Snacks.toggle
-        .new({
-          id = "tetravim_autolint_buffer",
-          name = "Autolint (Buffer)",
-          get = function()
-            return require("tetravim.util.lint").enabled(0)
-          end,
-          set = function(state)
-            vim.b.autolint = state
-          end,
-        })
-        :map("<leader>ul")
-      Snacks.toggle
-        .new({
-          id = "tetravim_autolint_global",
-          name = "Autolint (Global)",
-          get = function()
-            return vim.g.autolint ~= false
-          end,
-          set = function(state)
-            vim.g.autolint = state
-            vim.b.autolint = nil
-          end,
-        })
-        :map("<leader>uL")
-      Snacks.toggle
-        .new({
-          id = "tetravim_transparency",
-          name = "Transparency",
-          get = function()
-            return require("tetravim.util.transparency").enabled
-          end,
-          set = function(state)
-            require("tetravim.util.transparency").set(state)
-          end,
-        })
-        :map("<leader>ut")
-      -- Inlay hints: reads the real vim.lsp.inlay_hint state, writes through
-      -- util/lsp_attach so the choice sticks for buffers that attach a client
-      -- later (via vim.g.tetravim_inlay_hints).
-      Snacks.toggle
-        .new({
-          id = "tetravim_inlay_hints",
-          name = "Inlay Hints",
-          get = function()
-            return vim.lsp.inlay_hint ~= nil and vim.lsp.inlay_hint.is_enabled({})
-          end,
-          set = function()
-            require("tetravim.util.lsp_attach").toggle_inlay_hints()
-          end,
-        })
-        :map("<leader>uh")
-      -- Diagnostic virtual_lines: swap the terse one-line virtual text for
-      -- the multi-line current-line rendering (core/diagnostics.lua).
-      Snacks.toggle
-        .new({
-          id = "tetravim_virtual_lines",
-          name = "Diagnostic Virtual Lines",
-          get = function()
-            return require("tetravim.core.diagnostics").virtual_lines_enabled
-          end,
-          set = function()
-            require("tetravim.core.diagnostics").toggle_virtual_lines()
-          end,
-        })
-        :map("<leader>uv")
+      snacks_ext.suppress_image_health()
+      snacks_ext.guard_picker_jump()
+      snacks_ext.register_state_toggles()
     end,
     keys = {
       {
