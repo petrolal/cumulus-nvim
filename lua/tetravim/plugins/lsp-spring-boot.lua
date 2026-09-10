@@ -35,14 +35,14 @@ return {
       if not ok then
         return
       end
-      local caps = require("tetravim.util.lsp_capabilities").make({
+      local caps = require("tetravim.util.lsp.capabilities").make({
         -- `spring_boot.launch.update_ls_config` deep-merges `opts.server` with
         -- "keep" precedence -- our table wins -- so the STS4 executeCommand
         -- capability it relies on must be carried explicitly here.
         workspace = { executeCommand = { value = true } },
       })
       spring_boot.setup({
-        java_cmd = require("tetravim.util.jvm_frameworks").java_cmd(),
+        java_cmd = require("tetravim.util.jvm.frameworks").java_cmd(),
         server = {
           capabilities = caps,
         },

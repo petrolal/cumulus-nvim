@@ -67,7 +67,7 @@ return {
         return (fname and fname ~= "" and vim.fs.dirname(fname)) or vim.fn.getcwd()
       end
 
-      local jvm = require("tetravim.util.jvm")
+      local jvm = require("tetravim.util.jvm.jvm")
       local java21_path = jvm.find_java21_home()
       local runtimes = {}
       if java21_path then

@@ -12,7 +12,7 @@
 -- replace).
 
 describe("tetravim embedded DB explorer (SPEC-3.1)", function()
-  local db = require("tetravim.util.db")
+  local db = require("tetravim.util.clients.db")
 
   local function read(path)
     local fh = assert(io.open(path, "r"))
@@ -274,7 +274,7 @@ describe("tetravim embedded DB explorer (SPEC-3.1)", function()
 
         local src = read("lua/tetravim/plugins/tools-dadbod.lua")
         assert.is_truthy(src:match("vim%-dadbod%-completion"))
-        assert.is_truthy(src:match("tetravim%.util%.db"))
+        assert.is_truthy(src:match("tetravim%.util%.clients%.db"))
         assert.is_truthy(src:match("vim%.g%.dbs"))
         assert.is_truthy(src:match('"sql"'))
         assert.is_truthy(src:match("FileType"))
@@ -307,8 +307,8 @@ describe("tetravim embedded DB explorer (SPEC-3.1)", function()
     end)
 
     it("init() surfaces a WARN (and leaves vim.g.dbs unset) when discovery errors", function()
-      local orig_loaded = package.loaded["tetravim.util.db"]
-      package.loaded["tetravim.util.db"] = {
+      local orig_loaded = package.loaded["tetravim.util.clients.db"]
+      package.loaded["tetravim.util.clients.db"] = {
         discover_datasources = function()
           error("simulated discovery bug")
         end,
@@ -319,7 +319,7 @@ describe("tetravim embedded DB explorer (SPEC-3.1)", function()
         require("tetravim.plugins.tools-dadbod")[1].init()
       end)
 
-      package.loaded["tetravim.util.db"] = orig_loaded
+      package.loaded["tetravim.util.clients.db"] = orig_loaded
 
       assert.is_nil(vim.g.dbs)
       assert.is_true(has_warn(notified))

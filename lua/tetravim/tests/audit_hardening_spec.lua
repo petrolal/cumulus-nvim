@@ -17,7 +17,7 @@ local function read(path)
 end
 
 describe("jdtls_config session cache", function()
-  local cache = require("tetravim.util.jdtls_config")
+  local cache = require("tetravim.util.jvm.jdtls_config")
 
   after_each(function()
     cache.reset()
@@ -39,7 +39,7 @@ describe("jdtls_config session cache", function()
 
   it("ftplugin/java.lua consults the cache before globbing bundles", function()
     local body = read("ftplugin/java.lua")
-    assert.is_truthy(body:match("tetravim%.util%.jdtls_config"))
+    assert.is_truthy(body:match("tetravim%.util%.jvm%.jdtls_config"))
     assert.is_truthy(body:match("if not static then"))
     -- Framework-extension tokens must still be present for jvm_frameworks_spec.
     for _, tok in ipairs({ "java_extensions", "spring_boot", "microprofile", "quarkus" }) do

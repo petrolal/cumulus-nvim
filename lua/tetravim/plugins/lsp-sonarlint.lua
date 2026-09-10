@@ -6,7 +6,7 @@
 -- bridge). All analysis, rule metadata and quality-profile handling come
 -- from the SonarLint LS itself -- nothing is reimplemented here. The server
 -- command, bundled analyzer jars and `sonar-project.properties`
--- quality-profile binding are resolved by tetravim.util.sonar.
+-- quality-profile binding are resolved by tetravim.util.quality.sonar.
 --
 -- Everything is pcall-guarded: a missing plugin or a missing
 -- `sonarlint-language-server` binary degrades to a single notification,
@@ -18,7 +18,7 @@ return {
     ft = { "java", "kotlin", "scala" },
     dependencies = { "williamboman/mason.nvim" },
     config = function()
-      local sonar = require("tetravim.util.sonar")
+      local sonar = require("tetravim.util.quality.sonar")
       local ui = require("tetravim.util.ui")
 
       local ok, sonarlint = pcall(require, "sonarlint")

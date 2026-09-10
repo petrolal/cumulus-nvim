@@ -64,7 +64,7 @@ file returns a lazy.nvim spec (single spec table or a list of them). `defaults.l
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `lua/tetravim/core/`    | Editor bootstrap: `options`, global `keymaps`, `autocmds`, `diagnostics`, `health`, `devops` keymap engine, `lang_keymaps`, `setup` (headless provisioning pipeline)                                                                                                                                   |
 | `lua/tetravim/plugins/` | One lazy.nvim spec file per concern. Prefixes: `lsp-*`, `tools-*`, `editor-*`, `ui-*`, `cloud-*`, `core-*`, `lang-*`                                                                                                                                                                                   |
-| `lua/tetravim/util/`    | Pure Lua logic modules (`jvm`, `spring`, `spring_picker`, `refactor`, `refactor_treesitter`, `extract`, `filetemplate`, `db`, `http`, `grpc`, `openapi`, `cve`, `sonar`, `forge`, `lsp_async`, `lsp_resilience`, `lsp_capabilities`, `lsp_attach`, `format`, `lint`, `git`, `build`, `coverage`, `session`, `term`, `split`, …). Keymaps call into these; business logic lives here, not in the keymap files. A few large modules are split into a same-named sub-package: `util/project_wizard/catalog.lua` (curated Spring/Maven catalogs), `util/filetemplate/builtins.lua` (~590 lines of built-in template bodies), `util/spring/{ast,parse}.lua` (Tree-sitter primitives + pure content→data parser, leaving `spring.lua` the scan/LSP/DAP orchestration layer), `util/db/ignored_dirs.lua` (the config-walker directory denylist) — the parent module re-exports or consumes the moved surface (`project_wizard.SPRING_DEPENDENCIES`, `filetemplate.builtin`, `spring._endpoints_in_content`, `spring.has_parser`, …) so call sites are unchanged. Some plugin specs likewise push their imperative bits into `util/` to stay declarative: `util/dashboard.lua` (git-sha reader + Snacks dashboard footer builder) and `util/snacks_ext.lua` (snacks.nvim runtime health/picker patches + `<leader>u` state toggles) are consumed by `plugins/editor-snacks.lua` |
+| `lua/tetravim/util/`    | Pure Lua logic modules, grouped into concern subdirectories that mirror the `plugins/` prefixes. Feature groups: `util/lsp/` (`async`, `resilience`, `capabilities`, `attach`), `util/jvm/` (`jvm`, `frameworks`, `lsp_toggle`, `test`, `jdtls_config`, `neotest_java`, `dap_stacktrace`, `spring`, `spring_lsp`, `spring_picker`, `springboot_debug`, `build`, `build_sync_state`, `sync_runner`, `project_wizard`), `util/edit/` (`refactor`, `refactor_treesitter`, `extract`, `filetemplate`, `format`, `lint`, `docgen`), `util/clients/` (`http`, `grpc`, `openapi`, `db`, `endpoints_panel`), `util/cloud/` (`docker`, `k8s`, `forge`), `util/quality/` (`cve`, `sonar`, `coverage`, `profiling`). Cross-cutting primitives stay flat at `util/`: `ui`, `notify`, `split`, `term`, `panel`, `action_lock`, `git`, `session`, `ftconv`, `theme_colors`, `transparency`, `dashboard`, `snacks_ext`. `util/jvm/` is a plain directory with no `init.lua`, so the module is `require("tetravim.util.jvm.jvm")`. Keymaps call into these; business logic lives here, not in the keymap files. A few large modules are split into a same-named sub-package: `util/jvm/project_wizard/catalog.lua` (curated Spring/Maven catalogs), `util/edit/filetemplate/builtins.lua` (~590 lines of built-in template bodies), `util/jvm/spring/{ast,parse}.lua` (Tree-sitter primitives + pure content→data parser, leaving `spring.lua` the scan/LSP/DAP orchestration layer), `util/clients/db/ignored_dirs.lua` (the config-walker directory denylist) — the parent module re-exports or consumes the moved surface (`project_wizard.SPRING_DEPENDENCIES`, `filetemplate.builtin`, `spring._endpoints_in_content`, `spring.has_parser`, …) so call sites are unchanged. Some plugin specs likewise push their imperative bits into `util/` to stay declarative: `util/dashboard.lua` (git-sha reader + Snacks dashboard footer builder) and `util/snacks_ext.lua` (snacks.nvim runtime health/picker patches + `<leader>u` state toggles) are consumed by `plugins/editor-snacks.lua` |
 | `lua/tetravim/theme/`   | `tetris.lua` = canonical palette + highlight table; `init.lua` = loader/persistence shim                                                                                                                                                                                                              |
 | `colors/tetravim.lua`   | `:colorscheme tetravim` entry point                                                                                                                                                                                                                                                                  |
 | `lua/tetravim/tests/`   | `*_spec.lua` plenary busted specs                                                                                                                                                                                                                                                                    |
@@ -80,7 +80,7 @@ keys relevant to the current buffer:
    `<leader>a` API/data clients — `<leader>ah` HTTP, `<leader>ag` gRPC, `<leader>ad`
    database — `<leader>x` quality/security, file ops).
 2. **JVM platform** — `<leader>j`, registered unconditionally via
-   `require("tetravim.util.jvm").setup_keymaps()`.
+   `require("tetravim.util.jvm.jvm").setup_keymaps()`.
 3. **DevOps/infra** — `<leader>o`, registered globally via
    `require("tetravim.core.devops").setup_keymaps()`; which-key groups come from
    `devops.whichkey_spec()`.
@@ -88,7 +88,7 @@ keys relevant to the current buffer:
    `M.register{ filetypes=…, group=…, keys=… }`; a `FileType` autocmd installs the
    keys **buffer-local** only for matching filetypes, so `<leader>c` never mixes
    e.g. Maven keys into a Terraform buffer. Java/Kotlin build stacks are gated
-   behind `util/build_sync_state` until the first Maven/Gradle dependency sync
+   behind `util/jvm/build_sync_state` until the first Maven/Gradle dependency sync
    completes.
 
 ### LSP
@@ -112,7 +112,7 @@ JVM framework config intelligence (`application.properties` / `application.yml` 
   `JavaHello/quarkus.nvim` + `JavaHello/microprofile.nvim` (lsp4mp + Qute LS). These
   ship only inside Red Hat's `vscode-quarkus` / `vscode-microprofile` `.vsix`
   bundles — **not in Mason** — so `:TetraVimFetchJvmLspJars`
-  (`util/jvm_frameworks.fetch_jars()`) downloads them from Open VSX into
+  (`util/jvm/frameworks.fetch_jars()`) downloads them from Open VSX into
   `$TETRAVIM_JVM_LSP_DIR` (default `stdpath("data")/tetravim/jvm-lsp`, layout
   `quarkus/{server,jars}` + `microprofile/{server,jars}`). The spec loads but stays
   **dormant** (no server spawned) until those jars exist; each server is a separate
@@ -122,12 +122,12 @@ JVM framework config intelligence (`application.properties` / `application.yml` 
 - **Micronaut** — intentionally **unsupported**: no viable Neovim language server
   exists. Do not add one.
 
-`util/jvm_frameworks` is the path resolver + readiness probe API used by both
+`util/jvm/frameworks` is the path resolver + readiness probe API used by both
 plugin specs, `ftplugin/java.lua` (folds each module's `java_extensions()` into the
 jdtls `bundles`) and the `:checkhealth tetravim` "JVM Framework Config LSP"
 section. `tests/jvm_frameworks_spec.lua` covers it.
 
-Completion capabilities: `util/lsp_capabilities.make()` is the one source of truth
+Completion capabilities: `util/lsp/capabilities.make()` is the one source of truth
 for the `capabilities` table every server starts with — it folds
 `cmp_nvim_lsp.default_capabilities()` onto the 0.11 base and degrades gracefully
 when nvim-cmp isn't loaded. `lsp-core.lua` applies it once via
@@ -140,10 +140,10 @@ buffer-locally via `tools-dadbod.lua`.
 
 Resilience layer:
 
-- `util/lsp_resilience` — bounds the JDTLS JVM heap (`apply_memory_limit`) and
+- `util/lsp/resilience` — bounds the JDTLS JVM heap (`apply_memory_limit`) and
   auto-restarts a crashed server (max 3 restarts / 180s, then stops and points at
   `:LspLog`). `on_attach` calls `reset()` to open a fresh window.
-- `util/lsp_async.request_all_async` — fans a request out to all attached clients
+- `util/lsp/async.request_all_async` — fans a request out to all attached clients
   and calls back on `vim.schedule` after the last reply, so project-wide operations
   never block the UI thread.
 

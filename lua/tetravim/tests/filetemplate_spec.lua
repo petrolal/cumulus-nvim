@@ -1,7 +1,7 @@
 -- New File from Template (IDEA-style New) -- engine shape & behaviour tests
 
-describe("tetravim.util.filetemplate", function()
-  local ft = require("tetravim.util.filetemplate")
+describe("tetravim.util.edit.filetemplate", function()
+  local ft = require("tetravim.util.edit.filetemplate")
 
   it("exposes the public engine API", function()
     assert.is_table(ft)

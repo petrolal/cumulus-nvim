@@ -1,14 +1,14 @@
 -- lua/tetravim/tests/jvm_test_spec.lua
 --
--- Covers tetravim.util.jvm_test -- the in-repo Gradle/Maven runner Kotlin and
+-- Covers tetravim.util.jvm.test -- the in-repo Gradle/Maven runner Kotlin and
 -- Groovy buffers route through (neotest-java is .java-only, neotest-scala is
 -- .scala-only). Exercises: the `--tests` / `-Dtest=` filter derivation, the
 -- line-scan nearest-symbol fallback, JUnit XML aggregation, and the degraded
 -- "no build tool" path.
 
-local jt = require("tetravim.util.jvm_test")
+local jt = require("tetravim.util.jvm.test")
 
-describe("tetravim.util.jvm_test", function()
+describe("tetravim.util.jvm.test", function()
   describe("build_command", function()
     local method_target =
       { scope = "method", package = "com.foo", class = "BarTest", method = "baz", filter = "com.foo.BarTest.baz" }

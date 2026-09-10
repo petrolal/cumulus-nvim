@@ -1,4 +1,4 @@
--- Docker / Compose runtime dashboard (item 12) -- tetravim.util.docker +
+-- Docker / Compose runtime dashboard (item 12) -- tetravim.util.cloud.docker +
 -- tetravim.util.panel.
 --
 -- The busted child has no Docker daemon and (usually) no `docker` CLI, so
@@ -13,8 +13,8 @@ local function read(path)
   return body
 end
 
-describe("tetravim.util.docker", function()
-  local docker = require("tetravim.util.docker")
+describe("tetravim.util.cloud.docker", function()
+  local docker = require("tetravim.util.cloud.docker")
 
   it("exposes open()", function()
     assert.is_table(docker)
@@ -44,10 +44,10 @@ describe("tetravim.util.docker", function()
 end)
 
 describe("Docker runtime dashboard -- static wiring", function()
-  it("core/devops.lua binds <leader>odd to tetravim.util.docker.open", function()
+  it("core/devops.lua binds <leader>odd to tetravim.util.cloud.docker.open", function()
     local body = read("lua/tetravim/core/devops.lua")
     assert.is_truthy(body:match('"<leader>odd"'))
-    assert.is_truthy(body:match('require%("tetravim%.util%.docker"%)%.open'))
+    assert.is_truthy(body:match('require%("tetravim%.util%.cloud%.docker"%)%.open'))
     assert.is_truthy(body:match('desc = "Runtime Dashboard"'))
   end)
 

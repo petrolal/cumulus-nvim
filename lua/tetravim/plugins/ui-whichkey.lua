@@ -313,7 +313,7 @@ return {
 
       -- JVM platform (<leader>j) groups, likewise sourced from the module that
       -- owns the keymaps. jvm.setup_keymaps() no longer calls wk.add itself.
-      vim.list_extend(opts.spec, require("tetravim.util.jvm").whichkey_spec())
+      vim.list_extend(opts.spec, require("tetravim.util.jvm.jvm").whichkey_spec())
       return opts
     end,
   },

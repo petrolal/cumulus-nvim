@@ -1,4 +1,4 @@
--- Unit tests for tetravim.util.grpc (SPEC-3.4)
+-- Unit tests for tetravim.util.clients.grpc (SPEC-3.4)
 --
 -- Covers every I/O & Edge-Case Matrix row reachable without a live gRPC
 -- server: the request-skeleton generator (happy + malformed), the
@@ -6,8 +6,8 @@
 -- correct grpcurl command-array construction. `vim.system` is always
 -- monkeypatched -- no real binary is ever spawned.
 
-describe("tetravim.util.grpc", function()
-  local grpc = require("tetravim.util.grpc")
+describe("tetravim.util.clients.grpc", function()
+  local grpc = require("tetravim.util.clients.grpc")
 
   local notified
   local orig_notify, orig_system, orig_executable

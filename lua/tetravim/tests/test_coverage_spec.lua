@@ -1,4 +1,4 @@
-local coverage = require("tetravim.util.coverage")
+local coverage = require("tetravim.util.quality.coverage")
 
 describe("Test Coverage Module", function()
   local sample_xml = [[<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -260,7 +260,7 @@ describe("SPEC-1.3 test runner wiring (migrated from validate-test-coverage.sh)"
   end)
 
   it("jvm.whichkey_spec() carries the <leader>jt / <leader>jc groups", function()
-    local jvm = require("tetravim.util.jvm")
+    local jvm = require("tetravim.util.jvm.jvm")
     local groups = {}
     for _, item in ipairs(jvm.whichkey_spec()) do
       groups[item[1]] = item.group
@@ -282,7 +282,7 @@ describe("SPEC-1.3 test runner wiring (migrated from validate-test-coverage.sh)"
   end)
 
   it("jvm.setup_keymaps() registers the <leader>jt* / <leader>jc* leaves", function()
-    local jvm = require("tetravim.util.jvm")
+    local jvm = require("tetravim.util.jvm.jvm")
     jvm.setup_keymaps()
     for _, lhs in ipairs({
       "<leader>jtt",

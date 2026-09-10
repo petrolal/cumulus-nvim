@@ -37,11 +37,11 @@ return {
           callback = function()
             local opts_keymap = { noremap = true, silent = true, buffer = true }
             vim.keymap.set("n", "gf", function()
-              require("tetravim.util.dap_stacktrace").drill_down_at_line()
+              require("tetravim.util.jvm.dap_stacktrace").drill_down_at_line()
             end, vim.tbl_extend("force", opts_keymap, { desc = "Drill Down Stacktrace Symbol" }))
 
             vim.keymap.set("n", "<CR>", function()
-              require("tetravim.util.dap_stacktrace").drill_down_at_line()
+              require("tetravim.util.jvm.dap_stacktrace").drill_down_at_line()
             end, vim.tbl_extend("force", opts_keymap, { desc = "Drill Down Stacktrace Symbol" }))
           end,
         })

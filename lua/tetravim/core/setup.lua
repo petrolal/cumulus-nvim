@@ -58,7 +58,7 @@ function M.run(opts)
 
   -- 3. JVM LSP Jars (Quarkus / MicroProfile)
   log("3/5 Fetching Quarkus / MicroProfile JVM LSP jars...")
-  local jvm_fw_ok, jvm_fw = pcall(require, "tetravim.util.jvm_frameworks")
+  local jvm_fw_ok, jvm_fw = pcall(require, "tetravim.util.jvm.frameworks")
   if jvm_fw_ok and jvm_fw.fetch_jars then
     local fetch_ok = jvm_fw.fetch_jars({ sync = true, silent = opts.silent })
     if not fetch_ok then

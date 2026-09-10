@@ -36,8 +36,8 @@ return {
       -- only emit snippet edits / resolvable docs when the client claims to
       -- understand them. jdtls (ftplugin/java.lua) and metals (lsp-scala.lua)
       -- inject the same table on their own start paths.
-      local capabilities = require("tetravim.util.lsp_capabilities").make()
-      local resilience = require("tetravim.util.lsp_resilience")
+      local capabilities = require("tetravim.util.lsp.capabilities").make()
+      local resilience = require("tetravim.util.lsp.resilience")
 
       if vim.lsp.config and vim.lsp.enable then
         -- 0.11: a "*" config is merged into every named server config, so one
@@ -116,7 +116,7 @@ return {
           -- signature help), each capability-gated. jdtls / metals call the
           -- same module from their own attach paths.
           pcall(function()
-            require("tetravim.util.lsp_attach").on_attach(client, args.buf)
+            require("tetravim.util.lsp.attach").on_attach(client, args.buf)
           end)
         end,
       })
@@ -131,7 +131,7 @@ return {
           -- buffer-wide reference-mark / <C-k> cleanup only runs once the last
           -- capable client on the buffer has detached.
           pcall(function()
-            require("tetravim.util.lsp_attach").on_detach(args.buf, args.data.client_id)
+            require("tetravim.util.lsp.attach").on_detach(args.buf, args.data.client_id)
           end)
         end,
       })

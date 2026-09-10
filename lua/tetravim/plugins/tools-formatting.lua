@@ -48,7 +48,7 @@ return {
         sam = {},
       },
       format_on_save = function(bufnr)
-        if not require("tetravim.util.format").enabled(bufnr) then
+        if not require("tetravim.util.edit.format").enabled(bufnr) then
           return
         end
         return {

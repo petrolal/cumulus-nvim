@@ -22,7 +22,7 @@ function M.check()
   end
 
   vim.health.start("TetraVim Spring Boot Discovery")
-  local spring = require("tetravim.util.spring")
+  local spring = require("tetravim.util.jvm.spring")
 
   if spring.has_parser("java") then
     vim.health.ok("Tree-sitter java parser: installed")
@@ -52,7 +52,7 @@ function M.check()
     vim.health.info("Spring Boot / JVM project root: not detected in current directory")
   end
 
-  local ok_sl, spring_lsp = pcall(require, "tetravim.util.spring_lsp")
+  local ok_sl, spring_lsp = pcall(require, "tetravim.util.jvm.spring_lsp")
   if ok_sl and spring_lsp.available() then
     vim.health.ok(
       "Spring Boot LS symbol model: attached -- endpoint/bean discovery uses `workspace/symbol` (compiler-accurate)"
@@ -63,12 +63,12 @@ function M.check()
         .. "scan (open a Java buffer in a Spring project to attach the server)"
     )
   else
-    vim.health.warn("tetravim.util.spring_lsp: failed to load")
+    vim.health.warn("tetravim.util.jvm.spring_lsp: failed to load")
   end
 
   vim.health.start("TetraVim JVM Framework Config LSP (Spring Boot / Quarkus / MicroProfile)")
 
-  local frameworks = require("tetravim.util.jvm_frameworks")
+  local frameworks = require("tetravim.util.jvm.frameworks")
 
   -- Spring Boot LS (Mason: vscode-spring-boot-tools) --------------------------
   if pcall(require, "spring_boot") then
@@ -118,7 +118,7 @@ function M.check()
     vim.health.info("JVM framework servers will launch with 'java' on $PATH ($JAVA_HOME not resolved to a JDK 21)")
   end
 
-  local ok_tog, toggle = pcall(require, "tetravim.util.jvm_lsp_toggle")
+  local ok_tog, toggle = pcall(require, "tetravim.util.jvm.lsp_toggle")
   if ok_tog then
     local ram = toggle.available_ram_mb()
     if toggle.is_enabled() then

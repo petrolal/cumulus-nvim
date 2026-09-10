@@ -1,7 +1,7 @@
 -- Autocompletion / IntelliSense wiring -- shared capabilities + cmp stack
 
-describe("tetravim.util.lsp_capabilities", function()
-  local caps_mod = require("tetravim.util.lsp_capabilities")
+describe("tetravim.util.lsp.capabilities", function()
+  local caps_mod = require("tetravim.util.lsp.capabilities")
 
   it("returns a fresh capabilities table each call (no shared mutation)", function()
     local a = caps_mod.make()
@@ -72,19 +72,19 @@ end)
 describe("shared capabilities are threaded into every server", function()
   it("lsp-core.lua uses the wildcard config and the fallback path", function()
     local src = assert(io.open("lua/tetravim/plugins/lsp-core.lua", "r")):read("*a")
-    assert.is_truthy(src:match("lsp_capabilities"))
+    assert.is_truthy(src:match("lsp%.capabilities"))
     assert.is_truthy(src:match('vim%.lsp%.config%("%*"'))
     assert.is_truthy(src:match("capabilities = vim%.deepcopy%(capabilities%)"))
   end)
 
   it("ftplugin/java.lua injects it into the jdtls config", function()
     local src = assert(io.open("ftplugin/java.lua", "r")):read("*a")
-    assert.is_truthy(src:match('capabilities = require%("tetravim%.util%.lsp_capabilities"%)%.make%(%)'))
+    assert.is_truthy(src:match('capabilities = require%("tetravim%.util%.lsp%.capabilities"%)%.make%(%)'))
   end)
 
   it("lsp-scala.lua injects it into the metals config", function()
     local src = assert(io.open("lua/tetravim/plugins/lsp-scala.lua", "r")):read("*a")
-    assert.is_truthy(src:match('metals_config%.capabilities = require%("tetravim%.util%.lsp_capabilities"%)'))
+    assert.is_truthy(src:match('metals_config%.capabilities = require%("tetravim%.util%.lsp%.capabilities"%)'))
   end)
 end)
 

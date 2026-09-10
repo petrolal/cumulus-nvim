@@ -8,8 +8,8 @@ describe("Spring Boot Discovery", function()
   end)
 
   describe("Module shape", function()
-    it("should expose public API on tetravim.util.spring", function()
-      local spring = require("tetravim.util.spring")
+    it("should expose public API on tetravim.util.jvm.spring", function()
+      local spring = require("tetravim.util.jvm.spring")
       assert.is_table(spring)
       assert.is_function(spring.detect_root)
       assert.is_function(spring.find_main_class)
@@ -24,16 +24,16 @@ describe("Spring Boot Discovery", function()
       assert.is_function(spring._beans_in_content)
     end)
 
-    it("should expose public API on tetravim.util.spring_picker", function()
-      local picker = require("tetravim.util.spring_picker")
+    it("should expose public API on tetravim.util.jvm.spring_picker", function()
+      local picker = require("tetravim.util.jvm.spring_picker")
       assert.is_table(picker)
       assert.is_function(picker.pick_endpoint)
       assert.is_function(picker.pick_bean)
       assert.is_function(picker.detect_app)
     end)
 
-    it("should expose dedup_insert on tetravim.util.springboot_debug", function()
-      local sb = require("tetravim.util.springboot_debug")
+    it("should expose dedup_insert on tetravim.util.jvm.springboot_debug", function()
+      local sb = require("tetravim.util.jvm.springboot_debug")
       assert.is_table(sb)
       assert.is_function(sb.launch_debug)
       assert.is_function(sb.setup_springboot_dap)
@@ -42,7 +42,7 @@ describe("Spring Boot Discovery", function()
   end)
 
   describe("AST parsing fixtures", function()
-    local spring = require("tetravim.util.spring")
+    local spring = require("tetravim.util.jvm.spring")
 
     it("should parse Spring MVC controller endpoints with @RestController and mappings", function()
       local content = [[
@@ -190,7 +190,7 @@ class KotlinService(
   end)
 
   describe("DAP configuration deduplication", function()
-    local sb = require("tetravim.util.springboot_debug")
+    local sb = require("tetravim.util.jvm.springboot_debug")
 
     it("should deduplicate configs by non-nil name and allow multiple nil-named configs", function()
       local configs = {}
@@ -209,7 +209,7 @@ class KotlinService(
   end)
 
   describe("Graceful degradation (I/O Matrix Rows 7 & 8)", function()
-    local spring = require("tetravim.util.spring")
+    local spring = require("tetravim.util.jvm.spring")
 
     it("should warn and cb(nil) when rg and grep are both absent (Matrix row 7)", function()
       local orig_exec = vim.fn.executable
@@ -287,7 +287,7 @@ class KotlinService(
   -- Migrated from scripts/validate-2-3.sh (steps [2/4], [3/4], [4/4]). Needs rg
   -- and the Tree-sitter java parser, both present in the plenary busted child.
   describe("Native discovery -- behavioral (DAP config + keymaps)", function()
-    local spring_pkg = "tetravim.util.springboot_debug"
+    local spring_pkg = "tetravim.util.jvm.springboot_debug"
     local fixture, saved_cwd
 
     local function make_fixture()
@@ -350,7 +350,7 @@ class KotlinService(
 
     it("<leader>jse / <leader>jsb / <leader>jsd resolve and <leader>jsd notifies app details", function()
       vim.fn.chdir(fixture)
-      require("tetravim.util.jvm").setup_keymaps()
+      require("tetravim.util.jvm.jvm").setup_keymaps()
 
       for _, lhs in ipairs({ "<leader>jse", "<leader>jsb", "<leader>jsd" }) do
         local m = vim.fn.maparg(lhs, "n", false, true)
@@ -383,7 +383,7 @@ class KotlinService(
         end,
       }
 
-      require("tetravim.util.jvm").setup_keymaps()
+      require("tetravim.util.jvm.jvm").setup_keymaps()
       local m = vim.fn.maparg("<leader>jrd", "n", false, true)
       assert.is_table(m)
       assert.is_function(m.callback)

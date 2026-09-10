@@ -1,9 +1,9 @@
 -- SPEC-2.2: Intelligent Extraction -- static shape tests
 
 describe("Extract (SPEC-2.2)", function()
-  describe("tetravim.util.extract", function()
+  describe("tetravim.util.edit.extract", function()
     it("should expose extract_interface and inline", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       assert.is_table(extract)
       assert.is_function(extract.extract_interface)
       assert.is_function(extract.inline)
@@ -14,7 +14,7 @@ describe("Extract (SPEC-2.2)", function()
     end)
 
     it("should reject a second action while one is already in flight (shared action_lock.lua)", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       local action_lock = require("tetravim.util.action_lock")
       local notified = {}
       local orig_notify = vim.notify
@@ -35,7 +35,7 @@ describe("Extract (SPEC-2.2)", function()
 
   describe("Buffer-local <leader>ce and <leader>ci override wiring", function()
     it(
-      "ftplugin/java.lua should install REAL buffer-local extraction mappings (ce/ci/cm/cv/cc) that dispatch into tetravim.util.extract",
+      "ftplugin/java.lua should install REAL buffer-local extraction mappings (ce/ci/cm/cv/cc) that dispatch into tetravim.util.edit.extract",
       function()
         -- Dynamic, mirroring refactor_spec.lua's <leader>cr wiring test:
         -- load the REAL ftplugin/java.lua, capture the on_attach it hands
@@ -89,7 +89,7 @@ describe("Extract (SPEC-2.2)", function()
 
         captured_on_attach({ name = "jdtls" }, bufnr)
 
-        local extract = require("tetravim.util.extract")
+        local extract = require("tetravim.util.edit.extract")
         local calls = {}
         local function stub(name)
           return function(...)
@@ -117,7 +117,7 @@ describe("Extract (SPEC-2.2)", function()
           assert.is_function(mapping.callback)
           calls[key] = nil
           mapping.callback()
-          assert.is_not_nil(calls[key], lhs .. " (" .. mode .. ") did not call tetravim.util.extract." .. key)
+          assert.is_not_nil(calls[key], lhs .. " (" .. mode .. ") did not call tetravim.util.edit.extract." .. key)
           if expect_visual_arg then
             assert.is_true(calls[key][1], lhs .. " (" .. mode .. ") must pass is_visual=true")
           end
@@ -143,7 +143,7 @@ describe("Extract (SPEC-2.2)", function()
     )
 
     it(
-      "lsp-kotlin.lua's on_attach should install REAL buffer-local mappings that dispatch into tetravim.util.extract",
+      "lsp-kotlin.lua's on_attach should install REAL buffer-local mappings that dispatch into tetravim.util.edit.extract",
       function()
         local lsp_kotlin = require("tetravim.plugins.lsp-kotlin")
         local on_attach = lsp_kotlin[2].opts.servers.kotlin_language_server.on_attach
@@ -160,7 +160,7 @@ describe("Extract (SPEC-2.2)", function()
         -- Same dispatch/visual-arg coverage the Java test runs -- a mis-wired
         -- Kotlin mapping (wrong action, or normal-mode behavior on a visual
         -- selection) must not slip through as "some buffer-local mapping exists".
-        local extract = require("tetravim.util.extract")
+        local extract = require("tetravim.util.edit.extract")
         local calls = {}
         local orig = {}
         for _, name in ipairs({
@@ -183,7 +183,7 @@ describe("Extract (SPEC-2.2)", function()
           assert.is_function(mapping.callback)
           calls[key] = nil
           mapping.callback()
-          assert.is_not_nil(calls[key], lhs .. " (" .. mode .. ") did not call tetravim.util.extract." .. key)
+          assert.is_not_nil(calls[key], lhs .. " (" .. mode .. ") did not call tetravim.util.edit.extract." .. key)
           if expect_visual_arg then
             assert.is_true(calls[key][1], lhs .. " (" .. mode .. ") must pass is_visual=true")
           end
@@ -276,7 +276,7 @@ describe("Extract (SPEC-2.2)", function()
     end)
 
     it("single matching action -> Apply splices the mocked WorkspaceEdit into the real file, lock released", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       local java_file = make_fixture()
       local fake_client = { id = 9101, name = "jdtls", offset_encoding = "utf-16", server_capabilities = {} }
       local orig_get_clients, orig_bra, orig_select = vim.lsp.get_clients, vim.lsp.buf_request_all, vim.ui.select
@@ -305,7 +305,7 @@ describe("Extract (SPEC-2.2)", function()
     end)
 
     it("cancelling at the confirm prompt leaves the file byte-for-byte unmodified and releases the lock", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       local java_file = make_fixture()
       local before = table.concat(vim.fn.readfile(java_file), "\n")
       local fake_client = { id = 9102, name = "jdtls", offset_encoding = "utf-16", server_capabilities = {} }
@@ -334,7 +334,7 @@ describe("Extract (SPEC-2.2)", function()
     end)
 
     it("ambiguous multi-action -> disambiguation prompt BEFORE preview; only the chosen edit is applied", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       local java_file = make_fixture()
       local fake_client = { id = 9103, name = "jdtls", offset_encoding = "utf-16", server_capabilities = {} }
       local orig_get_clients, orig_bra, orig_select = vim.lsp.get_clients, vim.lsp.buf_request_all, vim.ui.select
@@ -378,7 +378,7 @@ describe("Extract (SPEC-2.2)", function()
     end)
 
     it("cancelling the disambiguation prompt applies nothing, releases the lock, and notifies", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       local java_file = make_fixture()
       local before = table.concat(vim.fn.readfile(java_file), "\n")
       local fake_client = { id = 9104, name = "jdtls", offset_encoding = "utf-16", server_capabilities = {} }
@@ -434,7 +434,7 @@ describe("Extract (SPEC-2.2)", function()
     end)
 
     it("no applicable code action -> WARN, no crash, lock released", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       local java_file = make_fixture()
       local fake_client = { id = 9105, name = "jdtls", offset_encoding = "utf-16", server_capabilities = {} }
       local orig_get_clients, orig_bra, orig_notify = vim.lsp.get_clients, vim.lsp.buf_request_all, vim.notify
@@ -469,7 +469,7 @@ describe("Extract (SPEC-2.2)", function()
     end)
 
     it("visual-mode byte columns are converted to LSP utf-16 CHARACTER offsets, not passed through raw", function()
-      local extract = require("tetravim.util.extract")
+      local extract = require("tetravim.util.edit.extract")
       vim.cmd("enew")
       local bufnr = vim.api.nvim_get_current_buf()
       -- "é" is 1 UTF-16 code unit but 2 UTF-8 bytes -- a raw byte-column

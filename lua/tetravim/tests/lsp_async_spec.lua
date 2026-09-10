@@ -2,7 +2,7 @@
 --
 -- Epic 5, Story 5.1 -- non-blocking LSP request fan-out.
 
-local async = require("tetravim.util.lsp_async")
+local async = require("tetravim.util.lsp.async")
 
 describe("request_all_async", function()
   local saved_get, saved_get_active, saved_schedule, saved_defer

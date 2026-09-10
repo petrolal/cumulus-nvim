@@ -1,7 +1,7 @@
--- Tests for TetraVim Project Generator Wizard (tetravim.util.project_wizard)
+-- Tests for TetraVim Project Generator Wizard (tetravim.util.jvm.project_wizard)
 
-describe("tetravim.util.project_wizard", function()
-  local wizard = require("tetravim.util.project_wizard")
+describe("tetravim.util.jvm.project_wizard", function()
+  local wizard = require("tetravim.util.jvm.project_wizard")
 
   it("exposes expected public wizard API functions", function()
     assert.is_function(wizard.create_project)
@@ -125,7 +125,7 @@ describe("tetravim.util.project_wizard", function()
   end)
 
   it("registers <leader>jn keymaps and user commands", function()
-    local jvm = require("tetravim.util.jvm")
+    local jvm = require("tetravim.util.jvm.jvm")
     jvm.setup_keymaps()
 
     -- Verify user commands exist

@@ -23,7 +23,7 @@ return {
       {
         "<leader>cg",
         function()
-          require("tetravim.util.docgen").generate("func")
+          require("tetravim.util.edit.docgen").generate("func")
         end,
         mode = { "n" },
         desc = "Generate Doc (function)",
@@ -31,7 +31,7 @@ return {
       {
         "<leader>cG",
         function()
-          require("tetravim.util.docgen").generate("class")
+          require("tetravim.util.edit.docgen").generate("class")
         end,
         mode = { "n" },
         desc = "Generate Doc (class/type)",

@@ -43,7 +43,7 @@ describe("Code Reviews Plugin Configuration", function()
         return {}
       end,
     }
-    package.loaded["tetravim.util.jvm"] = {
+    package.loaded["tetravim.util.jvm.jvm"] = {
       whichkey_spec = function()
         return {}
       end,
@@ -74,14 +74,14 @@ describe("util/forge shell dispatch (pure, all IO mocked)", function()
 
   before_each(function()
     saved = {}
-    package.loaded["tetravim.util.forge"] = nil
+    package.loaded["tetravim.util.cloud.forge"] = nil
   end)
 
   after_each(function()
     for i = #saved, 1, -1 do
       saved[i][1][saved[i][2]] = saved[i][3]
     end
-    package.loaded["tetravim.util.forge"] = nil
+    package.loaded["tetravim.util.cloud.forge"] = nil
     package.loaded["snacks"] = nil
   end)
 
@@ -150,7 +150,7 @@ describe("util/forge shell dispatch (pure, all IO mocked)", function()
     vim.api.nvim_buf_set_name = function() end
     vim.api.nvim_buf_delete = function() end
 
-    local forge = require("tetravim.util.forge")
+    local forge = require("tetravim.util.cloud.forge")
     forge.list_and_review_prs()
     forge.checkout_pr()
     forge.add_comment()

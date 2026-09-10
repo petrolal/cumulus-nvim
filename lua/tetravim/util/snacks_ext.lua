@@ -93,7 +93,7 @@ function M.register_state_toggles()
       id = "tetravim_autoformat_buffer",
       name = "Autoformat (Buffer)",
       get = function()
-        return require("tetravim.util.format").enabled(0)
+        return require("tetravim.util.edit.format").enabled(0)
       end,
       set = function(state)
         vim.b.autoformat = state
@@ -118,7 +118,7 @@ function M.register_state_toggles()
       id = "tetravim_autolint_buffer",
       name = "Autolint (Buffer)",
       get = function()
-        return require("tetravim.util.lint").enabled(0)
+        return require("tetravim.util.edit.lint").enabled(0)
       end,
       set = function(state)
         vim.b.autolint = state
@@ -161,7 +161,7 @@ function M.register_state_toggles()
         return vim.lsp.inlay_hint ~= nil and vim.lsp.inlay_hint.is_enabled({})
       end,
       set = function()
-        require("tetravim.util.lsp_attach").toggle_inlay_hints()
+        require("tetravim.util.lsp.attach").toggle_inlay_hints()
       end,
     })
     :map("<leader>uh")

@@ -2,9 +2,9 @@
 --
 -- Neovim-community best-practices audit -- §2.1 (multi-client document-highlight
 -- teardown) and §4 (per-filetype inlay-hint defaults). Exercises the pure
--- bookkeeping in tetravim.util.lsp_attach without a live language server.
+-- bookkeeping in tetravim.util.lsp.attach without a live language server.
 
-local lsp_attach = require("tetravim.util.lsp_attach")
+local lsp_attach = require("tetravim.util.lsp.attach")
 
 local function fake_client(id)
   return {

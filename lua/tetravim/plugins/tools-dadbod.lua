@@ -77,7 +77,7 @@ end
 --- leaves `vim.g.dbs` untouched.
 local function discover_and_assign_datasources()
   local ok, dbs = pcall(function()
-    return require("tetravim.util.db").discover_datasources(vim.fn.getcwd())
+    return require("tetravim.util.clients.db").discover_datasources(vim.fn.getcwd())
   end)
   if ok then
     if type(dbs) == "table" then

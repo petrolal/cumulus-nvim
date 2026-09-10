@@ -1,4 +1,4 @@
-local jvm = require("tetravim.util.jvm")
+local jvm = require("tetravim.util.jvm.jvm")
 
 local storage_path = vim.fn.stdpath("cache") .. "/kotlin-language-server"
 vim.fn.mkdir(storage_path, "p")
@@ -6,7 +6,7 @@ vim.fn.mkdir(storage_path, "p")
 local function kotlin_on_attach(client, bufnr)
   -- SPEC-2.2: Intelligent Extraction
   -- Wires up: extract_interface, inline, extract_method, extract_variable, extract_constant
-  require("tetravim.util.extract").setup_keymaps(bufnr, "Kotlin")
+  require("tetravim.util.edit.extract").setup_keymaps(bufnr, "Kotlin")
 end
 
 local function resolve_root(fname_or_buf, on_dir)
@@ -89,7 +89,7 @@ local function kotlin_lsp_root(fname_or_buf, on_dir)
   return resolve_root(fname_or_buf, on_dir)
 end
 
-local resilience = require("tetravim.util.lsp_resilience")
+local resilience = require("tetravim.util.lsp.resilience")
 
 -- Bespoke on_exit: re-fire FileType so a genuine crash re-attaches (mirrors the
 -- generic path in lsp-core.lua), but if a foreign intellij-server is holding the

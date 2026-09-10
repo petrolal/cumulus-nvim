@@ -99,17 +99,17 @@ return {
         -- `:Lazy sync` (off the UI thread), so the blocking variant is fine
         -- and preferable -- the jar is guaranteed present when sync returns.
         build = function()
-          require("tetravim.util.neotest_java").ensure_blocking(true)
+          require("tetravim.util.jvm.neotest_java").ensure_blocking(true)
         end,
       },
       -- Scala test tree. Kotlin/Groovy have no neotest adapter and route
-      -- through `tetravim.util.jvm_test` (in-repo Gradle/Maven runner) instead.
+      -- through `tetravim.util.jvm.test` (in-repo Gradle/Maven runner) instead.
       "stevanmilic/neotest-scala",
     },
     -- Adapters registered below cover `.java` (neotest-java) and `.scala` /
     -- `.sbt` (neotest-scala); gate the plugin load on those filetypes so
     -- neotest never loads where it has no adapter. Kotlin is handled outside
-    -- neotest entirely (`ftplugin/kotlin.lua` -> `tetravim.util.jvm_test`).
+    -- neotest entirely (`ftplugin/kotlin.lua` -> `tetravim.util.jvm.test`).
     ft = { "java", "scala", "sbt" },
     keys = {
       {
@@ -149,7 +149,7 @@ return {
         -- client_provider ("No Java file found in the directory"). Decline any
         -- project tree with no hand-written .java sources, and any non-.java
         -- buffer, so those runs fall through instead of crashing.
-        local nj = require("tetravim.util.neotest_java")
+        local nj = require("tetravim.util.jvm.neotest_java")
         local base_root = adapter.root
         local base_is_test_file = adapter.is_test_file
         local java_root_cache = {}
@@ -200,7 +200,7 @@ return {
       -- the async variant downloads the ~15 MB jar off the main thread and
       -- the next `<leader>tr` picks it up once it lands.
       pcall(function()
-        require("tetravim.util.neotest_java").ensure(true)
+        require("tetravim.util.jvm.neotest_java").ensure(true)
       end)
       local neotest = require("neotest")
       neotest.setup(opts)

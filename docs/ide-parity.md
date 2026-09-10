@@ -6,7 +6,7 @@ tetravim.nvim covers it with native Neovim LSP / Tree-sitter / Mason tooling.
 Legend: ✅ full LSP + Tree-sitter · 🟡 Tree-sitter / syntax only (no OSS server)
 · ➖ not covered (no OSS equivalent) · 🔷 handled by an existing spec
 
-_Last reconciled with the code: 2026-09-10 (`lsp-kotlin.lua`, `lsp-quarkus.lua`, `util/endpoints_panel.lua`, `util/k8s.lua`, `util/docker.lua`, `util/profiling.lua`, `syntax/freemarker.vim`, `syntax/velocity.vim`, `ftplugin/{freemarker,velocity,jsp}.lua`)._
+_Last reconciled with the code: 2026-09-10 (`lsp-kotlin.lua`, `lsp-quarkus.lua`, `util/clients/endpoints_panel.lua`, `util/cloud/k8s.lua`, `util/cloud/docker.lua`, `util/quality/profiling.lua`, `syntax/freemarker.vim`, `syntax/velocity.vim`, `ftplugin/{freemarker,velocity,jsp}.lua`)._
 
 ## Languages
 
@@ -47,12 +47,12 @@ Go, Rust, PHP, Ruby, C/C++, Dart, GraphQL, Perl, Elixir, Clojure, Haskell.
 
 | IDEA bundles | tetravim | Notes |
 | --- | --- | --- |
-| Spring / Spring Boot / Data / Security / Batch | 🔷 | `jdtls` + Spring Boot LS (`lsp-spring-boot.lua`, `spring-boot.nvim` / `vscode-spring-boot-tools`): `application.*` completion, and `tetravim.util.spring_lsp` drives endpoint/bean pickers off the STS4 `workspace/symbol` model when attached, falling back to the `tetravim.util.spring*` ripgrep + Tree-sitter scan otherwise; DAP via `ftplugin/java.lua` |
+| Spring / Spring Boot / Data / Security / Batch | 🔷 | `jdtls` + Spring Boot LS (`lsp-spring-boot.lua`, `spring-boot.nvim` / `vscode-spring-boot-tools`): `application.*` completion, and `tetravim.util.jvm.spring_lsp` drives endpoint/bean pickers off the STS4 `workspace/symbol` model when attached, falling back to the `tetravim.util.jvm.spring*` ripgrep + Tree-sitter scan otherwise; DAP via `ftplugin/java.lua` |
 | Jakarta EE / Java EE, Hibernate/JPA | 🔷 | `jdtls` semantic model |
-| Quarkus / MicroProfile | 🔷 | `lsp-quarkus.lua` → `quarkus.nvim` + `microprofile.nvim` (lsp4mp + Qute). Dormant until `:TetraVimFetchJvmLspJars` fetches the Red Hat `.vsix` bundles (not in Mason); each server is a separate ~1 GiB JVM, so activation is opt-in via `<leader>jsq` (`tetravim.util.jvm_lsp_toggle`: persisted flag + `MemAvailable` guard, `< 3 GiB` free RAM refuses auto-activate). `:checkhealth tetravim` reports the flag and live per-server `VmRSS` |
+| Quarkus / MicroProfile | 🔷 | `lsp-quarkus.lua` → `quarkus.nvim` + `microprofile.nvim` (lsp4mp + Qute). Dormant until `:TetraVimFetchJvmLspJars` fetches the Red Hat `.vsix` bundles (not in Mason); each server is a separate ~1 GiB JVM, so activation is opt-in via `<leader>jsq` (`tetravim.util.jvm.lsp_toggle`: persisted flag + `MemAvailable` guard, `< 3 GiB` free RAM refuses auto-activate). `:checkhealth tetravim` reports the flag and live per-server `VmRSS` |
 | Micronaut | ➖ | intentionally unsupported — no viable Neovim language server exists |
 | Ktor / Helidon | 🔷 | `jdtls` / Kotlin LSP semantic model — no framework-specific server |
-| JUnit / TestNG (JVM test UI) | 🔷 | `tools-test.lua`: Java → `neotest-java`, Scala → `neotest-scala`; Kotlin/Groovy → `tetravim.util.jvm_test` (in-repo Gradle/Maven runner, nearest test via Tree-sitter, JUnit XML parsed to a pass/fail summary + quickfix) |
+| JUnit / TestNG (JVM test UI) | 🔷 | `tools-test.lua`: Java → `neotest-java`, Scala → `neotest-scala`; Kotlin/Groovy → `tetravim.util.jvm.test` (in-repo Gradle/Maven runner, nearest test via Tree-sitter, JUnit XML parsed to a pass/fail summary + quickfix) |
 | Node.js / React | 🔷 | `ts_ls` |
 | Angular | ✅ | `lsp-web-frameworks.lua` → `angularls` |
 | Vue | ✅ | `lsp-web-frameworks.lua` → `vue_ls` (Volar, hybrid off) |
@@ -81,17 +81,17 @@ vim-dadbod (`tools-dadbod.lua`) + `sqlls` cover connection management, schema
 browsing, query execution and completion for the JDBC-style dialects IDEA's
 Database plugin targets (PostgreSQL, MySQL/MariaDB, Oracle, SQL Server, SQLite,
 H2, …). Datasource auto-discovery from Spring `application.*` is
-`tetravim.util.db`.
+`tetravim.util.clients.db`.
 
 ## DevOps / API
 
 | IDEA bundles | tetravim |
 | --- | --- |
 | HTTP Client (`.http`) | 🔷 `tools-http.lua` (kulala) |
-| OpenAPI / Swagger | 🔷 `tetravim.util.openapi` (`.http` generation); `tetravim.util.endpoints_panel` folds JSON specs into the Endpoints panel |
-| Endpoints tool window | 🔷 `tetravim.util.endpoints_panel` (`<leader>ae`) — docked list of every Spring MVC mapping + JSON OpenAPI operation, `<CR>` jump / `r` refresh / `g` → `.http` |
-| Docker / Compose | 🔷 `cloud-containers-k8s.lua` (LSP/lint) + `tetravim.util.docker` runtime dashboard (`<leader>odd`) — container/image list, logs, start/stop/restart, exec shell, remove, `docker compose up -d` / `down` |
-| Kubernetes / Helm | 🔷 `cloud-containers-k8s.lua` (LSP) + `tetravim.util.k8s` cluster explorer (`<leader>oke`) — Deployments/Pods/Services per context+namespace, describe/yaml, logs, exec shell, delete, namespace/context switch |
+| OpenAPI / Swagger | 🔷 `tetravim.util.clients.openapi` (`.http` generation); `tetravim.util.clients.endpoints_panel` folds JSON specs into the Endpoints panel |
+| Endpoints tool window | 🔷 `tetravim.util.clients.endpoints_panel` (`<leader>ae`) — docked list of every Spring MVC mapping + JSON OpenAPI operation, `<CR>` jump / `r` refresh / `g` → `.http` |
+| Docker / Compose | 🔷 `cloud-containers-k8s.lua` (LSP/lint) + `tetravim.util.cloud.docker` runtime dashboard (`<leader>odd`) — container/image list, logs, start/stop/restart, exec shell, remove, `docker compose up -d` / `down` |
+| Kubernetes / Helm | 🔷 `cloud-containers-k8s.lua` (LSP) + `tetravim.util.cloud.k8s` cluster explorer (`<leader>oke`) — Deployments/Pods/Services per context+namespace, describe/yaml, logs, exec shell, delete, namespace/context switch |
 | Terraform | 🔷 `cloud-terraform.lua` |
 | Database tools | 🔷 `tools-dadbod.lua` + `lsp-sql.lua` |
 
@@ -111,14 +111,14 @@ server, a workflow.
 | Grazie (grammar / spell / style for prose) | 🔷 `lsp-markdown.lua` → `ltex-ls` | via `<leader>ca` |
 | Bundled decompiler (source-less library `.class`) | 🔷 `lsp-java.lua` + `ftplugin/java.lua` → `dgileadi/vscode-java-decompiler` jars in the jdtls bundle list | `gd` |
 | npm dependency version inlays in `package.json` | 🔷 `lang-npm.lua` → package-info.nvim | `<leader>cp*` (in `package.json`) |
-| Run with Coverage | 🔷 native `tetravim.util.coverage` (JaCoCo XML overlay) | `<leader>jc*` |
-| Profiler tool window (interactive flamegraph / call tree) | 🔷 `tetravim.util.profiling` → `jps` process picker + timed `asprof -o collapsed` capture, parsed into a foldable call tree in `tetravim.util.panel` (`<CR>`/`o` expand, `E`/`C` expand/collapse-all, `g` raw stacks, `r` re-capture). External HTML flamegraph path stays on `<leader>jps`/`jpx`/`jpv` | `<leader>jpp` |
-| Endpoints tool window (project HTTP endpoint list) | 🔷 `tetravim.util.endpoints_panel` → `tetravim.util.panel` in the shared split (Spring `workspace/symbol` model + JSON OpenAPI specs) | `<leader>ae` |
-| Kubernetes tool window (cluster resource tree) | 🔷 `tetravim.util.k8s` → `tetravim.util.panel`; `kubectl`-driven Deployments/Pods/Services for the active context+namespace, describe / yaml / logs / exec / delete / ns+ctx switch | `<leader>oke` |
-| Services / Docker tool window (container + image runtime) | 🔷 `tetravim.util.docker` → `tetravim.util.panel`; `docker`-driven container/image list, inspect / logs / start-stop-restart / exec / rm / `docker compose up -d`+`down` | `<leader>odd` |
+| Run with Coverage | 🔷 native `tetravim.util.quality.coverage` (JaCoCo XML overlay) | `<leader>jc*` |
+| Profiler tool window (interactive flamegraph / call tree) | 🔷 `tetravim.util.quality.profiling` → `jps` process picker + timed `asprof -o collapsed` capture, parsed into a foldable call tree in `tetravim.util.panel` (`<CR>`/`o` expand, `E`/`C` expand/collapse-all, `g` raw stacks, `r` re-capture). External HTML flamegraph path stays on `<leader>jps`/`jpx`/`jpv` | `<leader>jpp` |
+| Endpoints tool window (project HTTP endpoint list) | 🔷 `tetravim.util.clients.endpoints_panel` → `tetravim.util.panel` in the shared split (Spring `workspace/symbol` model + JSON OpenAPI specs) | `<leader>ae` |
+| Kubernetes tool window (cluster resource tree) | 🔷 `tetravim.util.cloud.k8s` → `tetravim.util.panel`; `kubectl`-driven Deployments/Pods/Services for the active context+namespace, describe / yaml / logs / exec / delete / ns+ctx switch | `<leader>oke` |
+| Services / Docker tool window (container + image runtime) | 🔷 `tetravim.util.cloud.docker` → `tetravim.util.panel`; `docker`-driven container/image list, inspect / logs / start-stop-restart / exec / rm / `docker compose up -d`+`down` | `<leader>odd` |
 
 `nvim-coverage` was deliberately **not** added: the distro already ships a
-native JaCoCo coverage engine (`lua/tetravim/util/coverage.lua`, wired to
+native JaCoCo coverage engine (`lua/tetravim/util/quality/coverage.lua`, wired to
 `<leader>jc*`). To gain lcov/cobertura support for Python/JS later, extend that
 module's parser rather than layering a second, competing plugin.
 

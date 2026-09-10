@@ -119,7 +119,7 @@ return {
           key = "p",
           desc = "New Project Wizard",
           action = function()
-            require("tetravim.util.project_wizard").create_project()
+            require("tetravim.util.jvm.project_wizard").create_project()
           end,
         },
         {

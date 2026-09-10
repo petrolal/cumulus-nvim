@@ -18,7 +18,7 @@ local ui = require("tetravim.util.ui")
 local M = {}
 
 -- Upper bound on the one deliberate `git rev-parse --verify HEAD` probe used
--- by the history path (M.has_commits). Mirrors tetravim.util.http's
+-- by the history path (M.has_commits). Mirrors tetravim.util.clients.http's
 -- JQ_TIMEOUT_MS pattern so a hung git can never wedge the history keymap.
 local PROBE_TIMEOUT_MS = 2000
 

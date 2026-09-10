@@ -110,7 +110,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
   once = true,
   callback = function()
     vim.schedule(function()
-      require("tetravim.util.build_sync_state").run()
+      require("tetravim.util.jvm.build_sync_state").run()
     end)
   end,
 })
@@ -142,7 +142,7 @@ vim.api.nvim_create_autocmd("BufWritePost", {
       2500,
       0,
       vim.schedule_wrap(function()
-        local sync_state = require("tetravim.util.build_sync_state")
+        local sync_state = require("tetravim.util.jvm.build_sync_state")
         sync_state.reset()
         sync_state.run()
       end)
@@ -241,7 +241,7 @@ vim.api.nvim_create_autocmd("BufNewFile", {
 -- vim.ui.select; a "(no template)" entry always lets you decline, and it never
 -- overwrites content an earlier hook (e.g. the Java skeleton above) inserted.
 -- Disable entirely with `vim.g.tetravim_new_file_prompt = false`.
-require("tetravim.util.filetemplate").setup_new_file_prompt()
+require("tetravim.util.edit.filetemplate").setup_new_file_prompt()
 
 -- Native LSP CodeLens auto-refresh for Java & Kotlin buffers.
 -- Deliberately NOT on InsertLeave: that fires on every exit from insert mode

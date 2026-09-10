@@ -1,4 +1,4 @@
--- Unit tests for tetravim.util.cve (Epic 6, Story 6.2)
+-- Unit tests for tetravim.util.quality.cve (Epic 6, Story 6.2)
 --
 -- Covers the pure JSON report walkers (parse_results / remediation_hint /
 -- locate_coordinate / build_diagnostics), the missing-`osv-scanner`
@@ -6,8 +6,8 @@
 -- branches (clean, vulns-found, timeout, generic error). `vim.system` is
 -- always monkeypatched -- no real binary is ever spawned.
 
-describe("tetravim.util.cve", function()
-  local cve = require("tetravim.util.cve")
+describe("tetravim.util.quality.cve", function()
+  local cve = require("tetravim.util.quality.cve")
 
   local notified
   local orig_notify, orig_system, orig_executable

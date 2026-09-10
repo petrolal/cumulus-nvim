@@ -29,7 +29,7 @@ return {
     init = function()
       local function cmd_handler(cmd_opts)
         local force = cmd_opts.bang or (cmd_opts.args == "--force")
-        require("tetravim.util.jvm_frameworks").fetch_jars({ force = force })
+        require("tetravim.util.jvm.frameworks").fetch_jars({ force = force })
       end
 
       vim.api.nvim_create_user_command("TetraVimFetchJvmLspJars", cmd_handler, {
@@ -49,7 +49,7 @@ return {
       -- each server is a separate ~1 GiB JVM on top of jdtls + the Spring Boot
       -- LS. `jvm_lsp_toggle.activate()` runs the quarkus/microprofile
       -- `.setup()` + `.launch.setup()` chain that wires the FileType autocmds.
-      local toggle = require("tetravim.util.jvm_lsp_toggle")
+      local toggle = require("tetravim.util.jvm.lsp_toggle")
       if toggle.should_autostart() then
         toggle.activate()
       end

@@ -1,12 +1,12 @@
--- Unit tests for tetravim.util.lint.fix_now / buffer_fix_argv (Epic 6).
+-- Unit tests for tetravim.util.edit.lint.fix_now / buffer_fix_argv (Epic 6).
 --
 -- `fix_now` is the buffer-scoped twin of `project_run("fix")` wired to
 -- `<leader>xlf`: it rewrites the current buffer's file in place with the
 -- language's own formatter. `vim.system` is always monkeypatched -- no real
 -- binary is ever spawned.
 
-describe("tetravim.util.lint buffer autofix", function()
-  local lint = require("tetravim.util.lint")
+describe("tetravim.util.edit.lint buffer autofix", function()
+  local lint = require("tetravim.util.edit.lint")
 
   local notified
   local orig_notify, orig_system, orig_executable

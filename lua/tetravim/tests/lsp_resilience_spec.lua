@@ -2,7 +2,7 @@
 --
 -- Epic 5, Story 5.1 -- JDTLS heap limits + bounded LSP auto-restart.
 
-local resilience = require("tetravim.util.lsp_resilience")
+local resilience = require("tetravim.util.lsp.resilience")
 
 describe("apply_memory_limit", function()
   it("adds --jvm-arg heap flags to a JDTLS-style launcher", function()
@@ -195,20 +195,20 @@ describe("Epic 5 module surface + wiring (static)", function()
   end)
 
   it("util/lsp_async exposes request_all_async + request_all_sync", function()
-    local async = require("tetravim.util.lsp_async")
+    local async = require("tetravim.util.lsp.async")
     assert.are.equal("function", type(async.request_all_async))
     assert.are.equal("function", type(async.request_all_sync))
   end)
 
   it("ftplugin/java.lua bounds the JDTLS heap and wires an on_exit restart", function()
     local body = read("ftplugin/java.lua")
-    assert.is_truthy(body:match("lsp_resilience"))
+    assert.is_truthy(body:match("lsp%.resilience"))
     assert.is_truthy(body:match("apply_memory_limit"))
     assert.is_truthy(body:match("on_exit"))
   end)
 
   it("refactor.lua dispatches through the async wrapper", function()
-    assert.is_truthy(read("lua/tetravim/util/refactor.lua"):match("lsp_async"))
+    assert.is_truthy(read("lua/tetravim/util/edit/refactor.lua"):match("lsp%.async"))
   end)
 
   it("util/ui.lua routes notifications through util/notify for telemetry", function()

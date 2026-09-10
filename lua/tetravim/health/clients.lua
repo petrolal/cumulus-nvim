@@ -154,15 +154,15 @@ function M.check()
     )
   end
 
-  local endpoints_ok, endpoints = pcall(require, "tetravim.util.endpoints_panel")
+  local endpoints_ok, endpoints = pcall(require, "tetravim.util.clients.endpoints_panel")
   if endpoints_ok and type(endpoints.open) == "function" then
-    vim.health.ok("tetravim.util.endpoints_panel: loaded (<leader>ae opens the Endpoints panel)")
+    vim.health.ok("tetravim.util.clients.endpoints_panel: loaded (<leader>ae opens the Endpoints panel)")
   else
-    vim.health.warn("tetravim.util.endpoints_panel: not resolvable -- <leader>ae will error")
+    vim.health.warn("tetravim.util.clients.endpoints_panel: not resolvable -- <leader>ae will error")
   end
 
   local spring_ls_ok = false
-  local spring_lsp_ok, spring_lsp = pcall(require, "tetravim.util.spring_lsp")
+  local spring_lsp_ok, spring_lsp = pcall(require, "tetravim.util.jvm.spring_lsp")
   if spring_lsp_ok then
     local avail_ok, avail = pcall(spring_lsp.available)
     spring_ls_ok = avail_ok and avail == true
@@ -178,7 +178,7 @@ function M.check()
 
   vim.health.start("TetraVim Kubernetes Cluster Explorer")
 
-  -- <leader>oke -- tetravim.util.k8s renders a `kubectl`-driven resource tree
+  -- <leader>oke -- tetravim.util.cloud.k8s renders a `kubectl`-driven resource tree
   -- (Deployments / Pods / Services for the active context + namespace) in the
   -- shared split. `kubectl` is required; a reachable cluster is nice-to-have.
   if vim.fn.executable("kubectl") == 1 then
@@ -195,16 +195,16 @@ function M.check()
     vim.health.warn("kubectl: NOT found on $PATH -- <leader>oke (Kubernetes cluster explorer) is unavailable")
   end
 
-  local k8s_ok, k8s_mod = pcall(require, "tetravim.util.k8s")
+  local k8s_ok, k8s_mod = pcall(require, "tetravim.util.cloud.k8s")
   if k8s_ok and type(k8s_mod.open) == "function" then
-    vim.health.ok("tetravim.util.k8s: loaded")
+    vim.health.ok("tetravim.util.cloud.k8s: loaded")
   else
-    vim.health.warn("tetravim.util.k8s: not resolvable -- <leader>oke will error")
+    vim.health.warn("tetravim.util.cloud.k8s: not resolvable -- <leader>oke will error")
   end
 
   vim.health.start("TetraVim Docker Runtime Dashboard")
 
-  -- <leader>odd -- tetravim.util.docker lists containers + images for the local
+  -- <leader>odd -- tetravim.util.cloud.docker lists containers + images for the local
   -- daemon in the shared split. `docker` is required; a running daemon is
   -- needed for the panel to show anything.
   if vim.fn.executable("docker") == 1 then
@@ -221,11 +221,11 @@ function M.check()
     vim.health.warn("docker: NOT found on $PATH -- <leader>odd (Docker runtime dashboard) is unavailable")
   end
 
-  local docker_ok, docker_mod = pcall(require, "tetravim.util.docker")
+  local docker_ok, docker_mod = pcall(require, "tetravim.util.cloud.docker")
   if docker_ok and type(docker_mod.open) == "function" then
-    vim.health.ok("tetravim.util.docker: loaded")
+    vim.health.ok("tetravim.util.cloud.docker: loaded")
   else
-    vim.health.warn("tetravim.util.docker: not resolvable -- <leader>odd will error")
+    vim.health.warn("tetravim.util.cloud.docker: not resolvable -- <leader>odd will error")
   end
 end
 

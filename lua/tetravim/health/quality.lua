@@ -81,7 +81,7 @@ function M.check()
     vim.health.info("neotest-java: not resolvable -- open a java buffer to lazy-load it, or run :Lazy sync")
   end
 
-  local njava_ok, njava = pcall(require, "tetravim.util.neotest_java")
+  local njava_ok, njava = pcall(require, "tetravim.util.jvm.neotest_java")
   if njava_ok then
     if njava.is_installed() then
       vim.health.ok(
@@ -98,7 +98,7 @@ function M.check()
       )
     end
   else
-    vim.health.error("tetravim.util.neotest_java: failed to load (" .. tostring(njava) .. ")")
+    vim.health.error("tetravim.util.jvm.neotest_java: failed to load (" .. tostring(njava) .. ")")
   end
 
   if njava_ok then
@@ -107,7 +107,7 @@ function M.check()
     else
       vim.health.info(
         "Current project: no .java sources found -- neotest-java stays inactive here (it is Java-only; "
-          .. "Kotlin/Groovy route through tetravim.util.jvm_test, Scala through neotest-scala)"
+          .. "Kotlin/Groovy route through tetravim.util.jvm.test, Scala through neotest-scala)"
       )
     end
   end
@@ -118,23 +118,23 @@ function M.check()
     vim.health.info("neotest-scala: not resolvable -- open a scala buffer to lazy-load it, or run :Lazy sync")
   end
 
-  -- Kotlin / Groovy have no neotest adapter here; tetravim.util.jvm_test runs
+  -- Kotlin / Groovy have no neotest adapter here; tetravim.util.jvm.test runs
   -- their tests straight through the build wrapper and parses the JUnit XML.
-  local jvmtest_ok = pcall(require, "tetravim.util.jvm_test")
+  local jvmtest_ok = pcall(require, "tetravim.util.jvm.test")
   if jvmtest_ok then
     local cwd = vim.fn.getcwd()
     local has_gradle = vim.fn.executable("gradle") == 1 or vim.fn.filereadable(cwd .. "/gradlew") == 1
     local has_maven = vim.fn.executable("mvn") == 1 or vim.fn.filereadable(cwd .. "/mvnw") == 1
     if has_gradle or has_maven then
-      vim.health.ok("tetravim.util.jvm_test: build wrapper reachable (Kotlin/Groovy test running available)")
+      vim.health.ok("tetravim.util.jvm.test: build wrapper reachable (Kotlin/Groovy test running available)")
     else
       vim.health.info(
-        "tetravim.util.jvm_test: loaded, but no gradle/mvn on $PATH and no wrapper in cwd -- "
+        "tetravim.util.jvm.test: loaded, but no gradle/mvn on $PATH and no wrapper in cwd -- "
           .. "Kotlin/Groovy test running needs one"
       )
     end
   else
-    vim.health.error("tetravim.util.jvm_test: failed to load")
+    vim.health.error("tetravim.util.jvm.test: failed to load")
   end
 
   vim.health.start("TetraVim JVM & Diagnostic Linting -- nvim-lint")
@@ -160,7 +160,7 @@ function M.check()
   -- Scala: Metals already provides semantic diagnostics; scalastyle is the
   -- optional style linter (not in Mason -- install via coursier) and needs a
   -- rules file, scalafmt is the formatter used by conform + <leader>xlF.
-  local tvlint_ok, tvlint = pcall(require, "tetravim.util.lint")
+  local tvlint_ok, tvlint = pcall(require, "tetravim.util.edit.lint")
   if vim.fn.executable("scalastyle") == 1 then
     local cfg = tvlint_ok and tvlint.scalastyle_config() or nil
     if cfg then
@@ -204,7 +204,7 @@ function M.check()
 
   vim.health.start("TetraVim Code Quality & Security -- SonarLint")
 
-  local sonar = require("tetravim.util.sonar")
+  local sonar = require("tetravim.util.quality.sonar")
   if sonar.has_language_server() then
     vim.health.ok("sonarlint-language-server: installed and executable (Java/Kotlin/Scala SonarQube-rule diagnostics)")
     local jars = sonar.analyzer_paths()
@@ -325,7 +325,7 @@ function M.check()
 
   vim.health.start("TetraVim JVM Continuous Profiling -- async-profiler")
 
-  local profiler_ok, profiling = pcall(require, "tetravim.util.profiling")
+  local profiler_ok, profiling = pcall(require, "tetravim.util.quality.profiling")
   local profiler_found = profiler_ok and profiling.profiler_cmd()
   if profiler_found then
     vim.health.ok(

@@ -48,7 +48,7 @@ map("n", "<leader>cd", function()
   vim.diagnostic.open_float()
 end, { desc = "Line Diagnostics" })
 map({ "n", "x" }, "<leader>cf", function()
-  require("tetravim.util.format").format({ force = true })
+  require("tetravim.util.edit.format").format({ force = true })
 end, { desc = "Format" })
 map({ "n", "x" }, "<leader>cF", function()
   require("conform").format({ formatters = { "injected" }, timeout_ms = 3000 })
@@ -171,12 +171,12 @@ local lang_keymaps = require("tetravim.core.lang_keymaps")
 
 -- Shared by many keymap callbacks below; hoisted so we don't re-require per press.
 local ui = require("tetravim.util.ui")
-local grpc = require("tetravim.util.grpc")
+local grpc = require("tetravim.util.clients.grpc")
 
 -- ==============================================================================
 -- ⭐ JVM PLATFORM KEYMAP SUITE (<leader>j) - Unconditionally Registered
 -- ==============================================================================
-local jvm = require("tetravim.util.jvm")
+local jvm = require("tetravim.util.jvm.jvm")
 local jvm_ok, jvm_err = pcall(jvm.setup_keymaps)
 if not jvm_ok then
   ui.notify_warn("Failed to register JVM keymaps: " .. tostring(jvm_err), "TetraVim JVM")
@@ -219,7 +219,7 @@ map("n", "<leader>ada", "<cmd>DBUIAddConnection<cr>", { desc = "Add DB Connectio
 -- HTTP Client & REST API Explorer Keymaps (kulala.nvim -- SPEC-3.2). The
 -- plugin itself is wired up in tools-http.lua; the two custom pieces this
 -- story adds (OpenAPI-to-.http generation, jq response filtering) live in
--- tetravim.util.openapi / tetravim.util.http. Response/generated-template
+-- tetravim.util.clients.openapi / tetravim.util.clients.http. Response/generated-template
 -- output always renders in a persistent split, never a floating window,
 -- per this epic's established UX pattern.
 -- Thin wrapper over the shared persistent-split renderer (util/split.lua),
@@ -254,9 +254,9 @@ map("n", "<leader>aho", function()
     if not spec_path or spec_path == "" then
       return
     end
-    local http_text = require("tetravim.util.openapi").generate_http_from_spec(spec_path)
+    local http_text = require("tetravim.util.clients.openapi").generate_http_from_spec(spec_path)
     if not http_text then
-      return -- tetravim.util.openapi already warned via ui.notify_warn
+      return -- tetravim.util.clients.openapi already warned via ui.notify_warn
     end
     tetravim_http_open_in_split(http_text, "http", "generated")
     ui.notify_info("Generated .http request template from " .. spec_path)
@@ -264,7 +264,7 @@ map("n", "<leader>aho", function()
 end, { desc = "Generate .http from OpenAPI Spec" })
 
 map("n", "<leader>ae", function()
-  require("tetravim.util.endpoints_panel").open()
+  require("tetravim.util.clients.endpoints_panel").open()
 end, { desc = "Endpoints Panel" })
 
 map("n", "<leader>ahj", function()
@@ -291,7 +291,7 @@ map("n", "<leader>ahj", function()
   -- exactly one top-level value) rejects, so a decode failure here warns but
   -- does NOT abort the filter. kulala's own response window
   -- (filetype=kulala_ui) renders a known-good body, so skip the check there.
-  if ft ~= "kulala_ui" and not require("tetravim.util.http").looks_like_json(json_text) then
+  if ft ~= "kulala_ui" and not require("tetravim.util.clients.http").looks_like_json(json_text) then
     ui.notify_warn("Current buffer does not look like valid JSON -- jq may fail or produce unexpected output")
   end
 
@@ -299,7 +299,7 @@ map("n", "<leader>ahj", function()
     if not filter_expr or filter_expr == "" then
       return
     end
-    require("tetravim.util.http").jq_filter(json_text, filter_expr, function(result_text)
+    require("tetravim.util.clients.http").jq_filter(json_text, filter_expr, function(result_text)
       tetravim_http_open_in_split(result_text, "json", "jq-filtered")
     end)
   end)
@@ -309,7 +309,7 @@ end, { desc = "jq-Filter JSON Response/Buffer" })
 -- (protols), Tree-sitter parser and `buf` formatter are wired in
 -- lsp-proto.lua / core-treesitter.lua / tools-formatting.lua; the two
 -- custom pieces this story adds -- reflection-driven service/method
--- browsing and structured RPC execution -- live in tetravim.util.grpc,
+-- browsing and structured RPC execution -- live in tetravim.util.clients.grpc,
 -- which renders every gRPC output in the shared persistent split.
 map("n", "<leader>agg", function()
   require("grpcui").open()
@@ -372,7 +372,7 @@ end, { desc = "Save As..." })
 -- Class / HTML File / ..." parity. Context-aware picker; JVM package derived
 -- from the target directory's position under a source root.
 local function new_file_from_template()
-  require("tetravim.util.filetemplate").new_file()
+  require("tetravim.util.edit.filetemplate").new_file()
 end
 map("n", "<leader>fn", new_file_from_template, { desc = "New File from Template" })
 map("n", "<leader>n", new_file_from_template, { desc = "New File from Template" })
@@ -389,7 +389,7 @@ vim.api.nvim_create_user_command("NewFromTemplate", new_file_from_template, {
 -- SonarQube/SonarLint rule diagnostics (Story 6.1) and osv-scanner CVE
 -- scanning of Maven/Gradle build files (Story 6.2). SonarLint analysis is
 -- driven by the language server wired in lsp-sonarlint.lua; the CVE scan is a
--- pure async shell-out to `osv-scanner` in tetravim.util.cve whose findings
+-- pure async shell-out to `osv-scanner` in tetravim.util.quality.cve whose findings
 -- are published as buffer diagnostics on the offending dependency lines.
 --
 -- Keys are grouped by feature type. Within each type "b" is the current-buffer
@@ -420,16 +420,16 @@ end, { desc = "All Project (Quickfix)" })
 -- repo and render a combined report in a persistent split. The "f"/"F" fix
 -- variants rewrite files in place, then reload the affected buffers.
 map("n", "<leader>xlb", function()
-  require("tetravim.util.lint").lint_now()
+  require("tetravim.util.edit.lint").lint_now()
 end, { desc = "Check Buffer" })
 map("n", "<leader>xlp", function()
-  require("tetravim.util.lint").project_run("check")
+  require("tetravim.util.edit.lint").project_run("check")
 end, { desc = "Check All Code (Project)" })
 map("n", "<leader>xlf", function()
-  require("tetravim.util.lint").fix_now()
+  require("tetravim.util.edit.lint").fix_now()
 end, { desc = "Fix Buffer (writes file)" })
 map("n", "<leader>xlF", function()
-  require("tetravim.util.lint").project_run("fix")
+  require("tetravim.util.edit.lint").project_run("fix")
 end, { desc = "Fix All Code (Project)" })
 
 -- --- Sonar -------------------------------------------------------------
@@ -439,7 +439,7 @@ end, { desc = "Fix All Code (Project)" })
 -- `sonar-scanner` (connected mode) when a sonar-project.properties declares
 -- `sonar.host.url` and the CLI is installed, otherwise a server-free sweep
 -- that feeds every Java/Kotlin/Scala source to the SonarLint LS and dumps
--- every finding into the quickfix list. See tetravim.util.sonar.project_scan.
+-- every finding into the quickfix list. See tetravim.util.quality.sonar.project_scan.
 map("n", "<leader>xsb", function()
   if not pcall(require, "sonarlint") then
     ui.notify_err("sonarlint.nvim is not available -- run :Lazy sync / :MasonInstall sonarlint-language-server")
@@ -456,7 +456,7 @@ map("n", "<leader>xsb", function()
 end, { desc = "Rule Description (Buffer)" })
 
 map("n", "<leader>xsp", function()
-  require("tetravim.util.sonar").project_scan()
+  require("tetravim.util.quality.sonar").project_scan()
 end, { desc = "Scan Whole Project" })
 
 -- --- CVE / vulnerabilities -------------------------------------------
@@ -464,7 +464,7 @@ end, { desc = "Scan Whole Project" })
 -- on each vulnerable dependency line. Project: `osv-scanner -r` over the
 -- whole tree, rendered in a persistent split (findings span many files).
 map("n", "<leader>xvb", function()
-  local cve = require("tetravim.util.cve")
+  local cve = require("tetravim.util.quality.cve")
   local bufnr = vim.api.nvim_get_current_buf()
   local path = vim.api.nvim_buf_get_name(bufnr)
   local name = vim.fs.basename(path)
@@ -504,11 +504,11 @@ map("n", "<leader>xvb", function()
 end, { desc = "Scan Build File (Buffer)" })
 
 map("n", "<leader>xvp", function()
-  require("tetravim.util.cve").project_scan()
+  require("tetravim.util.quality.cve").project_scan()
 end, { desc = "Scan Whole Project" })
 
 map("n", "<leader>xvc", function()
   local bufnr = vim.api.nvim_get_current_buf()
-  require("tetravim.util.cve").clear_diagnostics(bufnr)
+  require("tetravim.util.quality.cve").clear_diagnostics(bufnr)
   ui.notify_info("Cleared CVE diagnostics for this buffer")
 end, { desc = "Clear Scan Diagnostics" })

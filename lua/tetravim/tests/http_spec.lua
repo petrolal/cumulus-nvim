@@ -9,8 +9,8 @@
 -- backend.
 
 describe("tetravim HTTP client (SPEC-3.2)", function()
-  local openapi = require("tetravim.util.openapi")
-  local http = require("tetravim.util.http")
+  local openapi = require("tetravim.util.clients.openapi")
+  local http = require("tetravim.util.clients.http")
 
   local function read(path)
     local fh = assert(io.open(path, "r"))

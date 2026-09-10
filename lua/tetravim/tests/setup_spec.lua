@@ -30,8 +30,8 @@ describe("tetravim.core.setup", function()
   end)
 
   it("run() tolerates missing optional modules without unhandled error", function()
-    local saved_jvm = package.loaded["tetravim.util.jvm_frameworks"]
-    package.loaded["tetravim.util.jvm_frameworks"] = {
+    local saved_jvm = package.loaded["tetravim.util.jvm.frameworks"]
+    package.loaded["tetravim.util.jvm.frameworks"] = {
       fetch_jars = function()
         return false
       end,
@@ -42,6 +42,6 @@ describe("tetravim.core.setup", function()
     assert.is_false(res.ok)
     assert.is_true(vim.tbl_contains(res.degraded, "jvm-lsp-jars"))
 
-    package.loaded["tetravim.util.jvm_frameworks"] = saved_jvm
+    package.loaded["tetravim.util.jvm.frameworks"] = saved_jvm
   end)
 end)

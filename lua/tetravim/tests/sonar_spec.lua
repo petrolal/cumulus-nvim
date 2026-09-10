@@ -1,4 +1,4 @@
--- Unit tests for tetravim.util.sonar (Epic 6, Story 6.1)
+-- Unit tests for tetravim.util.quality.sonar (Epic 6, Story 6.1)
 --
 -- Covers the pure `sonar-project.properties` parser (settings_from_properties
 -- / project_key), the FILETYPES contract, and the
@@ -6,8 +6,8 @@
 -- `vim.fn.executable` is monkeypatched -- nothing on the real $PATH is
 -- consulted.
 
-describe("tetravim.util.sonar", function()
-  local sonar = require("tetravim.util.sonar")
+describe("tetravim.util.quality.sonar", function()
+  local sonar = require("tetravim.util.quality.sonar")
 
   local orig_executable
   before_each(function()
@@ -260,7 +260,7 @@ end)
 -- branches (steps [3]-[4]) are already covered in cve_spec.lua, and the pure
 -- sonar parser / backend selection above.
 describe("Epic 6 module surface + wiring (static)", function()
-  local sonar = require("tetravim.util.sonar")
+  local sonar = require("tetravim.util.quality.sonar")
   local function read(path)
     local fh = assert(io.open(path, "r"))
     local body = fh:read("*a")
@@ -269,7 +269,7 @@ describe("Epic 6 module surface + wiring (static)", function()
   end
 
   it("util/cve exposes the documented function surface", function()
-    local cve = require("tetravim.util.cve")
+    local cve = require("tetravim.util.quality.cve")
     for _, fn in ipairs({
       "scan",
       "scan_command",
@@ -288,7 +288,7 @@ describe("Epic 6 module surface + wiring (static)", function()
   end)
 
   it("util/lint exposes lint_now / fix_now / project_run / project_plan + buffer_fix_argv", function()
-    local lint = require("tetravim.util.lint")
+    local lint = require("tetravim.util.edit.lint")
     for _, fn in ipairs({ "lint_now", "fix_now", "project_run", "project_plan" }) do
       assert.are.equal("function", type(lint[fn]), "util/lint missing " .. fn)
     end

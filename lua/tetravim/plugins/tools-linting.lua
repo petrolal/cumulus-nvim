@@ -2,7 +2,7 @@
 --
 -- The filetype -> linter map lives here; the dispatch logic (executable
 -- gating, CI-file path scoping) and the `vim.g.autolint` / `vim.b.autolint`
--- toggle live in `tetravim.util.lint`, shared with the `<leader>xlb` manual
+-- toggle live in `tetravim.util.edit.lint`, shared with the `<leader>xlb` manual
 -- "lint now" keymap and the `<leader>ul` / `<leader>uL` toggles.
 
 return {
@@ -36,14 +36,14 @@ return {
 
       -- nvim-lint ships no scalastyle linter. Define one here: SARIF isn't an
       -- option, so parse the plain text reporter. scalastyle refuses to run
-      -- without `-c <rules.xml>`, so `tetravim.util.lint.extra_ready` skips it
+      -- without `-c <rules.xml>`, so `tetravim.util.edit.lint.extra_ready` skips it
       -- until a scalastyle-config.xml is found up-tree (see that module).
       lint.linters.scalastyle = {
         cmd = "scalastyle",
         stdin = false,
         ignore_exitcode = true,
         args = function()
-          local cfg = require("tetravim.util.lint").scalastyle_config()
+          local cfg = require("tetravim.util.edit.lint").scalastyle_config()
           return cfg and { "-c", cfg } or {}
         end,
         parser = function(output)
@@ -75,7 +75,7 @@ return {
         end,
       }
 
-      local tvlint = require("tetravim.util.lint")
+      local tvlint = require("tetravim.util.edit.lint")
 
       -- The JVM linters (checkstyle / ktlint / scalastyle / npm-groovy-lint)
       -- each spin up a JVM or Node process -- cheap enough on save, but too

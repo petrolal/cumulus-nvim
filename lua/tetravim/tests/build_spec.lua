@@ -1,7 +1,7 @@
--- Tests for tetravim.util.build
-local build = require("tetravim.util.build")
+-- Tests for tetravim.util.jvm.build
+local build = require("tetravim.util.jvm.build")
 
-describe("tetravim.util.build", function()
+describe("tetravim.util.jvm.build", function()
   it("exposes detect and find_subprojects", function()
     assert.is_function(build.detect)
     assert.is_function(build.find_subprojects)

@@ -8,11 +8,11 @@ local M = {}
 function M.check()
   vim.health.start("TetraVim Asynchronous LSP & Resilience")
 
-  local resilience_ok, resilience = pcall(require, "tetravim.util.lsp_resilience")
+  local resilience_ok, resilience = pcall(require, "tetravim.util.lsp.resilience")
   if resilience_ok and type(resilience.health) == "function" then
     resilience.health()
   else
-    vim.health.error("tetravim.util.lsp_resilience: failed to load (" .. tostring(resilience) .. ")")
+    vim.health.error("tetravim.util.lsp.resilience: failed to load (" .. tostring(resilience) .. ")")
   end
 
   -- JetBrains kotlin-lsp shares a single on-disk RocksDB workspace index and
@@ -131,9 +131,9 @@ function M.check()
   vim.health.start("TetraVim New File from Template (IDEA-style New)")
 
   do
-    local ok, ft = pcall(require, "tetravim.util.filetemplate")
+    local ok, ft = pcall(require, "tetravim.util.edit.filetemplate")
     if not ok then
-      vim.health.error("tetravim.util.filetemplate: failed to load (" .. tostring(ft) .. ")")
+      vim.health.error("tetravim.util.edit.filetemplate: failed to load (" .. tostring(ft) .. ")")
     else
       vim.health.ok(
         ("built-in templates: %d registered (Java / Kotlin / Scala / Groovy / Web / DevOps / ...)"):format(

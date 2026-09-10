@@ -19,7 +19,7 @@ return {
       -- Shared cmp-nvim-lsp completion capabilities (same table lsp-core.lua
       -- and ftplugin/java.lua use) so Metals returns snippet completions and
       -- resolvable documentation for the popup.
-      metals_config.capabilities = require("tetravim.util.lsp_capabilities").make()
+      metals_config.capabilities = require("tetravim.util.lsp.capabilities").make()
 
       -- Surface the implicits / inferred types Metals can compute -- this is
       -- the Scala equivalent of jdtls parameter-name inlay hints, and the
@@ -45,13 +45,13 @@ return {
         -- (inlay hints / document highlight / <C-k> signature help). Metals
         -- attaches through its own path, so call it here explicitly.
         pcall(function()
-          require("tetravim.util.lsp_attach").on_attach(client, bufnr)
+          require("tetravim.util.lsp.attach").on_attach(client, bufnr)
         end)
       end
 
       -- Bounded auto-restart (max 3 / 180s) if the Metals BSP process exits
       -- unexpectedly, matching the jdtls handling in ftplugin/java.lua.
-      metals_config.on_exit = require("tetravim.util.lsp_resilience").make_on_exit("metals", function()
+      metals_config.on_exit = require("tetravim.util.lsp.resilience").make_on_exit("metals", function()
         vim.schedule(function()
           pcall(function()
             require("metals").initialize_or_attach(metals_config)

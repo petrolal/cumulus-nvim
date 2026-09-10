@@ -1,4 +1,4 @@
--- Kubernetes cluster explorer (item 11) -- tetravim.util.k8s + tetravim.util.panel.
+-- Kubernetes cluster explorer (item 11) -- tetravim.util.cloud.k8s + tetravim.util.panel.
 --
 -- The busted child has no cluster and (usually) no kubectl, so behaviour that
 -- needs a live `kubectl` is not exercised here: this covers the module surface,
@@ -12,8 +12,8 @@ local function read(path)
   return body
 end
 
-describe("tetravim.util.k8s", function()
-  local k8s = require("tetravim.util.k8s")
+describe("tetravim.util.cloud.k8s", function()
+  local k8s = require("tetravim.util.cloud.k8s")
 
   it("exposes open / switch_namespace / switch_context", function()
     assert.is_table(k8s)
@@ -45,10 +45,10 @@ describe("tetravim.util.k8s", function()
 end)
 
 describe("Kubernetes cluster explorer -- static wiring", function()
-  it("core/devops.lua binds <leader>oke to tetravim.util.k8s.open", function()
+  it("core/devops.lua binds <leader>oke to tetravim.util.cloud.k8s.open", function()
     local body = read("lua/tetravim/core/devops.lua")
     assert.is_truthy(body:match('"<leader>oke"'))
-    assert.is_truthy(body:match('require%("tetravim%.util%.k8s"%)%.open'))
+    assert.is_truthy(body:match('require%("tetravim%.util%.cloud%.k8s"%)%.open'))
     assert.is_truthy(body:match('desc = "Cluster Explorer"'))
   end)
 

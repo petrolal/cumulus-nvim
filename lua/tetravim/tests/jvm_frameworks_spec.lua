@@ -7,7 +7,7 @@
 -- forcing require("lazy").load() corrupts lazy's internal state (see
 -- dap_jvm_spec.lua). Verify those manually per the story's Verification section.
 
-local fw = require("tetravim.util.jvm_frameworks")
+local fw = require("tetravim.util.jvm.frameworks")
 
 local function tmpdir()
   local d = vim.fn.tempname()
@@ -21,7 +21,7 @@ local function touch(path)
   fh:close()
 end
 
-describe("tetravim.util.jvm_frameworks", function()
+describe("tetravim.util.jvm.frameworks", function()
   local saved
 
   before_each(function()
@@ -119,7 +119,7 @@ describe("JVM framework plugin specs (static shape)", function()
   it("lsp-spring-boot.lua declares spring-boot.nvim + the properties parser", function()
     local body = read("lua/tetravim/plugins/lsp-spring-boot.lua")
     assert.is_truthy(body:match("JavaHello/spring%-boot%.nvim"))
-    assert.is_truthy(body:match("lsp_capabilities"))
+    assert.is_truthy(body:match("lsp%.capabilities"))
     assert.is_truthy(body:match('"properties"'))
   end)
 
@@ -127,12 +127,12 @@ describe("JVM framework plugin specs (static shape)", function()
     local body = read("lua/tetravim/plugins/lsp-quarkus.lua")
     assert.is_truthy(body:match("JavaHello/quarkus%.nvim"))
     assert.is_truthy(body:match("JavaHello/microprofile%.nvim"))
-    -- Activation moved behind tetravim.util.jvm_lsp_toggle: it is opt-in
+    -- Activation moved behind tetravim.util.jvm.lsp_toggle: it is opt-in
     -- (persisted flag + RAM guard), not "on whenever the jars resolve".
-    assert.is_truthy(body:match("jvm_lsp_toggle"))
+    assert.is_truthy(body:match("jvm%.lsp_toggle"))
     assert.is_truthy(body:match("should_autostart"))
     -- The readiness path resolution still lives in the toggle module.
-    local toggle = read("lua/tetravim/util/jvm_lsp_toggle.lua")
+    local toggle = read("lua/tetravim/util/jvm/lsp_toggle.lua")
     assert.is_truthy(toggle:match("quarkus_paths"))
     assert.is_truthy(toggle:match("microprofile_paths"))
   end)

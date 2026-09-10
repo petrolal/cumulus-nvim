@@ -1,5 +1,5 @@
--- Endpoints panel (item 14) -- tetravim.util.endpoints_panel + tetravim.util.panel +
--- the OpenAPI spec-discovery / list-endpoints additions to tetravim.util.openapi.
+-- Endpoints panel (item 14) -- tetravim.util.clients.endpoints_panel + tetravim.util.panel +
+-- the OpenAPI spec-discovery / list-endpoints additions to tetravim.util.clients.openapi.
 --
 -- Behavioural assertions that need an attached Spring Boot LS or a live project
 -- scan are NOT exercised here (the busted child has no LSP client and no JVM
@@ -42,8 +42,8 @@ local SPEC = [[
 }
 ]]
 
-describe("tetravim.util.openapi -- spec discovery + endpoint listing", function()
-  local openapi = require("tetravim.util.openapi")
+describe("tetravim.util.clients.openapi -- spec discovery + endpoint listing", function()
+  local openapi = require("tetravim.util.clients.openapi")
 
   it("exposes discover_specs and list_endpoints", function()
     assert.is_function(openapi.discover_specs)
@@ -154,16 +154,16 @@ describe("tetravim.util.panel", function()
   end)
 end)
 
-describe("tetravim.util.endpoints_panel", function()
+describe("tetravim.util.clients.endpoints_panel", function()
   it("exposes open()", function()
-    local endpoints = require("tetravim.util.endpoints_panel")
+    local endpoints = require("tetravim.util.clients.endpoints_panel")
     assert.is_table(endpoints)
     assert.is_function(endpoints.open)
   end)
 
   it("open() does not throw with no Spring project / no specs in cwd", function()
     assert.has_no.errors(function()
-      require("tetravim.util.endpoints_panel").open()
+      require("tetravim.util.clients.endpoints_panel").open()
     end)
   end)
 end)
@@ -172,7 +172,7 @@ describe("Endpoints panel -- static wiring", function()
   it("core/keymaps.lua binds <leader>ae to the endpoints panel", function()
     local body = read("lua/tetravim/core/keymaps.lua")
     assert.is_truthy(body:match('"<leader>ae"'))
-    assert.is_truthy(body:match('require%("tetravim%.util%.endpoints_panel"%)%.open'))
+    assert.is_truthy(body:match('require%("tetravim%.util%.clients%.endpoints_panel"%)%.open'))
     assert.is_truthy(body:match('desc = "Endpoints Panel"'))
   end)
 

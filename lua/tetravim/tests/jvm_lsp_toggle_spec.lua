@@ -1,13 +1,13 @@
 -- lua/tetravim/tests/jvm_lsp_toggle_spec.lua
 --
--- Covers tetravim.util.jvm_lsp_toggle -- the opt-in / RAM guard that keeps the
+-- Covers tetravim.util.jvm.lsp_toggle -- the opt-in / RAM guard that keeps the
 -- Quarkus + MicroProfile language servers (a ~1 GiB JVM each) from
 -- auto-activating on top of jdtls. The busted child has no jars fetched, so
 -- every activation path resolves to "blocked" without throwing.
 
-local toggle = require("tetravim.util.jvm_lsp_toggle")
+local toggle = require("tetravim.util.jvm.lsp_toggle")
 
-describe("tetravim.util.jvm_lsp_toggle", function()
+describe("tetravim.util.jvm.lsp_toggle", function()
   describe("available_ram_mb", function()
     it("returns a positive integer on Linux (or nil elsewhere)", function()
       local mb = toggle.available_ram_mb()
@@ -20,7 +20,7 @@ describe("tetravim.util.jvm_lsp_toggle", function()
 
   describe("reason_blocked / should_autostart", function()
     it("is blocked on the jars when the bundles are not fetched", function()
-      local fw = require("tetravim.util.jvm_frameworks")
+      local fw = require("tetravim.util.jvm.frameworks")
       if not fw.quarkus_ready() then
         local reason = toggle.reason_blocked()
         assert.is_string(reason)
@@ -71,7 +71,7 @@ describe("tetravim.util.jvm_lsp_toggle", function()
 
   describe("activate()", function()
     it("returns false (no-op) when the jars are missing", function()
-      local fw = require("tetravim.util.jvm_frameworks")
+      local fw = require("tetravim.util.jvm.frameworks")
       if not (fw.quarkus_paths() and fw.microprofile_paths()) then
         assert.is_false(toggle.activate())
       end

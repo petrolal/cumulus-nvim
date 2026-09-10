@@ -1,13 +1,13 @@
 -- lua/tetravim/tests/spring_lsp_spec.lua
 --
--- Covers tetravim.util.spring_lsp -- the Spring Boot LS `workspace/symbol`
--- bridge tetravim.util.spring prefers over its ripgrep/Tree-sitter scan when the
+-- Covers tetravim.util.jvm.spring_lsp -- the Spring Boot LS `workspace/symbol`
+-- bridge tetravim.util.jvm.spring prefers over its ripgrep/Tree-sitter scan when the
 -- STS4 server is attached. The live-client paths degrade to cb(nil); only the
 -- pure `workspace/symbol` name parsers are unit-tested here.
 
-local sl = require("tetravim.util.spring_lsp")
+local sl = require("tetravim.util.jvm.spring_lsp")
 
-describe("tetravim.util.spring_lsp", function()
+describe("tetravim.util.jvm.spring_lsp", function()
   describe("parse_endpoint_symbol", function()
     it('verb baked into the annotation: @GetMapping("/greeting")', function()
       local ep = sl.parse_endpoint_symbol('@GetMapping("/greeting")')

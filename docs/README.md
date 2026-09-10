@@ -15,14 +15,14 @@ Welcome to the **TetraVim** documentation repository.
 
 - **Core**: `lua/tetravim/core/` (Options, keymaps, autocmds, devops, lazy bootstrap)
 - **Plugins**: `lua/tetravim/plugins/` (Lazy.nvim plugin specifications)
-- **JVM Utilities**: `lua/tetravim/util/jvm.lua`, `lua/tetravim/util/spring.lua`, `lua/tetravim/util/spring_picker.lua`, `lua/tetravim/util/refactor.lua`, `lua/tetravim/util/extract.lua`, `lua/tetravim/util/db.lua`, `lua/tetravim/util/http.lua`, `lua/tetravim/util/openapi.lua`, `lua/tetravim/util/git.lua`, `lua/tetravim/util/forge.lua`, `lua/tetravim/util/sonar.lua`, `lua/tetravim/util/cve.lua`
+- **JVM Utilities**: `lua/tetravim/util/jvm/jvm.lua`, `lua/tetravim/util/jvm/spring.lua`, `lua/tetravim/util/jvm/spring_picker.lua`, `lua/tetravim/util/edit/refactor.lua`, `lua/tetravim/util/edit/extract.lua`, `lua/tetravim/util/clients/db.lua`, `lua/tetravim/util/clients/http.lua`, `lua/tetravim/util/clients/openapi.lua`, `lua/tetravim/util/git.lua`, `lua/tetravim/util/cloud/forge.lua`, `lua/tetravim/util/quality/sonar.lua`, `lua/tetravim/util/quality/cve.lua`
 
 ## Enterprise Operability (Epic 5)
 
 ### Asynchronous LSP & Resilience (Story 5.1)
 
-- Project-wide LSP operations (e.g. the safe-rename reference scan) fan out through `tetravim.util.lsp_async.request_all_async`, which dispatches to every attached client and calls back on `vim.schedule` once the last response lands — the UI thread never blocks waiting on a server.
-- JDTLS is launched with a bounded JVM heap (`-Xmx2g` / `-Xms512m`, via `tetravim.util.lsp_resilience.apply_memory_limit`) so indexing a large monorepo cannot OOM the host.
+- Project-wide LSP operations (e.g. the safe-rename reference scan) fan out through `tetravim.util.lsp.async.request_all_async`, which dispatches to every attached client and calls back on `vim.schedule` once the last response lands — the UI thread never blocks waiting on a server.
+- JDTLS is launched with a bounded JVM heap (`-Xmx2g` / `-Xms512m`, via `tetravim.util.lsp.resilience.apply_memory_limit`) so indexing a large monorepo cannot OOM the host.
 - If a language-server process crashes it is auto-restarted, bounded to 3 restarts per 180s. Exhausting that budget stops the retry loop and surfaces one error pointing at `:LspLog`. A clean re-attach resets the window.
 - `:checkhealth tetravim` → "Asynchronous LSP & Resilience (Story 5.1)".
 
