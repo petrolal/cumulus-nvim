@@ -39,6 +39,12 @@ M.DEFAULT_COLORS = {
 -- Cache stores the current theme colors
 M.cache = vim.deepcopy(M.DEFAULT_COLORS)
 
+-- The highlight table of the currently-applied theme. Set by
+-- `tetravim.theme.apply()` right after it applies the palette, and read by
+-- `init_theme_colors()` below. `nil` until the first theme apply -- in which
+-- case we fall back to the canonical Tetris highlight map.
+M.current_highlights = nil
+
 -- ============================================================================
 -- Color Initialization & Refresh
 -- ============================================================================
@@ -49,7 +55,7 @@ M.cache = vim.deepcopy(M.DEFAULT_COLORS)
 --- Falls back to the Tetris highlight map, then to `M.DEFAULT_COLORS`.
 ---@return nil
 function M.init_theme_colors()
-  local highlights = _G._tetravim_current_highlights or {}
+  local highlights = M.current_highlights or {}
 
   local palette
   local ok, tetris = pcall(require, "tetravim.theme.tetris")

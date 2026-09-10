@@ -16,56 +16,71 @@ if not ok then
   return
 end
 
-local bundles = {}
+-- The bundle-jar globs and lazy.core `opts` lookup below are identical for
+-- every Java buffer in a session, so they run once and the result is parked in
+-- tetravim.util.jdtls_config; subsequent Java buffers skip straight to the
+-- per-file work (root dir / workspace `-data` / heap-bounded cmd).
+local jdtls_config_cache = require("tetravim.util.jdtls_config")
+local static = jdtls_config_cache.get()
 
-local java_debug_path = vim.fn.expand("~/.local/share/nvim/mason/packages/java-debug-adapter/extension/server")
-local java_debug_jars = vim.fn.glob(java_debug_path .. "/com.microsoft.java.debug.plugin-*.jar", true, true)
-if type(java_debug_jars) == "table" and #java_debug_jars > 0 then
-  vim.list_extend(bundles, java_debug_jars)
-end
+if not static then
+  local bundles = {}
 
-local java_test_path = vim.fn.expand("~/.local/share/nvim/mason/packages/java-test/extension/server")
-local java_test_jars = vim.fn.glob(java_test_path .. "/*.jar", true, true)
-if type(java_test_jars) == "table" and #java_test_jars > 0 then
-  vim.list_extend(bundles, java_test_jars)
-end
-
--- Story 37.1: IDEA bundled-decompiler parity. The dgileadi/vscode-java-decompiler
--- lazy plugin (see lua/tetravim/plugins/lsp-java.lua) ships Fernflower/CFR/
--- Procyon bundle jars under its server/ dir; feeding them to jdtls makes
--- go-to-definition on a source-less library `.class` open a decompiled buffer.
--- Paired with `java.contentProvider.preferred = "fernflower"` in lsp-java.lua.
-local decompiler_root = vim.fn.stdpath("data") .. "/lazy/vscode-java-decompiler/server"
-if vim.fn.isdirectory(decompiler_root) == 1 then
-  local decompiler_jars = vim.fn.glob(decompiler_root .. "/*.jar", true, true)
-  if type(decompiler_jars) == "table" and #decompiler_jars > 0 then
-    vim.list_extend(bundles, decompiler_jars)
+  local java_debug_path = vim.fn.expand("~/.local/share/nvim/mason/packages/java-debug-adapter/extension/server")
+  local java_debug_jars = vim.fn.glob(java_debug_path .. "/com.microsoft.java.debug.plugin-*.jar", true, true)
+  if type(java_debug_jars) == "table" and #java_debug_jars > 0 then
+    vim.list_extend(bundles, java_debug_jars)
   end
+
+  local java_test_path = vim.fn.expand("~/.local/share/nvim/mason/packages/java-test/extension/server")
+  local java_test_jars = vim.fn.glob(java_test_path .. "/*.jar", true, true)
+  if type(java_test_jars) == "table" and #java_test_jars > 0 then
+    vim.list_extend(bundles, java_test_jars)
+  end
+
+  -- Story 37.1: IDEA bundled-decompiler parity. The dgileadi/vscode-java-decompiler
+  -- lazy plugin (see lua/tetravim/plugins/lsp-java.lua) ships Fernflower/CFR/
+  -- Procyon bundle jars under its server/ dir; feeding them to jdtls makes
+  -- go-to-definition on a source-less library `.class` open a decompiled buffer.
+  -- Paired with `java.contentProvider.preferred = "fernflower"` in lsp-java.lua.
+  local decompiler_root = vim.fn.stdpath("data") .. "/lazy/vscode-java-decompiler/server"
+  if vim.fn.isdirectory(decompiler_root) == 1 then
+    local decompiler_jars = vim.fn.glob(decompiler_root .. "/*.jar", true, true)
+    if type(decompiler_jars) == "table" and #decompiler_jars > 0 then
+      vim.list_extend(bundles, decompiler_jars)
+    end
+  end
+
+  -- Spring Boot / Quarkus / MicroProfile JDT extensions. Each `java_extensions()`
+  -- returns {} when its plugin or backing jars are absent (see lsp-spring-boot.lua
+  -- / lsp-quarkus.lua), so on a machine without the framework tooling this whole
+  -- block is a no-op. With the jars present, jdtls gains Spring symbol indexing,
+  -- `@ConfigurationProperties` / `@ConfigProperty` metadata and Qute Java support.
+  for _, mod in ipairs({ "spring_boot", "microprofile", "quarkus" }) do
+    local ext_ok, ext = pcall(function()
+      return require(mod).java_extensions()
+    end)
+    if ext_ok and type(ext) == "table" and #ext > 0 then
+      vim.list_extend(bundles, ext)
+    end
+  end
+
+  local opts = {}
+  local lazy_ok, lazy_config = pcall(require, "lazy.core.config")
+  if lazy_ok and lazy_config and lazy_config.spec and lazy_config.spec.plugins["nvim-jdtls"] then
+    local plugin = lazy_config.spec.plugins["nvim-jdtls"]
+    local lazy_plugin_ok, lazy_plugin = pcall(require, "lazy.core.plugin")
+    if lazy_plugin_ok then
+      opts = lazy_plugin.values(plugin, "opts", false) or {}
+    end
+  end
+
+  static = { bundles = bundles, opts = opts }
+  jdtls_config_cache.set(static)
 end
 
--- Spring Boot / Quarkus / MicroProfile JDT extensions. Each `java_extensions()`
--- returns {} when its plugin or backing jars are absent (see lsp-spring-boot.lua
--- / lsp-quarkus.lua), so on a machine without the framework tooling this whole
--- block is a no-op. With the jars present, jdtls gains Spring symbol indexing,
--- `@ConfigurationProperties` / `@ConfigProperty` metadata and Qute Java support.
-for _, mod in ipairs({ "spring_boot", "microprofile", "quarkus" }) do
-  local ext_ok, ext = pcall(function()
-    return require(mod).java_extensions()
-  end)
-  if ext_ok and type(ext) == "table" and #ext > 0 then
-    vim.list_extend(bundles, ext)
-  end
-end
-
-local opts = {}
-local lazy_ok, lazy_config = pcall(require, "lazy.core.config")
-if lazy_ok and lazy_config and lazy_config.spec and lazy_config.spec.plugins["nvim-jdtls"] then
-  local plugin = lazy_config.spec.plugins["nvim-jdtls"]
-  local lazy_plugin_ok, lazy_plugin = pcall(require, "lazy.core.plugin")
-  if lazy_plugin_ok then
-    opts = lazy_plugin.values(plugin, "opts", false) or {}
-  end
-end
+local bundles = static.bundles
+local opts = static.opts
 
 local fname = vim.api.nvim_buf_get_name(0)
 local cmd = opts.full_cmd and opts.full_cmd({ "jdtls" }) or { "jdtls" }
@@ -102,11 +117,8 @@ cmd = resilience.apply_memory_limit(cmd, {
 -- Story 5.1: never-attached crash streaks (jdtls dies before `on_attach`
 -- ever fires) would otherwise leak their restart budget across ftplugin
 -- reloads. Reset the window here when there is no live jdtls client yet.
-do
-  local getter = vim.lsp.get_clients or vim.lsp.get_active_clients
-  if #(getter({ name = "jdtls" }) or {}) == 0 then
-    resilience.reset("jdtls")
-  end
+if #(vim.lsp.get_clients({ name = "jdtls" }) or {}) == 0 then
+  resilience.reset("jdtls")
 end
 
 -- The buffer this ftplugin instance fired for. The auto-restart callback
@@ -180,8 +192,5 @@ local function make_config()
     end,
   }
 end
-
--- Capture JDTLS start time for sync health check (SPEC-005)
-_G.tetravim_jdtls_start_time = os.time()
 
 jdtls.start_or_attach(make_config())

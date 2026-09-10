@@ -71,6 +71,17 @@ return {
         -- Navigate / Info ------------------------------------------
         { "<leader>cs", desc = "Symbols Outline (Structure)", icon = "󰙅 " },
         { "<leader>cl", desc = "Lsp Info", icon = "󰋽 " },
+        -- Hierarchy ----------------------------------------------
+        { "<leader>ch", group = "hierarchy", icon = "󰘐 " },
+        { "<leader>chi", desc = "Incoming Calls", icon = "󰘐 " },
+        { "<leader>cho", desc = "Outgoing Calls", icon = "󰘐 " },
+        { "<leader>chs", desc = "Type Hierarchy (Subtypes)", icon = "󰙅 " },
+        { "<leader>chS", desc = "Type Hierarchy (Supertypes)", icon = "󰙅 " },
+        -- Generate / advanced refactor -------------------------
+        { "<leader>cn", desc = "Generate...", icon = "󰛨 " },
+        { "<leader>ck", desc = "Change Signature / Rewrite", icon = "󰑕 " },
+        { "<leader>cy", desc = "Safe Delete / Inline", icon = "󰅖 " },
+        { "<leader>ct", desc = "LSP References / Defs (Trouble)", icon = "󰋽 " },
       })
 
       -- Per-language <leader>c* subgroups (Maven/Gradle, Terraform,

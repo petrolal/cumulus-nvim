@@ -9,8 +9,7 @@ function M.json()
   local version_str = string.format("%d.%d.%d", neovim_version.major, neovim_version.minor, neovim_version.patch)
 
   -- LSP client names
-  local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
-  local lsp_clients = get_clients()
+  local lsp_clients = vim.lsp.get_clients()
   local client_names = {}
   for _, client in ipairs(lsp_clients) do
     table.insert(client_names, client.name)

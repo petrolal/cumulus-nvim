@@ -90,6 +90,43 @@ end, { desc = "Rename File" })
 -- active clients, capabilities, and file-watcher status.
 map("n", "<leader>cl", "<cmd>checkhealth vim.lsp<cr>", { desc = "Lsp Info" })
 
+-- Call / type hierarchy (IDEA Ctrl+Alt+H / Ctrl+H). Neovim 0.11 ships these
+-- buf helpers but maps none of them. Nested under a <leader>ch prefix so the
+-- four rarely-pressed navigators don't burn scarce single letters -- and so
+-- <leader>ci stays free for the buffer-local "Inline" refactor the JVM stack
+-- installs (util/extract).
+map("n", "<leader>chi", function()
+  vim.lsp.buf.incoming_calls()
+end, { desc = "Incoming Calls" })
+map("n", "<leader>cho", function()
+  vim.lsp.buf.outgoing_calls()
+end, { desc = "Outgoing Calls" })
+map("n", "<leader>chs", function()
+  vim.lsp.buf.typehierarchy("subtypes")
+end, { desc = "Type Hierarchy (Subtypes)" })
+map("n", "<leader>chS", function()
+  vim.lsp.buf.typehierarchy("supertypes")
+end, { desc = "Type Hierarchy (Supertypes)" })
+map("n", "<leader>cn", function()
+  vim.lsp.buf.code_action({
+    context = { only = { "source.generate" }, diagnostics = {} },
+  })
+end, { desc = "Generate..." })
+map("n", "<leader>ck", function()
+  -- Change-signature: jdtls surfaces it as a refactor.rewrite code action;
+  -- other servers expose an equivalent under the generic refactor kind.
+  vim.lsp.buf.code_action({
+    context = { only = { "refactor.rewrite", "refactor" }, diagnostics = {} },
+  })
+end, { desc = "Change Signature / Rewrite" })
+map("n", "<leader>cy", function()
+  -- Safe delete: servers that support it advertise it as a refactor action;
+  -- fall back to the full picker when none is offered.
+  vim.lsp.buf.code_action({
+    context = { only = { "refactor.inline", "refactor" }, diagnostics = {} },
+  })
+end, { desc = "Safe Delete / Inline" })
+
 -- Per-language <leader>c* subgroups (Story 34.1): build/lint/format commands
 -- for a given language stack only appear as buffer-local keymaps while
 -- editing a matching filetype, so <leader>c no longer mixes e.g. Maven

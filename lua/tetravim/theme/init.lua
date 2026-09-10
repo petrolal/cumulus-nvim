@@ -32,10 +32,13 @@ function M.apply()
   end
 
   tetris.apply()
-  _G._tetravim_current_highlights = tetris.highlights()
 
   local colors_ok, theme_colors = pcall(require, "tetravim.util.theme_colors")
   if colors_ok then
+    -- Hand the freshly-applied highlight table to the derived-colour cache
+    -- as a module field (previously a `_G._tetravim_current_highlights`
+    -- global) so `refresh_cache()` reads it back without touching `_G`.
+    theme_colors.current_highlights = tetris.highlights()
     theme_colors.refresh_cache()
   end
 end

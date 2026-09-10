@@ -904,6 +904,9 @@ function M.check()
       mod = "neogen",
       desc = "Javadoc / KDoc / docstring stub generator (IDEA 'Generate... > Javadoc') -- <leader>cg / <leader>cG",
     },
+    { mod = "fidget", desc = "LSP / indexing progress widget (IDEA 'indexing' status bar)" },
+    { mod = "trouble", desc = "Diagnostics / quickfix panel (IDEA 'Problems' tool window) -- <leader>xx" },
+    { mod = "neogit", desc = "Full Git tool window (IDEA 'Git' / 'Commit') -- <leader>gn" },
   }
   for _, p in ipairs(editor_plugins) do
     if pcall(require, p.mod) then

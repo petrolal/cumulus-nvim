@@ -167,3 +167,37 @@ jobs:
       - name: Verify health snapshot
         run: nvim --headless -u init.lua -c "lua io.write(require('tetravim.core.health').json() .. '\n')" -c "qa!"
 
+      # --------------------------------------------------------------------
+      # Startup-time budget. `defaults.lazy = false`, so every plugin loads
+      # on startup -- a spec that pulls in something heavy on the eager path
+      # shows up here. Measure a few runs (plugins already synced above),
+      # take the fastest, and fail if it blows the ceiling.
+      # --------------------------------------------------------------------
+      - name: Startup-time budget
+        run: |
+          set -o pipefail
+          BUDGET_MS=1200
+          best=999999
+          for i in 1 2 3 4 5; do
+            rm -f startuptime.log
+            nvim --headless -u init.lua --startuptime startuptime.log +qa >/dev/null 2>&1 || true
+            # Last line of --startuptime output is "<total>  <total>: --- NVIM STARTED ---"
+            ms=$(awk 'END { print int($1) }' startuptime.log)
+            echo "run $i: ${ms}ms"
+            if [ "$ms" -lt "$best" ]; then best=$ms; fi
+          done
+          echo "best startup: ${best}ms (budget ${BUDGET_MS}ms)"
+          tail -n 25 startuptime.log || true
+          if [ "$best" -gt "$BUDGET_MS" ]; then
+            echo "::error::startup ${best}ms exceeds ${BUDGET_MS}ms budget"
+            exit 1
+          fi
+
+      - name: Upload startuptime log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: startuptime-log
+          path: startuptime.log
+          if-no-files-found: ignore
+

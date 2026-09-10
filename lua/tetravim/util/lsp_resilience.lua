@@ -230,13 +230,15 @@ function M.health()
     h.error("tetravim.util.lsp_async: failed to load or missing request_all_async")
   end
 
-  local refactor_src_ok, refactor_src = pcall(function()
-    return table.concat(vim.fn.readfile(vim.fn.stdpath("config") .. "/lua/tetravim/util/refactor.lua"), "\n")
-  end)
-  if refactor_src_ok and refactor_src:find("lsp_async", 1, true) then
-    h.ok("Project-wide rename dispatches through the async wrapper (no synchronous buf_request_all)")
+  -- Behaviour probe rather than a source grep: the project-wide rename entry
+  -- point must load and expose its public function. That its fan-out goes
+  -- through tetravim.util.lsp_async (and never a synchronous buf_request_all)
+  -- is asserted structurally by lsp_resilience_spec.lua.
+  local refactor_ok, refactor = pcall(require, "tetravim.util.refactor")
+  if refactor_ok and type(refactor.project_rename) == "function" then
+    h.ok("Project-wide rename available (tetravim.util.refactor.project_rename); async fan-out covered by specs")
   else
-    h.warn("refactor.lua does not appear to use tetravim.util.lsp_async for its LSP fan-out")
+    h.warn("tetravim.util.refactor failed to load or exposes no project_rename")
   end
 
   h.info(

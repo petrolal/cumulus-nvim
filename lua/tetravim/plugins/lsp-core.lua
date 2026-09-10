@@ -55,8 +55,24 @@ return {
             if server_opts.on_exit == nil then
               local name = server
               server_opts.on_exit = resilience.make_on_exit(name, function()
+                -- Toggling `vim.lsp.enable` only flips the global auto-attach
+                -- config; it does NOT re-attach the buffers whose client just
+                -- died. Re-fire FileType on every loaded real buffer so the
+                -- native lspconfig FileType handler starts a fresh client for
+                -- the ones that match this server again.
                 pcall(vim.lsp.enable, name, false)
                 pcall(vim.lsp.enable, name)
+                vim.schedule(function()
+                  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+                    if
+                      vim.api.nvim_buf_is_loaded(bufnr)
+                      and vim.bo[bufnr].buftype == ""
+                      and vim.bo[bufnr].filetype ~= ""
+                    then
+                      pcall(vim.api.nvim_exec_autocmds, "FileType", { buffer = bufnr })
+                    end
+                  end
+                end)
               end)
             end
             vim.lsp.config(server, server_opts)
@@ -109,11 +125,11 @@ return {
         group = notify_group,
         callback = function(args)
           notified_clients[args.data.client_id] = nil
-          -- Tear down the document-highlight autocmds / reference marks this
-          -- buffer picked up on attach, so a detached server doesn't keep
-          -- firing on CursorHold.
+          -- Tear down just this client's document-highlight autocmds; the
+          -- buffer-wide reference-mark / <C-k> cleanup only runs once the last
+          -- capable client on the buffer has detached.
           pcall(function()
-            require("tetravim.util.lsp_attach").on_detach(args.buf)
+            require("tetravim.util.lsp_attach").on_detach(args.buf, args.data.client_id)
           end)
         end,
       })

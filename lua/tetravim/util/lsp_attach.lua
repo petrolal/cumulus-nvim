@@ -18,7 +18,35 @@
 
 local M = {}
 
-local highlight_group = vim.api.nvim_create_augroup("tetravim_lsp_document_highlight", { clear = true })
+-- Per-(buffer, client) bookkeeping. A single module-level augroup shared by
+-- every client on a buffer meant the last client's closure won any capability
+-- and ANY one client detaching wiped document-highlight for the whole buffer.
+-- Instead: one augroup per (bufnr, client.id), and the buffer-wide teardown
+-- (clear_references, `<C-k>` keymap) fires only when the last capable client
+-- detaches.
+--   M._dochl[bufnr] = { [client_id] = augroup_id, ... }
+--   M._sig[bufnr]   = { [client_id] = true, ... }
+M._dochl = {}
+M._sig = {}
+
+-- Per-filetype inlay-hint default consulted only when the user has expressed
+-- no session-wide preference (vim.g.tetravim_inlay_hints is nil). Verbose
+-- languages where parameter-name / inferred-type hints are noise default off.
+M.INLAY_DEFAULTS = {
+  java = true,
+  kotlin = true,
+  scala = true,
+  lua = true,
+  go = true,
+  rust = true,
+  typescript = true,
+  typescriptreact = true,
+  javascript = true,
+  json = false,
+  yaml = false,
+  markdown = false,
+  text = false,
+}
 
 local function supports(client, method)
   if not client then
@@ -38,8 +66,17 @@ function M.maybe_enable_inlay_hints(client, bufnr)
   if not (vim.lsp.inlay_hint and supports(client, "textDocument/inlayHint")) then
     return
   end
-  if vim.g.tetravim_inlay_hints == false then
+  local pref = vim.g.tetravim_inlay_hints
+  if pref == false then
     return
+  end
+  if pref == nil then
+    -- No explicit session choice -> fall back to the per-filetype default
+    -- (unknown filetypes keep the historical "on" behaviour).
+    local ft = vim.bo[bufnr] and vim.bo[bufnr].filetype or ""
+    if M.INLAY_DEFAULTS[ft] == false then
+      return
+    end
   end
   pcall(vim.lsp.inlay_hint.enable, true, { bufnr = bufnr })
 end
@@ -71,13 +108,13 @@ end
 ---@param client vim.lsp.Client
 ---@param bufnr integer
 function M.wire_document_highlight(client, bufnr)
-  if not supports(client, "textDocument/documentHighlight") then
-    pcall(vim.api.nvim_clear_autocmds, { group = highlight_group, buffer = bufnr })
+  if not (client and supports(client, "textDocument/documentHighlight")) then
     return
   end
-  pcall(vim.api.nvim_clear_autocmds, { group = highlight_group, buffer = bufnr })
+  local group_name = ("tetravim_lsp_dochl_%d_%d"):format(bufnr, client.id)
+  local group = vim.api.nvim_create_augroup(group_name, { clear = true })
   vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-    group = highlight_group,
+    group = group,
     buffer = bufnr,
     callback = function()
       if supports(client, "textDocument/documentHighlight") then
@@ -86,33 +123,71 @@ function M.wire_document_highlight(client, bufnr)
     end,
   })
   vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-    group = highlight_group,
+    group = group,
     buffer = bufnr,
     callback = function()
       pcall(vim.lsp.buf.clear_references)
     end,
   })
+  M._dochl[bufnr] = M._dochl[bufnr] or {}
+  M._dochl[bufnr][client.id] = group
 end
 
 --- `<C-k>` signature help (insert + normal), buffer-local.
 ---@param client vim.lsp.Client
 ---@param bufnr integer
 function M.wire_signature_help(client, bufnr)
-  if not supports(client, "textDocument/signatureHelp") then
+  if not (client and supports(client, "textDocument/signatureHelp")) then
     return
   end
   vim.keymap.set({ "i", "n" }, "<C-k>", function()
     vim.lsp.buf.signature_help()
   end, { buffer = bufnr, desc = "Signature Help" })
+  M._sig[bufnr] = M._sig[bufnr] or {}
+  M._sig[bufnr][client.id] = true
 end
 
---- Drop the document-highlight autocmds and any lingering reference marks
---- when a client detaches, so a stale server does not keep firing on
---- `CursorHold`.
+--- Drop the document-highlight autocmds, the `<C-k>` keymap and any lingering
+--- reference marks a client wired on attach. With `client_id` only that
+--- client's slice is removed; the buffer-wide teardown (clear_references,
+--- keymap delete) fires when the last tracked client on the buffer is gone.
+--- Called with no `client_id` (e.g. BufWipeout) it tears everything down.
 ---@param bufnr integer
-function M.on_detach(bufnr)
-  pcall(vim.api.nvim_clear_autocmds, { group = highlight_group, buffer = bufnr })
-  pcall(vim.lsp.buf.clear_references)
+---@param client_id integer|nil
+function M.on_detach(bufnr, client_id)
+  if client_id then
+    local dh = M._dochl[bufnr]
+    if dh and dh[client_id] then
+      pcall(vim.api.nvim_clear_autocmds, { group = dh[client_id] })
+      dh[client_id] = nil
+      if next(dh) == nil then
+        M._dochl[bufnr] = nil
+      end
+    end
+    if M._sig[bufnr] then
+      M._sig[bufnr][client_id] = nil
+      if next(M._sig[bufnr]) == nil then
+        M._sig[bufnr] = nil
+      end
+    end
+  else
+    local dh = M._dochl[bufnr]
+    if dh then
+      for _, group in pairs(dh) do
+        pcall(vim.api.nvim_clear_autocmds, { group = group })
+      end
+      M._dochl[bufnr] = nil
+    end
+    M._sig[bufnr] = nil
+  end
+
+  -- Nothing tracked for this buffer any more -> remove the shared bits.
+  if not M._dochl[bufnr] and not M._sig[bufnr] then
+    if vim.api.nvim_buf_is_valid(bufnr) then
+      pcall(vim.keymap.del, { "i", "n" }, "<C-k>", { buffer = bufnr })
+    end
+    pcall(vim.lsp.buf.clear_references)
+  end
 end
 
 --- Entry point called once per client from lsp-core.lua's global `LspAttach`.
