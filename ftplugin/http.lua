@@ -3,10 +3,7 @@
 -- (IntelliJ HTTP Client / kulala.nvim syntax)
 
 -- Indentation: 2-space soft tabs
-vim.bo.shiftwidth = 2
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.expandtab = true
+require("tetravim.util.ftconv").soft_tabs()
 
 -- Comment formatting: .http files use "#" line comments; "###" additionally
 -- delimits request blocks (IntelliJ HTTP Client / kulala.nvim convention).

@@ -5,10 +5,7 @@
 -- files: 2-space indent, `<%-- --%>` comment strings, matchit tag pairs, and
 -- emmet (declared in lsp-web-tooling.lua).
 
-vim.bo.shiftwidth = 2
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.expandtab = true
+require("tetravim.util.ftconv").soft_tabs()
 
 -- JSP comments (`<%-- --%>`) are stripped before the response, unlike HTML
 -- `<!-- -->` comments -- prefer them for the `gc` operator.

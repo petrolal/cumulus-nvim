@@ -34,7 +34,7 @@ describe("template engines (FreeMarker / Velocity / JSP)", function()
       local body = read(files[1])
       assert.is_truthy(body:find(cs, 1, true), ft .. " ftplugin should set commentstring " .. cs)
       assert.is_truthy(body:find("match_words", 1, true), ft .. " ftplugin should set matchit pairs")
-      assert.is_truthy(body:find("shiftwidth = 2", 1, true), ft .. " ftplugin should use 2-space indent")
+      assert.is_truthy(body:find("soft_tabs", 1, true), ft .. " ftplugin should use the shared 2-space indent helper")
     end
   end)
 

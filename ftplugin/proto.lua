@@ -3,10 +3,7 @@
 -- files, mirroring ftplugin/http.lua / ftplugin/sql.lua.
 
 -- Indentation: 2-space soft tabs (buf / protobuf style guide default)
-vim.bo.shiftwidth = 2
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.expandtab = true
+require("tetravim.util.ftconv").soft_tabs()
 
 -- Comment formatting: proto3 uses "//" line comments and "/* */" block
 -- comments (C-style). List the block-comment parts first so a "/*" run is

@@ -5,10 +5,7 @@
 -- matchit block pairs, on top of the HTML-embedded highlighting in
 -- syntax/velocity.vim and emmet (declared in lsp-web-tooling.lua).
 
-vim.bo.shiftwidth = 2
-vim.bo.tabstop = 2
-vim.bo.softtabstop = 2
-vim.bo.expandtab = true
+require("tetravim.util.ftconv").soft_tabs()
 
 -- Velocity: `## line comment`, `#* block comment *#`. commentstring drives the
 -- `gc` operator; `comments` keeps `o`/formatoptions sane inside `#* *#`.

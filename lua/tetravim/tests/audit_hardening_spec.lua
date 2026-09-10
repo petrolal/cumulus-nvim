@@ -7,6 +7,7 @@
 --   * core/autocmds.lua: bounded typeahead drain + async archive reader
 --   * CI startup-time budget
 --   * new IDE-parity plugin specs (fidget / trouble / neogit)
+--   * util/ftconv.soft_tabs -- the shared thin-ftplugin 2-space indent block
 
 local function read(path)
   local fh = assert(io.open(path, "r"))
@@ -144,6 +145,53 @@ describe("IDE-parity plugin specs", function()
     assert.is_true(lhs["<leader>gn"])
     assert.is_nil(lhs["<leader>gg"])
     assert.is_nil(lhs["<leader>gl"])
+  end)
+end)
+
+describe("util/ftconv.soft_tabs (shared ftplugin indent block)", function()
+  local ftconv = require("tetravim.util.ftconv")
+
+  it("sets a 2-space soft-tab indent on the current buffer by default", function()
+    vim.cmd("new")
+    local buf = vim.api.nvim_get_current_buf()
+    ftconv.soft_tabs()
+    assert.are.equal(2, vim.bo[buf].shiftwidth)
+    assert.are.equal(2, vim.bo[buf].tabstop)
+    assert.are.equal(2, vim.bo[buf].softtabstop)
+    assert.is_true(vim.bo[buf].expandtab)
+    vim.api.nvim_buf_delete(buf, { force = true })
+  end)
+
+  it("honors an explicit width", function()
+    vim.cmd("new")
+    local buf = vim.api.nvim_get_current_buf()
+    ftconv.soft_tabs(4)
+    assert.are.equal(4, vim.bo[buf].shiftwidth)
+    assert.are.equal(4, vim.bo[buf].softtabstop)
+    vim.api.nvim_buf_delete(buf, { force = true })
+  end)
+
+  it("the thin ftplugins call it instead of re-inlining the four assignments", function()
+    for _, ft in ipairs({
+      "css",
+      "html",
+      "javascript",
+      "typescript",
+      "lua",
+      "sql",
+      "xml",
+      "http",
+      "proto",
+      "jsp",
+      "velocity",
+      "freemarker",
+    }) do
+      local files = vim.api.nvim_get_runtime_file("ftplugin/" .. ft .. ".lua", false)
+      assert.is_true(#files > 0, "missing ftplugin/" .. ft .. ".lua")
+      local body = read(files[1])
+      assert.is_truthy(body:find("ftconv", 1, true), ft .. " ftplugin should use the shared indent helper")
+      assert.is_falsy(body:find("vim.bo.shiftwidth", 1, true), ft .. " ftplugin still inlines the indent block")
+    end
   end)
 end)
 
