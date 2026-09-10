@@ -36,7 +36,16 @@ fi
 pass "Neovim: $(nvim --version | head -n 1)"
 
 # ============================================================================
-# 1. Link config & sync plugins (idempotent)
+# 1. Cache cleanup — clear Neovim runtime and Tree-sitter caches
+# ============================================================================
+section "Cache cleanup"
+NVIM_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/nvim"
+TS_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/tree-sitter"
+rm -rf "$NVIM_CACHE" "$TS_CACHE"
+pass "Caches cleared ($NVIM_CACHE, $TS_CACHE)"
+
+# ============================================================================
+# 2. Link config & sync plugins (idempotent)
 # ============================================================================
 section "Config & Plugins"
 
@@ -66,13 +75,14 @@ else
 	warn "Mason tools install failed – you may need to run :MasonToolsInstall manually"
 fi
 
-# Quarkus / MicroProfile language-server jars (not in Mason -- pulled from Open
-# VSX). Best-effort: the script always exits 0, and Spring Boot / jdtls are
-# unaffected if it fails.
-if bash "$REPO_DIR/scripts/fetch-jvm-lsp-jars.sh"; then
+# Quarkus / MicroProfile language-server jars (pulled natively from Open VSX via Lua).
+# Best-effort: exits 0 on failure so Spring Boot / jdtls remain unaffected.
+if nvim --headless -u "$NVIM_CONFIG/init.lua" \
+	-c "lua local ok = require('tetravim.util.jvm_frameworks').fetch_jars({ sync = true }); if not ok then os.exit(1) end" \
+	-c "qa!" 2>/dev/null; then
 	pass "Quarkus / MicroProfile language servers fetched"
 else
-	warn "Quarkus / MicroProfile jar fetch skipped -- run scripts/fetch-jvm-lsp-jars.sh later"
+	warn "Quarkus / MicroProfile jar fetch skipped -- run :TetraVimFetchJvmLspJars in nvim later"
 fi
 
 # ============================================================================
@@ -165,7 +175,15 @@ section "Tree-sitter parsers"
 # out to the `tree-sitter` CLI (`tree-sitter build`); without it on $PATH the
 # install fails for every parser with `ENOENT ... 'tree-sitter'`. It's
 # installed above via `npm install -g tree-sitter-cli` (and Mason ships a
-# `tree-sitter-cli` package as a fallback).
+# Ensure tree-sitter CLI is findable on PATH (check Mason bin directory as fallback)
+MASON_BIN="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin"
+if [ -d "$MASON_BIN" ] && ! echo "$PATH" | grep -q "$MASON_BIN"; then
+	export PATH="$MASON_BIN:$PATH"
+fi
+
+# Clean any stale tree-sitter locks from interrupted builds
+rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}/tree-sitter/lock" 2>/dev/null || true
+
 if ! command -v tree-sitter >/dev/null 2>&1; then
 	warn "'tree-sitter' CLI not on \$PATH -- parser compilation will fail."
 	warn "Install it with:  npm install -g tree-sitter-cli   (or :MasonInstall tree-sitter-cli)"

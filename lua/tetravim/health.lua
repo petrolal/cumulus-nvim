@@ -177,7 +177,7 @@ function M.check()
     )
   end
 
-  -- Quarkus + MicroProfile (Open VSX .vsix, fetched by scripts/fetch-jvm-lsp-jars.sh)
+  -- Quarkus + MicroProfile (Open VSX .vsix, fetched via :TetraVimFetchJvmLspJars)
   for _, mod in ipairs({ "quarkus", "microprofile" }) do
     if pcall(require, mod) then
       vim.health.ok(mod .. ".nvim: resolvable")
@@ -195,7 +195,7 @@ function M.check()
   else
     vim.health.info(
       "Quarkus / lsp4mp jars: NOT installed (optional). Suggestion: run "
-        .. "'bash scripts/fetch-jvm-lsp-jars.sh' to download the Red Hat vscode-quarkus / "
+        .. "':TetraVimFetchJvmLspJars' to download the Red Hat vscode-quarkus / "
         .. "vscode-microprofile bundles from Open VSX into "
         .. frameworks.dir()
         .. ". Each adds a ~1 GiB JVM language server."

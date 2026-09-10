@@ -60,10 +60,12 @@ else
 fi
 
 log "3/5  Fetching Quarkus / MicroProfile language-server jars (Open VSX)..."
-if bash "$SCRIPT_DIR/scripts/fetch-jvm-lsp-jars.sh"; then
+if nvim --headless -u "$INIT_LUA" \
+	-c "lua local ok = require('tetravim.util.jvm_frameworks').fetch_jars({ sync = true }); if not ok then os.exit(1) end" \
+	-c "qa!" 2>/dev/null; then
 	log "     Quarkus / MicroProfile jars in place (or already current)."
 else
-	log "     WARNING: fetch-jvm-lsp-jars.sh reported errors -- re-run it later to enable Quarkus/MicroProfile."
+	log "     WARNING: fetch_jars reported errors -- run ':TetraVimFetchJvmLspJars' later to enable Quarkus/MicroProfile."
 	DEGRADED+=("Quarkus/MicroProfile language servers")
 fi
 
@@ -72,7 +74,9 @@ log "4/5  Installing Tree-sitter parsers..."
 # `tree-sitter` CLI (`tree-sitter build`). It comes from the `tree-sitter-cli`
 # Mason package installed in step 2/5 (mason.nvim drops mason/bin onto the
 # $PATH of the nvim invocation below); a missing CLI fails every parser with
-# `ENOENT ... 'tree-sitter'`.
+# Clean any stale tree-sitter locks from interrupted builds
+rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}/tree-sitter/lock" 2>/dev/null || true
+
 if nvim --headless -u "$INIT_LUA" \
 	-c "Lazy! load nvim-treesitter" \
 	-c "lua require('nvim-treesitter').install({ 'java', 'kotlin', 'scala', 'lua', 'regex' }):wait(300000)" \

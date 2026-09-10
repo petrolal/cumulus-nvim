@@ -126,4 +126,175 @@ function M.spring_boot_ready()
   return M.spring_boot_ls_jar() ~= nil
 end
 
+--- Fetch and unpack the Quarkus and MicroProfile language server bundles from Open VSX.
+--- Can run synchronously (opts.sync = true) or asynchronously in the background.
+---@param opts? { force?: boolean, sync?: boolean, silent?: boolean }
+---@param on_complete? fun(ok: boolean, msg: string)
+---@return boolean, string
+function M.fetch_jars(opts, on_complete)
+  opts = opts or {}
+  local force = opts.force or false
+  local sync = opts.sync or false
+  local silent = opts.silent or false
+
+  local function notify(msg, level)
+    if not silent then
+      vim.notify("[TetraVim JVM LSP] " .. msg, level or vim.log.levels.INFO)
+    end
+  end
+
+  for _, bin in ipairs({ "curl", "unzip" }) do
+    if vim.fn.executable(bin) ~= 1 then
+      local err = string.format("'%s' is not executable on $PATH -- cannot fetch JVM LSP jars.", bin)
+      notify(err, vim.log.levels.WARN)
+      if on_complete then
+        on_complete(false, err)
+      end
+      return false, err
+    end
+  end
+
+  local function exec_cmd(cmd_array)
+    local co = coroutine.running()
+    if not co or sync then
+      return vim.system(cmd_array, { text = true }):wait()
+    end
+    vim.system(cmd_array, { text = true }, function(res)
+      vim.schedule(function()
+        coroutine.resume(co, res)
+      end)
+    end)
+    return coroutine.yield()
+  end
+
+  local base_dir = M.dir()
+  vim.fn.mkdir(base_dir, "p")
+
+  local function runner()
+    local tmp_dir = vim.fn.tempname() .. "_jvm_lsp"
+    vim.fn.mkdir(tmp_dir, "p")
+
+    local extensions = {
+      {
+        slug = "quarkus",
+        ns = "redhat",
+        name = "vscode-quarkus",
+        version = vim.env.TETRAVIM_QUARKUS_VERSION or "latest",
+        title = "Quarkus Language Server",
+      },
+      {
+        slug = "microprofile",
+        ns = "redhat",
+        name = "vscode-microprofile",
+        version = vim.env.TETRAVIM_MICROPROFILE_VERSION or "latest",
+        title = "MicroProfile Language Server",
+      },
+    }
+
+    local any_failed = false
+
+    for _, ext in ipairs(extensions) do
+      local dest = base_dir .. "/" .. ext.slug
+      local stamp = dest .. "/.version"
+
+      local api_url = string.format("https://open-vsx.org/api/%s/%s/%s", ext.ns, ext.name, ext.version)
+      local meta_res = exec_cmd({ "curl", "-fsSL", api_url })
+
+      if not meta_res or meta_res.code ~= 0 or not meta_res.stdout or meta_res.stdout == "" then
+        notify(
+          string.format("Could not resolve %s (%s) on Open VSX -- skipping.", ext.name, ext.version),
+          vim.log.levels.WARN
+        )
+        any_failed = true
+      else
+        local ok_json, meta = pcall(vim.json.decode, meta_res.stdout)
+        if not ok_json or not meta then
+          notify(string.format("Failed to parse Open VSX metadata for %s", ext.name), vim.log.levels.WARN)
+          any_failed = true
+        else
+          local rver = meta.version or ext.version
+          local dl_url = (meta.files and meta.files.download) or meta.download
+          if not dl_url or dl_url == "" then
+            notify(string.format("No download URL found for %s %s", ext.name, rver), vim.log.levels.WARN)
+            any_failed = true
+          else
+            local is_up_to_date = false
+            if not force and vim.fn.filereadable(stamp) == 1 then
+              local f = io.open(stamp, "r")
+              if f then
+                local current_ver = vim.trim(f:read("*a") or "")
+                f:close()
+                if current_ver == rver then
+                  is_up_to_date = true
+                end
+              end
+            end
+
+            if is_up_to_date then
+              notify(string.format("%s: already at %s (up to date)", ext.title, rver), vim.log.levels.INFO)
+            else
+              notify(string.format("%s: downloading %s %s...", ext.title, ext.name, rver), vim.log.levels.INFO)
+              local vsix_file = tmp_dir .. "/" .. ext.slug .. ".vsix"
+              local dl_res = exec_cmd({ "curl", "-fsSL", "-o", vsix_file, dl_url })
+              if not dl_res or dl_res.code ~= 0 then
+                notify(string.format("Download failed for %s (%s)", ext.name, dl_url), vim.log.levels.WARN)
+                any_failed = true
+              else
+                local unpack_dir = tmp_dir .. "/" .. ext.slug
+                vim.fn.delete(unpack_dir, "rf")
+                vim.fn.mkdir(unpack_dir, "p")
+
+                exec_cmd({ "unzip", "-qq", vsix_file, "extension/server/*", "extension/jars/*", "-d", unpack_dir })
+
+                local server_dir = unpack_dir .. "/extension/server"
+                if vim.fn.isdirectory(server_dir) ~= 1 then
+                  notify(string.format("%s: no extension/server/ found in archive", ext.title), vim.log.levels.WARN)
+                  any_failed = true
+                else
+                  vim.fn.delete(dest, "rf")
+                  vim.fn.mkdir(dest, "p")
+                  exec_cmd({ "mv", server_dir, dest .. "/server" })
+
+                  local jars_dir = unpack_dir .. "/extension/jars"
+                  if vim.fn.isdirectory(jars_dir) == 1 then
+                    exec_cmd({ "mv", jars_dir, dest .. "/jars" })
+                  else
+                    vim.fn.mkdir(dest .. "/jars", "p")
+                  end
+
+                  local f = io.open(stamp, "w")
+                  if f then
+                    f:write(rver .. "\n")
+                    f:close()
+                  end
+                  notify(string.format("%s: installed %s -> %s", ext.title, rver, dest), vim.log.levels.INFO)
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    vim.fn.delete(tmp_dir, "rf")
+
+    local success = not any_failed
+    local msg = success and "Quarkus / MicroProfile language servers are ready."
+      or "One or more JVM LSP bundles failed to install."
+    notify(msg, success and vim.log.levels.INFO or vim.log.levels.WARN)
+
+    if on_complete then
+      on_complete(success, msg)
+    end
+    return success, msg
+  end
+
+  if sync then
+    return runner()
+  else
+    coroutine.wrap(runner)()
+    return true, "JVM LSP installation started in background"
+  end
+end
+
 return M

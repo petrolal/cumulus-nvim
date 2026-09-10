@@ -94,6 +94,7 @@ describe("tetravim.util.jvm_frameworks", function()
       "quarkus_ready",
       "spring_boot_ls_jar",
       "spring_boot_ready",
+      "fetch_jars",
     }) do
       assert.are.equal("function", type(fw[name]), name .. " missing")
     end
@@ -146,13 +147,12 @@ describe("JVM framework plugin specs (static shape)", function()
     assert.is_truthy(read("lua/tetravim/health.lua"):match("JVM Framework Config LSP"))
   end)
 
-  -- Migrated from scripts/validate-jvm-frameworks.sh step [4/4].
-  it("fetch-jvm-lsp-jars.sh is present, executable and syntactically valid", function()
-    local path = "scripts/fetch-jvm-lsp-jars.sh"
-    local st = vim.uv.fs_stat(path)
-    assert.is_table(st, path .. " is missing")
-    assert.is_true(bit.band(st.mode, tonumber("111", 8)) ~= 0, path .. " is not executable")
-    vim.fn.system({ "bash", "-n", path })
-    assert.are.equal(0, vim.v.shell_error, path .. " has a shell syntax error")
+  it("lsp-quarkus.lua declares TetraVimFetchJvmLspJars command", function()
+    local body = read("lua/tetravim/plugins/lsp-quarkus.lua")
+    assert.is_truthy(body:match("TetraVimFetchJvmLspJars"))
+  end)
+
+  it("jvm_frameworks exposes fetch_jars native function", function()
+    assert.are.equal("function", type(fw.fetch_jars))
   end)
 end)

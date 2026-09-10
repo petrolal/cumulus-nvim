@@ -26,6 +26,24 @@ return {
     "JavaHello/quarkus.nvim",
     dependencies = { "JavaHello/microprofile.nvim" },
     ft = { "java", "yaml", "jproperties", "html" },
+    init = function()
+      local function cmd_handler(cmd_opts)
+        local force = cmd_opts.bang or (cmd_opts.args == "--force")
+        require("tetravim.util.jvm_frameworks").fetch_jars({ force = force })
+      end
+
+      vim.api.nvim_create_user_command("TetraVimFetchJvmLspJars", cmd_handler, {
+        bang = true,
+        nargs = "?",
+        desc = "Download Quarkus and MicroProfile language server jars from Open VSX",
+      })
+
+      vim.api.nvim_create_user_command("TetraVimInstallJvmLsp", cmd_handler, {
+        bang = true,
+        nargs = "?",
+        desc = "Download Quarkus and MicroProfile language server jars from Open VSX (alias)",
+      })
+    end,
     config = function()
       local fw = require("tetravim.util.jvm_frameworks")
       local qp = fw.quarkus_paths()

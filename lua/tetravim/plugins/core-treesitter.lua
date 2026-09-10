@@ -36,8 +36,38 @@ return {
     config = function(_, opts)
       require("nvim-treesitter").setup({})
 
-      if type(opts.ensure_installed) == "table" and #opts.ensure_installed > 0 then
-        require("nvim-treesitter").install(opts.ensure_installed)
+      local function install_parsers()
+        if type(opts.ensure_installed) == "table" and #opts.ensure_installed > 0 then
+          require("nvim-treesitter").install(opts.ensure_installed)
+        end
+      end
+
+      -- nvim-treesitter ("main" branch) shells out to `tree-sitter build` to compile parsers.
+      -- If the `tree-sitter` CLI is not yet on PATH (e.g. Mason is still installing
+      -- `tree-sitter-cli` in the background on a fresh setup), calling install() immediately
+      -- throws ENOENT errors for every parser. Guard behind an executable check and listen
+      -- for Mason to finish installing tree-sitter-cli as a fallback.
+      if vim.fn.executable("tree-sitter") == 1 then
+        install_parsers()
+      else
+        local ok_mr, mr = pcall(require, "mason-registry")
+        if ok_mr then
+          mr:on("package:install:success", function(pkg)
+            if pkg.name == "tree-sitter-cli" then
+              vim.schedule(install_parsers)
+            end
+          end)
+        end
+
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "MasonToolsUpdateCompleted",
+          callback = function()
+            if vim.fn.executable("tree-sitter") == 1 then
+              install_parsers()
+            end
+          end,
+          once = true,
+        })
       end
 
       vim.api.nvim_create_autocmd("FileType", {

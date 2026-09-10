@@ -117,20 +117,20 @@ JVM framework config intelligence (`application.properties` / `application.yml` 
 - **Quarkus / MicroProfile** — `plugins/lsp-quarkus.lua` drives
   `JavaHello/quarkus.nvim` + `JavaHello/microprofile.nvim` (lsp4mp + Qute LS). These
   ship only inside Red Hat's `vscode-quarkus` / `vscode-microprofile` `.vsix`
-  bundles — **not in Mason** — so `scripts/fetch-jvm-lsp-jars.sh` downloads them
+  bundles — **not in Mason** — so `:TetraVimFetchJvmLspJars` (`util/jvm_frameworks.fetch_jars()`) downloads them
   from Open VSX into `$TETRAVIM_JVM_LSP_DIR` (default
   `stdpath("data")/tetravim/jvm-lsp`, layout `quarkus/{server,jars}` +
   `microprofile/{server,jars}`). The spec loads but stays **dormant** (no server
   spawned) until those jars exist; each server is a separate ~1 GiB JVM on top of
-  jdtls, so activation is opt-in. The three provisioning scripts
-  (`bootstrap.sh`, `scripts/bootstrap.sh`, `scripts/headless-setup.sh`) call the
-  fetch script best-effort.
+  jdtls, so activation is opt-in. The provisioning scripts
+  (`bootstrap.sh`, `scripts/bootstrap.sh`, `scripts/headless-setup.sh`) call
+  `jvm_frameworks.fetch_jars()` headlessly best-effort.
 - **Micronaut** — intentionally **unsupported**: no viable Neovim language server
   exists. Do not add one.
 
 `util/jvm_frameworks` is the path resolver + readiness probe API
 (`dir`, `java_cmd`, `quarkus_paths`, `microprofile_paths`, `quarkus_ready`,
-`spring_boot_ls_jar`, `spring_boot_ready`) used by both plugin specs,
+`spring_boot_ls_jar`, `spring_boot_ready`, `fetch_jars`) used by both plugin specs,
 `ftplugin/java.lua` (folds each module's `java_extensions()` into the jdtls
 `bundles`) and the `:checkhealth tetravim` "JVM Framework Config LSP" section.
 `tests/jvm_frameworks_spec.lua` covers it.
