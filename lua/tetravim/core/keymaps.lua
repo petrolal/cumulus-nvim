@@ -227,6 +227,10 @@ map("n", "<leader>aho", function()
   end)
 end, { desc = "Generate .http from OpenAPI Spec" })
 
+map("n", "<leader>ae", function()
+  require("tetravim.util.endpoints_panel").open()
+end, { desc = "Endpoints Panel" })
+
 map("n", "<leader>ahj", function()
   local ft = vim.bo.filetype
 

@@ -311,4 +311,127 @@ function M.generate_http_from_spec(spec_path)
   return table.concat(blocks, "\n\n") .. "\n"
 end
 
+--- Discover JSON OpenAPI / Swagger spec files under `root` (bounded depth).
+--- Matches the conventional filenames plus `*.openapi.json` / `*.swagger.json`;
+--- YAML specs are skipped (JSON only, per this module's scope). Vendored trees
+--- (`node_modules`, `target`, `build`, `.git`, `.gradle`, `dist`, `out`) are
+--- pruned so a monorepo scan stays cheap.
+---@param root string
+---@return string[]
+function M.discover_specs(root)
+  if type(root) ~= "string" or root == "" then
+    return {}
+  end
+  root = vim.fs.normalize(root)
+
+  local exact = {
+    ["openapi.json"] = true,
+    ["swagger.json"] = true,
+    ["api-docs.json"] = true,
+  }
+  -- Any path segment matching one of these prunes the file. vim.fs.find has no
+  -- dir-prune hook, so this is a post-filter on the containing directory path.
+  local pruned = {
+    ["node_modules"] = true,
+    ["target"] = true,
+    ["build"] = true,
+    ["dist"] = true,
+    ["out"] = true,
+    [".git"] = true,
+    [".gradle"] = true,
+    [".idea"] = true,
+  }
+
+  local found = vim.fs.find(function(name, path)
+    if not (exact[name] or name:match("%.openapi%.json$") or name:match("%.swagger%.json$")) then
+      return false
+    end
+    local rel = path:sub(#root + 1)
+    local depth = 0
+    for seg in rel:gmatch("[^/]+") do
+      if pruned[seg] then
+        return false
+      end
+      depth = depth + 1
+    end
+    return depth <= 6
+  end, { path = root, type = "file", limit = 25 })
+
+  return found or {}
+end
+
+--- Parse a JSON OpenAPI spec at `spec_path` into a flat endpoint list.
+--- Non-throwing: returns an empty list (never nil) for a missing / YAML /
+--- non-JSON / pathless spec, so a caller merging several specs never has to
+--- nil-check. `line` is a best-effort source line (the first raw line quoting
+--- the path key) for jump-to-source into the spec file.
+---@param spec_path string
+---@return { http_method: string, path: string, operation_id: string, summary: string, file: string, line: integer, source: string }[]
+function M.list_endpoints(spec_path)
+  if type(spec_path) ~= "string" or spec_path == "" then
+    return {}
+  end
+  spec_path = vim.fs.normalize(spec_path)
+  if spec_path:lower():match("%.ya?ml$") or vim.fn.filereadable(spec_path) ~= 1 then
+    return {}
+  end
+
+  local ok_read, raw_lines = pcall(vim.fn.readfile, spec_path)
+  if not ok_read or type(raw_lines) ~= "table" then
+    return {}
+  end
+  local raw = table.concat(raw_lines, "\n"):gsub("^\239\187\191", "")
+  local ok_decode, spec = pcall(vim.json.decode, raw)
+  if not ok_decode or type(spec) ~= "table" or type(spec.paths) ~= "table" then
+    return {}
+  end
+
+  local function line_of(path_key)
+    local needle = '"' .. path_key .. '"'
+    for i, l in ipairs(raw_lines) do
+      if l:find(needle, 1, true) then
+        return i
+      end
+    end
+    return 1
+  end
+
+  local out = {}
+  for path_key, path_item in pairs(spec.paths) do
+    if type(path_key) == "string" and path_key:match("^/") and type(path_item) == "table" then
+      local ln = line_of(path_key)
+      for method_key, op in pairs(path_item) do
+        if type(method_key) == "string" and HTTP_METHODS[method_key:lower()] then
+          local operation_id, summary = "", ""
+          if type(op) == "table" then
+            if type(op.operationId) == "string" then
+              operation_id = op.operationId:gsub("[\r\n]+", " ")
+            end
+            if type(op.summary) == "string" then
+              summary = op.summary:gsub("[\r\n]+", " ")
+            end
+          end
+          out[#out + 1] = {
+            http_method = method_key:upper(),
+            path = path_key,
+            operation_id = operation_id,
+            summary = summary,
+            file = spec_path,
+            line = ln,
+            source = "openapi",
+          }
+        end
+      end
+    end
+  end
+
+  table.sort(out, function(a, b)
+    if a.path == b.path then
+      return a.http_method < b.http_method
+    end
+    return a.path < b.path
+  end)
+  return out
+end
+
 return M

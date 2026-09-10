@@ -815,10 +815,16 @@ function M.setup_keymaps(force)
   -- Docker & Containers (<leader>od) -- group label already reads "docker".
   map("n", "<leader>odb", M.docker_build, { desc = "Build Image", silent = true })
   map("n", "<leader>odl", M.docker_lint, { desc = "Lint Dockerfile", silent = true })
+  map("n", "<leader>odd", function()
+    require("tetravim.util.docker").open()
+  end, { desc = "Runtime Dashboard", silent = true })
 
   -- Helm & Kubernetes (<leader>ok) -- group label already reads "helm/k8s".
   map("n", "<leader>okl", M.helm_lint, { desc = "Lint Chart", silent = true })
   map("n", "<leader>okt", M.helm_template, { desc = "Render Template", silent = true })
+  map("n", "<leader>oke", function()
+    require("tetravim.util.k8s").open()
+  end, { desc = "Cluster Explorer", silent = true })
 
   M.keymaps_registered = true
 end

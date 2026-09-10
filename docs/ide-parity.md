@@ -6,7 +6,7 @@ tetravim.nvim covers it with native Neovim LSP / Tree-sitter / Mason tooling.
 Legend: ✅ full LSP + Tree-sitter · 🟡 Tree-sitter / syntax only (no OSS server)
 · ➖ not covered (no OSS equivalent) · 🔷 handled by an existing spec
 
-_Last reconciled with the code: 2026-09-10 (`lsp-kotlin.lua`, `lsp-quarkus.lua`)._
+_Last reconciled with the code: 2026-09-10 (`lsp-kotlin.lua`, `lsp-quarkus.lua`, `util/endpoints_panel.lua`, `util/k8s.lua`, `util/docker.lua`)._
 
 ## Languages
 
@@ -88,9 +88,10 @@ H2, …). Datasource auto-discovery from Spring `application.*` is
 | IDEA bundles | tetravim |
 | --- | --- |
 | HTTP Client (`.http`) | 🔷 `tools-http.lua` (kulala) |
-| OpenAPI / Swagger | 🔷 `tetravim.util.openapi` |
-| Docker / Compose | 🔷 `cloud-containers-k8s.lua` |
-| Kubernetes / Helm | 🔷 `cloud-containers-k8s.lua` |
+| OpenAPI / Swagger | 🔷 `tetravim.util.openapi` (`.http` generation); `tetravim.util.endpoints_panel` folds JSON specs into the Endpoints panel |
+| Endpoints tool window | 🔷 `tetravim.util.endpoints_panel` (`<leader>ae`) — docked list of every Spring MVC mapping + JSON OpenAPI operation, `<CR>` jump / `r` refresh / `g` → `.http` |
+| Docker / Compose | 🔷 `cloud-containers-k8s.lua` (LSP/lint) + `tetravim.util.docker` runtime dashboard (`<leader>odd`) — container/image list, logs, start/stop/restart, exec shell, remove, `docker compose up -d` / `down` |
+| Kubernetes / Helm | 🔷 `cloud-containers-k8s.lua` (LSP) + `tetravim.util.k8s` cluster explorer (`<leader>oke`) — Deployments/Pods/Services per context+namespace, describe/yaml, logs, exec shell, delete, namespace/context switch |
 | Terraform | 🔷 `cloud-terraform.lua` |
 | Database tools | 🔷 `tools-dadbod.lua` + `lsp-sql.lua` |
 
@@ -111,6 +112,9 @@ server, a workflow.
 | Bundled decompiler (source-less library `.class`) | 🔷 `lsp-java.lua` + `ftplugin/java.lua` → `dgileadi/vscode-java-decompiler` jars in the jdtls bundle list | `gd` |
 | npm dependency version inlays in `package.json` | 🔷 `lang-npm.lua` → package-info.nvim | `<leader>cn*` (buffer-local in `package.json`) |
 | Run with Coverage | 🔷 native `tetravim.util.coverage` (JaCoCo XML overlay) | `<leader>jc*` |
+| Endpoints tool window (project HTTP endpoint list) | 🔷 `tetravim.util.endpoints_panel` → `tetravim.util.panel` in the shared split (Spring `workspace/symbol` model + JSON OpenAPI specs) | `<leader>ae` |
+| Kubernetes tool window (cluster resource tree) | 🔷 `tetravim.util.k8s` → `tetravim.util.panel`; `kubectl`-driven Deployments/Pods/Services for the active context+namespace, describe / yaml / logs / exec / delete / ns+ctx switch | `<leader>oke` |
+| Services / Docker tool window (container + image runtime) | 🔷 `tetravim.util.docker` → `tetravim.util.panel`; `docker`-driven container/image list, inspect / logs / start-stop-restart / exec / rm / `docker compose up -d`+`down` | `<leader>odd` |
 
 `nvim-coverage` was deliberately **not** added: the distro already ships a
 native JaCoCo coverage engine (`lua/tetravim/util/coverage.lua`, wired to

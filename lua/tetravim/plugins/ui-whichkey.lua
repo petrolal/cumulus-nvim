@@ -28,6 +28,7 @@ return {
         -- top-level groups (<leader>D / <leader>H / <leader>G) that collided
         -- with <leader>d and <leader>g; folded under one lowercase <leader>a.
         { "<leader>a", group = "api/data", icon = "󰖟 " },
+        { "<leader>ae", desc = "Endpoints Panel", icon = "󰛳 " },
         { "<leader>ad", group = "database", icon = "󰆼 " },
         { "<leader>ah", group = "http", icon = "󰖟 " },
         { "<leader>ag", group = "grpc/proto", icon = "󱅥 " },
