@@ -1111,8 +1111,13 @@ function M.check()
     end
   end
 
-  -- undotree is Vimscript-only (no Lua module); probe the command it defines.
-  if vim.fn.exists(":UndotreeToggle") == 2 then
+  -- undotree (persistent undo timeline / IDEA 'Local History')
+  local ok_undotree = pcall(require, "undotree")
+  if
+    ok_undotree
+    or vim.fn.exists(":UndotreeToggle") == 2
+    or vim.fn.isdirectory(vim.fn.stdpath("data") .. "/lazy/undotree") == 1
+  then
     vim.health.ok("undotree: available (persistent undo timeline / IDEA 'Local History') -- <leader>uu")
   else
     vim.health.info("undotree: not loaded (IDEA 'Local History'). Suggestion: :Lazy sync")

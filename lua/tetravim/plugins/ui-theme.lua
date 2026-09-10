@@ -173,17 +173,6 @@ return {
   {
     "akinsho/bufferline.nvim",
     event = "VeryLazy",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
     opts = get_bufferline_opts,
-  },
-
-  -- Global Devicons Specification (Story 30.2)
-  {
-    "nvim-tree/nvim-web-devicons",
-    -- NOTE: must load eagerly because icons are consumed immediately by dashboard/statusline/telescope
-    lazy = false,
-    opts = {
-      default = true,
-    },
   },
 }

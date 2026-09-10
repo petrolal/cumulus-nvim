@@ -6,21 +6,45 @@
 -- and time-travel, which is the same recovery workflow.
 --
 -- Persistent undo itself is configured in core/options.lua -- this spec only
--- adds the viewer. Pure Vimscript plugin, no external dependency.
+-- adds the viewer in pure Lua with diff previews.
 
 return {
   {
-    "mbbill/undotree",
-    cmd = { "UndotreeToggle", "UndotreeShow", "UndotreeFocus" },
+    "jiaoshijie/undotree",
+    dependencies = { "nvim-lua/plenary.nvim" },
     keys = {
-      { "<leader>uu", "<cmd>UndotreeToggle<cr>", desc = "Toggle Undo History" },
+      {
+        "<leader>uu",
+        function()
+          require("undotree").toggle()
+        end,
+        desc = "Toggle Undo History",
+      },
     },
-    init = function()
-      vim.g.undotree_WindowLayout = 2
-      vim.g.undotree_SplitWidth = 34
-      vim.g.undotree_DiffpanelHeight = 12
-      vim.g.undotree_SetFocusWhenToggle = 1
-      vim.g.undotree_ShortIndicators = 1
-    end,
+    opts = {
+      float_diff = true,
+      layout = "left_bottom",
+      position = "left",
+      ignore_filetype = {
+        "Undotree",
+        "UndotreeDiff",
+        "qf",
+        "TelescopePrompt",
+        "spectre_panel",
+        "tsplayground",
+      },
+      window = {
+        winblend = 10,
+      },
+      keymaps = {
+        ["j"] = "move_next",
+        ["k"] = "move_prev",
+        ["J"] = "move_change_next",
+        ["K"] = "move_change_prev",
+        ["<cr>"] = "action_enter",
+        ["p"] = "enter_diffbuf",
+        ["q"] = "quit",
+      },
+    },
   },
 }

@@ -12,7 +12,6 @@ return {
   {
     "Bekaboo/dropbar.nvim",
     event = { "BufReadPost", "BufNewFile" },
-    dependencies = { "nvim-tree/nvim-web-devicons" },
     opts = {
       bar = {
         -- Winbar only in real file windows -- keep it off the dashboard,
