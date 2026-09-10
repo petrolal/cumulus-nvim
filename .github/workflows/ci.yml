@@ -2,7 +2,7 @@ name: CI
 
 # Runs the validation apparatus that already lives in this repo -- stylua,
 # shell-syntax checks, the plenary busted suite (lua/tetravim/tests/) and the
-# scripts/validate*.sh smoke suites -- on every push to main and every PR, so a
+# scripts/validate.sh orchestrator -- on every push to main and every PR, so a
 # regression is caught here instead of the next time someone runs validate.sh
 # by hand.
 
@@ -139,13 +139,13 @@ jobs:
           if-no-files-found: ignore
 
   # --------------------------------------------------------------------------
-  # scripts/validate.sh (7-stage aggregate) plus every standalone
-  # scripts/validate-*.sh component suite. Provisioning goes through the repo's
-  # own headless entrypoint; real-binary steps SKIP when a Mason tool is
-  # absent, so this stays green without a full tool-chain.
+  # scripts/validate.sh orchestrator (runs headless-setup.sh then the
+  # plenary busted suite). All former validate-*.sh component suites have been
+  # migrated to lua/tetravim/tests/*_spec.lua and are covered by the `test`
+  # job above.
   # --------------------------------------------------------------------------
   smoke:
-    name: Validation suite (scripts/validate*.sh)
+    name: Validation suite (scripts/validate.sh)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -193,18 +193,14 @@ jobs:
             echo "::endgroup::"
           }
 
-          # Aggregate suite first. The bulk of the old validate-*.sh
-          # assertions now live in lua/tetravim/tests/ and run in the `busted`
-          # job above; the remaining validate-*.sh are the shrunk real-binary
-          # steps (3-4 / db / http) and the runtime-only ones (4-1 /
-          # completion / dap-jvm).
+          # All validate-*.sh component suites are now migrated to Plenary
+          # specs in lua/tetravim/tests/ and run in the `test` job above.
+          # Only the orchestration script remains.
           run scripts/validate.sh
-          for s in scripts/validate-*.sh; do
-            run "$s"
-          done
 
           if ((${#failed[@]})); then
             printf '::error::validation failure: %s\n' "${failed[*]}"
             exit 1
           fi
           echo "All validation scripts passed."
+

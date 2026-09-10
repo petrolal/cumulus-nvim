@@ -542,4 +542,60 @@ describe("tetravim embedded DB explorer (SPEC-3.1)", function()
       assert.is_truthy(dbs[1].url:match("://postgres:@localhost:5432/emptydef"))
     end)
   end)
+
+  describe("dadbod cmp source registration (migrated from validate-db.sh)", function()
+    it("registers cmp source on fresh, already-open, and re-fired sql buffers without duplicates", function()
+      local code = [[
+        local spec = require('tetravim.plugins.tools-dadbod')
+        assert(spec[1] and type(spec[1].config) == 'function', 'plugin spec[1].config missing')
+        local buf_preexisting = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_set_current_buf(buf_preexisting)
+        vim.bo[buf_preexisting].filetype = 'sql'
+        spec[1].config()
+        local cmp = require('cmp')
+        local function dadbod_count(bufnr)
+          local n = 0
+          local sources = vim.api.nvim_buf_call(bufnr, function()
+            return cmp.get_config().sources
+          end)
+          for _, s in ipairs(sources or {}) do
+            if s.name == 'vim-dadbod-completion' then n = n + 1 end
+          end
+          return n
+        end
+        assert(dadbod_count(buf_preexisting) == 1, 'preexisting sql buf missing dadbod source')
+        local buf_fresh = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_set_current_buf(buf_fresh)
+        vim.bo[buf_fresh].filetype = 'sql'
+        assert(dadbod_count(buf_fresh) == 1, 'fresh sql buf missing dadbod source')
+        vim.api.nvim_exec_autocmds('FileType', { buffer = buf_fresh })
+        vim.api.nvim_exec_autocmds('FileType', { buffer = buf_fresh })
+        assert(dadbod_count(buf_fresh) == 1, 'refiring FileType duplicated dadbod source')
+        vim.cmd('qa!')
+      ]]
+      local out = vim.fn.system({ "nvim", "--headless", "-u", "init.lua", "-c", "lua " .. code })
+      assert.are.equal(0, vim.v.shell_error, out)
+    end)
+
+    it("cmp source registration merges rather than replaces existing sources", function()
+      local code = [[
+        local cmp = require('cmp')
+        cmp.setup.global({ sources = { { name = 'cr_sentinel_src' } } })
+        vim.cmd('enew')
+        local buf = vim.api.nvim_get_current_buf()
+        vim.bo[buf].filetype = 'sql'
+        require('tetravim.plugins.tools-dadbod')[1].config()
+        local srcs = vim.api.nvim_buf_call(buf, function()
+          return cmp.get_config().sources
+        end)
+        local names = {}
+        for _, s in ipairs(srcs or {}) do names[s.name] = true end
+        assert(names['vim-dadbod-completion'], 'dadbod cmp source missing')
+        assert(names['cr_sentinel_src'], 'pre-existing cmp source was not preserved')
+        vim.cmd('qa!')
+      ]]
+      local out = vim.fn.system({ "nvim", "--headless", "-u", "init.lua", "-c", "lua " .. code })
+      assert.are.equal(0, vim.v.shell_error, out)
+    end)
+  end)
 end)

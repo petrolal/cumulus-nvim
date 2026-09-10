@@ -321,4 +321,99 @@ describe("tetravim HTTP client (SPEC-3.2)", function()
       vim.api.nvim_buf_delete(buf, { force = true })
     end)
   end)
+
+  describe("jq integration (migrated from validate-http.sh)", function()
+    it("jq installed: valid filter delivers filtered output via callback", function()
+      if vim.fn.executable("jq") ~= 1 then
+        return
+      end
+      local done, result = false, nil
+      http.jq_filter('{"a":1}', ".a", function(text)
+        result = text
+        done = true
+      end)
+      vim.wait(5000, function()
+        return done
+      end, 50)
+      assert.is_true(done, "jq_filter callback never fired within 5s")
+      assert.are.equal("1", vim.trim(result or ""))
+    end)
+
+    it("jq filter syntax error: surfaces error notification and does not invoke callback", function()
+      if vim.fn.executable("jq") ~= 1 then
+        return
+      end
+      local notified = {}
+      local orig = vim.notify
+      vim.notify = function(msg, level)
+        table.insert(notified, { msg = msg, level = level })
+      end
+
+      local cb_called = false
+      http.jq_filter('{"a":1}', "this is not valid jq (((", function()
+        cb_called = true
+      end)
+
+      vim.wait(5000, function()
+        for _, n in ipairs(notified) do
+          if n.level == vim.log.levels.ERROR then
+            return true
+          end
+        end
+        return false
+      end, 50)
+      vim.notify = orig
+
+      assert.is_false(cb_called, "callback must not be invoked on a jq syntax error")
+      local saw_err = false
+      for _, n in ipairs(notified) do
+        if n.level == vim.log.levels.ERROR then
+          saw_err = true
+        end
+      end
+      assert.is_true(saw_err, "expected an ERROR notification carrying jq stderr for a syntax error")
+    end)
+
+    it("<leader>ahj callback jq-filters the current buffer into a real split", function()
+      if vim.fn.executable("jq") ~= 1 then
+        return
+      end
+      require("tetravim.core.keymaps")
+      local maps = vim.api.nvim_get_keymap("n")
+      local hj = nil
+      for _, m in ipairs(maps) do
+        if m.lhs:match("ahj$") then
+          hj = m
+        end
+      end
+      assert.is_table(hj, "<leader>ahj mapping missing")
+      assert.is_function(hj.callback, "<leader>ahj callback missing")
+
+      vim.cmd("enew")
+      local cur_buf = vim.api.nvim_get_current_buf()
+      vim.api.nvim_buf_set_lines(cur_buf, 0, -1, false, { '{"a":1,"b":2}' })
+      vim.bo[cur_buf].modified = false
+
+      local orig_input = vim.ui.input
+      vim.ui.input = function(_, cb)
+        cb(".b")
+      end
+
+      local win_count_before = #vim.api.nvim_list_wins()
+      hj.callback()
+      vim.wait(5000, function()
+        return #vim.api.nvim_list_wins() > win_count_before
+      end, 20)
+      vim.ui.input = orig_input
+
+      assert.is_true(#vim.api.nvim_list_wins() > win_count_before, "<leader>ahj must open a new window")
+      local win = vim.api.nvim_get_current_win()
+      assert.are.equal("", vim.api.nvim_win_get_config(win).relative, "result window must be a real split, not floating")
+
+      local buf = vim.api.nvim_win_get_buf(win)
+      local text = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n")
+      assert.are.equal("2", vim.trim(text))
+      vim.api.nvim_win_close(win, true)
+    end)
+  end)
 end)

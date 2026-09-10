@@ -68,4 +68,65 @@ describe("JVM Debugger (SPEC-1.1)", function()
       assert.is_truthy(content:match("hotcodereplace%s*=%s*['\"]auto['\"]"))
     end)
   end)
+
+  describe("Behavioral DAP callbacks (migrated from validate-dap-jvm.sh)", function()
+    it(
+      "exercises conditional breakpoint, logpoint, exception breakpoints, and eval in isolated headless nvim",
+      function()
+        local code = [==[
+        local dap = require('dap')
+        local dap_bp = require('dap.breakpoints')
+        local dap_devops = require('tetravim.plugins.tools-dap-devops')
+        local key_fns = {}
+        for _, k in ipairs(dap_devops[1].keys) do
+          key_fns[k[1]] = k[2]
+        end
+
+        local orig_input = vim.fn.input
+        local function with_input(value, fn)
+          vim.fn.input = function() return value end
+          local call_ok, call_err = pcall(fn)
+          vim.fn.input = orig_input
+          if not call_ok then error(call_err, 0) end
+        end
+
+        vim.cmd('enew')
+        local bufnr = vim.api.nvim_get_current_buf()
+        vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'line1', 'line2', 'line3' })
+        vim.api.nvim_win_set_cursor(0, { 1, 0 })
+
+        -- Conditional breakpoint (<leader>dC)
+        with_input('x > 5', key_fns['<leader>dC'])
+        local bps = dap_bp.get(bufnr)[bufnr] or {}
+        assert(#bps == 1 and bps[1].condition == 'x > 5', 'conditional breakpoint condition not stored')
+        dap.clear_breakpoints()
+
+        -- Logpoint (<leader>dL)
+        with_input('hit line1', key_fns['<leader>dL'])
+        bps = dap_bp.get(bufnr)[bufnr] or {}
+        assert(#bps == 1 and bps[1].logMessage == 'hit line1', 'logpoint logMessage not stored')
+        dap.clear_breakpoints()
+
+        -- Whitespace-only input must be rejected by guard
+        with_input('   ', key_fns['<leader>dC'])
+        bps = dap_bp.get(bufnr)[bufnr] or {}
+        assert(#bps == 0, 'whitespace-only condition input must not create a breakpoint')
+
+        with_input('   ', key_fns['<leader>dL'])
+        bps = dap_bp.get(bufnr)[bufnr] or {}
+        assert(#bps == 0, 'whitespace-only log message input must not create a logpoint')
+
+        -- Exception breakpoints (<leader>dE) with no active session
+        key_fns['<leader>dE']()
+
+        -- Variable eval (<leader>dv) with no active session
+        key_fns['<leader>dv']()
+
+        vim.cmd('qa!')
+      ]==]
+        local out = vim.fn.system({ "nvim", "--headless", "-u", "init.lua", "-c", "lua " .. code })
+        assert.are.equal(0, vim.v.shell_error, out)
+      end
+    )
+  end)
 end)

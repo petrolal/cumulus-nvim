@@ -61,8 +61,11 @@ vim.diagnostic.config({
   },
   -- `[d` / `]d` / `vim.diagnostic.jump` open the float on landing, so a jump
   -- shows the full message without a second keystroke.
+  -- NOTE: opts.jump.float was deprecated in Neovim 0.14; use on_jump instead.
   jump = {
-    float = true,
+    on_jump = function()
+      vim.diagnostic.open_float()
+    end,
   },
 })
 

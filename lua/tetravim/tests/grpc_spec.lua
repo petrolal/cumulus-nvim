@@ -347,5 +347,31 @@ describe("tetravim.util.grpc", function()
 
       assert.is_truthy(table.concat(sections, "\n"):match("gRPC"))
     end)
+
+    it("grpcurl binary is runnable when present", function()
+      if vim.fn.executable("grpcurl") == 1 then
+        local out = vim.fn.system({ "grpcurl", "-help" })
+        assert.is_truthy(out ~= "")
+      end
+    end)
+
+    it("conform runs buf formatting on a .proto buffer when buf is present", function()
+      if vim.fn.executable("buf") == 1 then
+        local scratch = vim.fn.tempname() .. ".proto"
+        vim.fn.writefile({ 'syntax = "proto3";', "package demo;", "message Ping { string msg = 1; }" }, scratch)
+        vim.fn.system({
+          "nvim",
+          "--headless",
+          "-u",
+          "init.lua",
+          "-c",
+          "edit " .. scratch,
+          "-c",
+          "lua require('conform').format({ bufnr = 0, async = false, lsp_fallback = false, timeout_ms = 5000 }); vim.cmd('qa!')",
+        })
+        vim.fn.delete(scratch)
+        assert.are.equal(0, vim.v.shell_error)
+      end
+    end)
   end)
 end)
