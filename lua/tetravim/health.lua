@@ -740,6 +740,32 @@ function M.check()
     vim.health.error("tetravim.util.lsp_resilience: failed to load (" .. tostring(resilience) .. ")")
   end
 
+  -- JetBrains kotlin-lsp shares a single on-disk RocksDB workspace index and
+  -- fails every request when a second intellij-server races it for the lock --
+  -- lsp-kotlin.lua refuses to start a second instance (TETRAVIM_KOTLIN_LSP_FORCE
+  -- overrides). Surface which state we're in.
+  if
+    vim.fn.executable("intellij-server") == 1
+    or vim.fn.filereadable(vim.fn.stdpath("data") .. "/mason/bin/intellij-server") == 1
+  then
+    local another = vim.fn.executable("pgrep") == 1
+      and (function()
+        vim.fn.system({ "pgrep", "-f", "intellij-server" })
+        return vim.v.shell_error == 0
+      end)()
+    if vim.env.TETRAVIM_KOTLIN_LSP_FORCE == "1" then
+      vim.health.warn(
+        "Kotlin LSP: TETRAVIM_KOTLIN_LSP_FORCE=1 -- lock-contention guard disabled (concurrent index locks may crash the server)"
+      )
+    elseif another then
+      vim.health.warn(
+        "Kotlin LSP: an intellij-server is already running -- a second one is suppressed to avoid a workspace-index lock crash (:LspStart kotlin_lsp after the other session exits)"
+      )
+    else
+      vim.health.ok("Kotlin LSP: intellij-server present, no competing instance -- workspace index is free")
+    end
+  end
+
   vim.health.start("TetraVim Headless Setup & Telemetry")
 
   local setup_ok, setup_mod = pcall(require, "tetravim.core.setup")

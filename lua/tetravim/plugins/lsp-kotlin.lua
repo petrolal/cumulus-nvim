@@ -34,6 +34,78 @@ local mason_server_bin = vim.fn.stdpath("data") .. "/mason/bin/intellij-server"
 local has_kotlin_lsp = vim.fn.executable("intellij-server") == 1 or vim.fn.filereadable(mason_server_bin) == 1
 local kotlin_lsp_bin = vim.fn.filereadable(mason_server_bin) == 1 and mason_server_bin or "intellij-server"
 
+-- JetBrains' intellij-server keeps ONE RocksDB workspace index per project under
+-- ~/.cache/JetBrains/analyzer/workspaces/<hash>/index/kotlin-server/rocks/v*/LOCK
+-- and guards it with a POSIX fcntl lock. A second intellij-server against the
+-- same index loses the lock race and fails *every* request -- `initialize`
+-- included -- with
+--   RPC[Error] RequestFailed "While lock file: .../kotlin-server/rocks/vNNN/LOCK:
+--   Resource temporarily unavailable"
+-- which nvim surfaces as an uncaught `vim.schedule callback` error (client.lua
+-- asserts on the initialize error) and then the generic resilience layer
+-- restart-thrashes into the same wall.
+--
+-- fcntl locks are invisible to flock(1), so we gate on the real precondition
+-- instead: is another intellij-server already alive? (Caveat: this also
+-- suppresses a legitimate second project whose index hash differs -- rare, and
+-- far better than a crash loop. Escape hatch: TETRAVIM_KOTLIN_LSP_FORCE=1.)
+local function foreign_kotlin_lsp()
+  if vim.env.TETRAVIM_KOTLIN_LSP_FORCE == "1" then
+    return false
+  end
+  if vim.fn.executable("pgrep") ~= 1 then
+    return false
+  end
+  vim.fn.system({ "pgrep", "-f", "intellij-server" })
+  return vim.v.shell_error == 0
+end
+
+local kotlin_lsp_suppressed = has_kotlin_lsp and foreign_kotlin_lsp()
+if kotlin_lsp_suppressed then
+  vim.schedule(function()
+    require("tetravim.util.ui").notify_warn(
+      "Kotlin LSP: another Neovim/IDE already holds the JetBrains workspace index -- "
+        .. "not starting a second intellij-server (it would fail every request). "
+        .. "Close the other session, or set TETRAVIM_KOTLIN_LSP_FORCE=1, then :LspStart kotlin_lsp.",
+      "kotlin-lsp"
+    )
+  end)
+end
+
+local resilience = require("tetravim.util.lsp_resilience")
+
+-- Bespoke on_exit: re-fire FileType so a genuine crash re-attaches (mirrors the
+-- generic path in lsp-core.lua), but if a foreign intellij-server is holding the
+-- shared index at exit time, back off silently-once instead of thrashing.
+local function kotlin_lsp_refire()
+  pcall(vim.lsp.enable, "kotlin_lsp", false)
+  pcall(vim.lsp.enable, "kotlin_lsp")
+  vim.schedule(function()
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].buftype == "" and vim.bo[bufnr].filetype == "kotlin" then
+        pcall(vim.api.nvim_exec_autocmds, "FileType", { buffer = bufnr })
+      end
+    end
+  end)
+end
+
+local kotlin_lsp_bounded_restart = resilience.make_on_exit("kotlin_lsp", kotlin_lsp_refire)
+
+local function kotlin_lsp_on_exit(code, signal, client_id)
+  if foreign_kotlin_lsp() then
+    resilience.reset("kotlin_lsp")
+    vim.schedule(function()
+      require("tetravim.util.ui").notify_warn(
+        "Kotlin LSP: workspace index is locked by another Neovim/IDE -- not restarting. "
+          .. "Free it (or set TETRAVIM_KOTLIN_LSP_FORCE=1) and run :LspStart kotlin_lsp.",
+        "kotlin-lsp"
+      )
+    end)
+    return
+  end
+  return kotlin_lsp_bounded_restart(code, signal, client_id)
+end
+
 return {
   {
     "nvim-treesitter/nvim-treesitter",
@@ -50,10 +122,11 @@ return {
       servers = {
         -- Official JetBrains Kotlin Language Server (IntelliJ IDEA engine)
         kotlin_lsp = {
-          enabled = has_kotlin_lsp,
+          enabled = has_kotlin_lsp and not kotlin_lsp_suppressed,
           cmd = { kotlin_lsp_bin, "--stdio" },
           root_dir = resolve_root,
           on_attach = kotlin_on_attach,
+          on_exit = kotlin_lsp_on_exit,
         },
 
         -- Legacy fwcd/kotlin-language-server fallback
