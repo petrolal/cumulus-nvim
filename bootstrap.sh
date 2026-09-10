@@ -116,6 +116,7 @@ else
 	npm_global_install prettier          # conform formatter: js/ts/yaml/json/md/css/html
 	npm_global_install sonarqube-scanner # `sonar-scanner` CLI: <leader>xsp whole-codebase Sonar scan (connected mode)
 	npm_global_install tree-sitter-cli   # `tree-sitter` CLI: nvim-treesitter "main" branch compiles every parser via `tree-sitter build`
+	npm_global_install @mermaid-js/mermaid-cli  # `mmdc` CLI: Snacks.image renders Mermaid diagrams in docs/markdown
 fi
 
 # ============================================================================

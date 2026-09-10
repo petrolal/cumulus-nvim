@@ -15,24 +15,19 @@ bash bootstrap.sh
 
 ## Validation & Test Suites
 
-Most component assertions have been migrated into plenary busted specs under
-`lua/tetravim/tests/` (one `*_spec.lua` per concern). The remaining
-`scripts/validate*.sh` cover only the steps that need a real external binary
-or a plugin the busted subprocess cannot load (`cmp`, `dap`, `conform`,
-`kulala`, …).
+All component validations and smoke tests have been migrated into native Plenary busted specs under
+`lua/tetravim/tests/` (one `*_spec.lua` per concern). All former `scripts/validate-*.sh` scripts have
+been decommissioned.
 
-- **Plenary Busted specs (the bulk of the coverage):**
+- **Plenary Busted specs (full suite):**
   ```bash
-  nvim --headless -u init.lua -c "Lazy! load plenary.nvim" -c "PlenaryBustedDirectory lua/tetravim/tests/"
+  nvim --headless -u init.lua -c "Lazy! load plenary.nvim" -c "PlenaryBustedDirectory lua/tetravim/tests/" -c "qa"
   ```
-- **Full distribution smoke test:**
+- **Test suite orchestrator:**
   ```bash
   bash scripts/validate.sh
   ```
-- **Remaining shell verification suites:**
-  - `bash scripts/validate-3-4.sh`: gRPC/Protobuf — real `grpcurl` / `buf` / `protols` steps
-  - `bash scripts/validate-db.sh`: DB explorer — `cmp`-source registration on sql buffers
-  - `bash scripts/validate-http.sh`: HTTP client — real `jq` filter steps
-  - `bash scripts/validate-4-1.sh`: Git 3-way conflict resolution (runtime-only)
-  - `bash scripts/validate-completion.sh`: nvim-cmp + LuaSnip IntelliSense wiring (runtime-only)
-  - `bash scripts/validate-dap-jvm.sh`: JVM DAP debugger & breakpoint controls (runtime-only)
+- **Single spec file:**
+  ```bash
+  nvim --headless -u init.lua -c "Lazy! load plenary.nvim" -c "PlenaryBustedFile lua/tetravim/tests/smoke_spec.lua" -c "qa"
+  ```

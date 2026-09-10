@@ -56,4 +56,25 @@ vim.api.nvim_create_user_command("CheckHealthJson", function()
   vim.api.nvim_out_write(M.json() .. "\n")
 end, { desc = "Echo health information as JSON" })
 
+--- Neovim health provider entry-point.
+--- Called when running `:checkhealth tetravim.core`.
+function M.check()
+  vim.health.start("TetraVim Core Health JSON")
+  local ok, result = pcall(function()
+    return vim.json.decode(M.json())
+  end)
+  if ok and type(result) == "table" then
+    vim.health.ok(
+      string.format(
+        ":CheckHealthJson emits valid JSON (neovim: %s, plugins: %d, lsp_clients: %d)",
+        result.neovim_version or "?",
+        result.plugin_count or 0,
+        result.lsp_clients and #result.lsp_clients or 0
+      )
+    )
+  else
+    vim.health.error("tetravim.core.health.json() did not return decodable JSON: " .. tostring(result))
+  end
+end
+
 return M

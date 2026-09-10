@@ -40,7 +40,7 @@ return {
         backend = "nui",
       },
       notify = {
-        enabled = false,
+        enabled = true,
       },
       views = {
         mini = {

@@ -23,23 +23,12 @@ bash bootstrap.sh
 # DEGRADED summary if best-effort steps fail)
 bash scripts/headless-setup.sh
 
-# Full smoke test (shell syntax, headless load, core modules, theme, plugins, DevOps suite)
+# Full test suite orchestrator (runs all Plenary busted specs in lua/tetravim/tests/)
 bash scripts/validate.sh
 
-# Lua test suite (plenary busted) -- the bulk of the component coverage.
-# Most former validate-*.sh scripts were migrated to companion *_spec.lua here.
+# Direct plenary busted suite execution
 nvim --headless -u init.lua -c "Lazy! load plenary.nvim" \
   -c "PlenaryBustedDirectory lua/tetravim/tests/" -c "qa"
-
-# Remaining shell suites -- only the steps that need a real external binary or
-# a plugin the busted subprocess cannot load (cmp / dap / conform / kulala):
-bash scripts/validate-3-4.sh           # gRPC/Protobuf -- real grpcurl / buf / protols
-bash scripts/validate-db.sh            # dadbod cmp-source registration on sql buffers
-bash scripts/validate-http.sh          # kulala HTTP client -- real jq filter steps
-bash scripts/validate-4-1.sh           # Git 3-way conflict resolution (runtime-only)
-bash scripts/validate-completion.sh    # nvim-cmp + LuaSnip IntelliSense wiring (runtime-only)
-bash scripts/validate-dap-jvm.sh       # JVM DAP debugger (runtime-only)
-
 # Single test file
 nvim --headless -u init.lua -c "Lazy! load plenary.nvim" \
   -c "PlenaryBustedFile lua/tetravim/tests/theme_integration_spec.lua" -c "qa"

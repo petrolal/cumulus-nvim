@@ -782,7 +782,9 @@ function M.check()
     vim.health.error("tetravim.theme.tetris: failed to load (" .. tostring(tetris) .. ")")
   else
     local pal = tetris.palette or {}
-    if pal.bg == "#111216" and pal.cyan == "#00F0F0" and pal.purple == "#A000F0" then
+    -- The canonical palette uses tinted (readable) versions for code text.
+    -- Pure spec hexes live in cyan_pure / purple_pure (chrome / ANSI accents).
+    if pal.bg == "#111216" and pal.cyan == "#4EC9D9" and pal.purple == "#C792EA" then
       vim.health.ok("Tetris palette module loaded (canonical hex values present)")
     else
       vim.health.warn("Tetris palette module loaded but hex values are not the canonical TetraVim set")

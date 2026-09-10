@@ -5,6 +5,12 @@ vim.g.maplocalleader = "\\"
 
 vim.g.have_nerd_font = true
 
+-- Disable unused providers to suppress vim.provider healthcheck warnings.
+-- TetraVim has no Perl or Ruby plugins; disabling them avoids spurious
+-- "Neovim::Ext not installed" / "ruby and gem must be in $PATH" noise.
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0
+
 -- Enterprise headless mode flag (Story 5‑2)
 vim.g.tetravim_headless = false
 
@@ -18,6 +24,9 @@ end
 
 -- Enable 24-bit true color support for theme highlights (Story 5.1)
 vim.opt.termguicolors = true
+
+-- Prompt to confirm save when closing a buffer with unsaved changes (Story 27.2)
+vim.opt.confirm = true
 
 -- Sync yank/paste with the OS clipboard (fixes y/p not reaching system
 -- clipboard). Deferred, and skipped entirely in headless mode: setting this
