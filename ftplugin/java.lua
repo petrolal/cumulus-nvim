@@ -109,6 +109,12 @@ do
   end
 end
 
+-- The buffer this ftplugin instance fired for. The auto-restart callback
+-- below is a closure captured at first start; by the time a crash fires it
+-- days later the user may have moved on, so it re-checks this buffer is
+-- still a live Java buffer before resurrecting jdtls.
+local ftplugin_bufnr = vim.api.nvim_get_current_buf()
+
 -- Build a fresh config table for every (re)start so an auto-restart after a
 -- crash never re-submits a table that `start_or_attach` has already mutated.
 local function make_config()
@@ -116,11 +122,29 @@ local function make_config()
     cmd = cmd,
     root_dir = root_dir,
     settings = opts.settings,
+    -- Debounce document-change syncs and use incremental sync so a fast
+    -- typist doesn't flood jdtls with full-document didChange payloads.
+    flags = {
+      debounce_text_changes = 150,
+      allow_incremental_sync = true,
+    },
     -- Shared cmp-nvim-lsp completion capabilities (same table lsp-core.lua
     -- gives every other server) so jdtls emits snippet edits, resolvable
     -- Javadoc and import text-edits for the completion popup.
     capabilities = require("tetravim.util.lsp_capabilities").make(),
     on_exit = resilience.make_on_exit("jdtls", function()
+      -- Only resurrect jdtls if the buffer that started it is still open and
+      -- still Java -- otherwise a crash long after the user closed every Java
+      -- file would spin the server back up for nothing.
+      if
+        not (
+          vim.api.nvim_buf_is_valid(ftplugin_bufnr)
+          and vim.api.nvim_buf_is_loaded(ftplugin_bufnr)
+          and vim.bo[ftplugin_bufnr].filetype == "java"
+        )
+      then
+        return
+      end
       jdtls.start_or_attach(make_config())
     end),
     init_options = {

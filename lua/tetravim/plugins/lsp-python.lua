@@ -32,6 +32,15 @@ return {
                 autoImportCompletions = true,
                 autoSearchPaths = true,
                 useLibraryCodeForTypes = true,
+                -- Inline type / return / argument-name hints, the way
+                -- PyCharm shows them. Generic-type hints stay off -- they're
+                -- the noisiest of the set.
+                inlayHints = {
+                  variableTypes = true,
+                  callArgumentNames = true,
+                  functionReturnTypes = true,
+                  genericTypes = false,
+                },
               },
             },
           },

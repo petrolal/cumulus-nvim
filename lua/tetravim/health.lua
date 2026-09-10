@@ -677,6 +677,43 @@ function M.check()
     )
   end
 
+  vim.health.start("TetraVim JVM Continuous Profiling -- async-profiler (Story 1.2)")
+
+  local profiler_bins = { "asprof", "async-profiler", "profiler.sh" }
+  local profiler_found
+  for _, bin in ipairs(profiler_bins) do
+    if vim.fn.executable(bin) == 1 then
+      profiler_found = bin
+      break
+    end
+  end
+  if profiler_found then
+    vim.health.ok(
+      ("%s: installed and executable (<leader>jps start / <leader>jpx stop / <leader>jpv view available)"):format(
+        profiler_found
+      )
+    )
+  else
+    vim.health.info(
+      "async-profiler: NOT found on $PATH (looked for 'asprof', 'async-profiler', 'profiler.sh'). "
+        .. "The <leader>jp profiling keymaps error until it is installed. "
+        .. "Suggestion: run `bash bootstrap.sh`, or grab a release from "
+        .. "https://github.com/async-profiler/async-profiler/releases"
+    )
+  end
+
+  if vim.fn.has("mac") == 0 and vim.fn.filereadable("/proc/sys/kernel/perf_event_paranoid") == 1 then
+    local paranoid = tonumber((vim.fn.readfile("/proc/sys/kernel/perf_event_paranoid")[1] or ""):match("%-?%d+"))
+    if paranoid and paranoid <= 1 then
+      vim.health.ok(("kernel.perf_event_paranoid=%d (async-profiler can sample a running JVM)"):format(paranoid))
+    elseif paranoid then
+      vim.health.warn(
+        ("kernel.perf_event_paranoid=%d -- async-profiler needs <= 1 to sample the JVM. "):format(paranoid)
+          .. "Run: sudo sysctl kernel.perf_event_paranoid=1 kernel.kptr_restrict=0"
+      )
+    end
+  end
+
   vim.health.start("TetraVim Asynchronous LSP & Resilience (Story 5.1)")
 
   local resilience_ok, resilience = pcall(require, "tetravim.util.lsp_resilience")

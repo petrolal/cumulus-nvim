@@ -83,8 +83,23 @@ return {
           configuration = {
             runtimes = runtimes,
           },
-          signatureHelp = { enabled = true },
+          -- Signature help with the parameter's Javadoc inline in the popup,
+          -- not just the parameter list.
+          signatureHelp = { enabled = true, description = { enabled = true } },
           contentProvider = { preferred = "fernflower" },
+          -- Auto-attach library sources so hover / go-to-definition land in
+          -- real Javadoc instead of a Fernflower decompile whenever a
+          -- `-sources.jar` is actually published.
+          eclipse = { downloadSources = true },
+          maven = { downloadSources = true },
+          gradle = { downloadSources = true },
+          -- "N references" / "N implementations" lenses above every member,
+          -- the way IDEA shows usage counts.
+          referencesCodeLens = { enabled = true },
+          implementationsCodeLens = { enabled = true },
+          -- Inline parameter-name hints at every call site (jdtls only emits
+          -- them for literal args unless set to "all").
+          inlayHints = { parameterNames = { enabled = "all" } },
           completion = {
             favoriteStaticMembers = {
               "org.hamcrest.MatcherAssert.assertThat",

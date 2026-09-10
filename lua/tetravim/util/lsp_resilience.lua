@@ -164,6 +164,15 @@ end
 ---@return fun(code: integer, signal: integer, client_id: integer)
 function M.make_on_exit(name, restart_fn)
   return function(code, signal)
+    -- Neovim is tearing down (`:qa`, `:qa!`, or a fatal signal): the server
+    -- is being killed on purpose. A SIGTERM on shutdown often surfaces here
+    -- as a non-zero code / signal 15 -- don't score it as a crash, don't
+    -- burn a slot in the restart window, and don't queue a `vim.defer_fn`
+    -- restart that just races the event-loop teardown.
+    if vim.v.exiting ~= vim.NIL or vim.v.dying ~= 0 then
+      return
+    end
+
     if code == 0 and (signal == nil or signal == 0) then
       return
     end

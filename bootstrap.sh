@@ -294,6 +294,148 @@ else
 fi
 
 # ============================================================================
+# 9. Core CLI tools
+#    - rg (ripgrep) -> project-wide search: safe-rename reference scan, Spring
+#                      Boot discovery, snacks.picker (:checkhealth marks it
+#                      REQUIRED)
+#    - jq           -> <leader>ahj HTTP response filtering
+#    - curl         -> kulala.nvim request backend + Spring Initializr download
+#    - unzip        -> Spring Initializr project unpack
+# ============================================================================
+section "Core CLI tools"
+
+pkg_mgr=""
+for m in pacman apt-get dnf brew; do
+	if command -v "$m" >/dev/null 2>&1; then
+		pkg_mgr="${m/apt-get/apt}"
+		break
+	fi
+done
+
+for tool in rg jq curl unzip; do
+	if command -v "$tool" >/dev/null 2>&1; then
+		pass "$tool ready"
+		continue
+	fi
+	pkg="$tool"
+	[ "$tool" = "rg" ] && pkg="ripgrep"
+	if [ -n "$pkg_mgr" ]; then
+		warn "'$tool' missing. Attempting installation..."
+		install_system_pkgs "$pkg_mgr" "$pkg" || warn "Could not install $pkg -- install it manually"
+	else
+		warn "'$tool' missing and no known package manager -- install '$pkg' manually"
+	fi
+done
+
+# ============================================================================
+# 10. Scala lint & format tools (scalafmt / scalastyle)
+#     Not in the Mason registry -- installed via Coursier when available.
+#     Metals still provides semantic diagnostics without these; they add the
+#     <leader>xlF project formatting and optional style linting.
+# ============================================================================
+section "Scala lint & format tools (scalafmt / scalastyle)"
+
+if command -v cs >/dev/null 2>&1 || command -v coursier >/dev/null 2>&1; then
+	CS="$(command -v cs 2>/dev/null || command -v coursier)"
+	for app in scalafmt scalastyle; do
+		if command -v "$app" >/dev/null 2>&1; then
+			pass "$app already installed"
+		else
+			echo "  -> $CS install $app"
+			if "$CS" install "$app" >/dev/null 2>&1; then
+				pass "$app installed via coursier"
+			else
+				warn "coursier could not install $app -- install it manually if you need Scala $app"
+			fi
+		fi
+	done
+else
+	warn "coursier (cs) not found -- skipping scalafmt/scalastyle. Install Coursier, then: cs install scalafmt scalastyle"
+fi
+
+# ============================================================================
+# 11. async-profiler (JVM sampling profiler)
+#     util/profiling.lua shells out to `asprof` / `profiler.sh`; without it the
+#     <leader>jps (start) / <leader>jpx (stop) / <leader>jpv (view) keymaps
+#     error with "async-profiler binary not found in $PATH".
+# ============================================================================
+section "async-profiler (JVM profiler)"
+
+AP_VERSION="3.0"
+ap_present() {
+	command -v asprof >/dev/null 2>&1 ||
+		command -v async-profiler >/dev/null 2>&1 ||
+		command -v profiler.sh >/dev/null 2>&1
+}
+
+if ap_present; then
+	pass "async-profiler already installed ($(command -v asprof 2>/dev/null || command -v profiler.sh 2>/dev/null || command -v async-profiler))"
+elif command -v yay >/dev/null 2>&1; then
+	echo "  -> yay -S --noconfirm --needed async-profiler"
+	yay -S --noconfirm --needed async-profiler || warn "yay could not install async-profiler"
+elif command -v brew >/dev/null 2>&1; then
+	install_system_pkgs brew async-profiler || warn "brew could not install async-profiler"
+fi
+
+if ! ap_present; then
+	# No distro package -- fetch the upstream release tarball into
+	# ~/.local/share and symlink the launcher onto ~/.local/bin.
+	case "$(uname -s)" in
+	Linux) ap_os="linux" ;;
+	Darwin) ap_os="macos" ;;
+	*) ap_os="" ;;
+	esac
+	case "$(uname -m)" in
+	x86_64 | amd64) ap_arch="x64" ;;
+	aarch64 | arm64) ap_arch="arm64" ;;
+	*) ap_arch="" ;;
+	esac
+
+	if [ -n "$ap_os" ] && [ -n "$ap_arch" ] && command -v curl >/dev/null 2>&1; then
+		if [ "$ap_os" = "macos" ]; then
+			ap_tarball="async-profiler-${AP_VERSION}-macos.tar.gz"
+		else
+			ap_tarball="async-profiler-${AP_VERSION}-${ap_os}-${ap_arch}.tar.gz"
+		fi
+		ap_url="https://github.com/async-profiler/async-profiler/releases/download/v${AP_VERSION}/${ap_tarball}"
+		ap_dest="${XDG_DATA_HOME:-$HOME/.local/share}/tetravim/async-profiler"
+		ap_bin_dir="$HOME/.local/bin"
+		echo "  -> downloading $ap_url"
+		mkdir -p "$ap_dest" "$ap_bin_dir"
+		if curl -fsSL "$ap_url" | tar -xz -C "$ap_dest" --strip-components=1; then
+			ln -sf "$ap_dest/bin/asprof" "$ap_bin_dir/asprof"
+			if [ -x "$ap_dest/bin/asprof" ]; then
+				pass "async-profiler $AP_VERSION installed -> $ap_bin_dir/asprof"
+			else
+				warn "async-profiler tarball extracted but bin/asprof is missing"
+			fi
+			if ! echo "$PATH" | grep -q "$ap_bin_dir"; then
+				warn "Add $ap_bin_dir to your PATH (e.g. in ~/.bashrc or ~/.zshrc)"
+			fi
+		else
+			warn "async-profiler download/extract failed -- install it manually from"
+			warn "  https://github.com/async-profiler/async-profiler/releases"
+		fi
+	else
+		warn "Cannot auto-install async-profiler (unsupported platform or curl missing)."
+		warn "Download from https://github.com/async-profiler/async-profiler/releases and put 'asprof' on \$PATH"
+	fi
+fi
+
+# async-profiler needs relaxed perf_event access to sample a running JVM.
+if [ "$(uname -s)" = "Linux" ] && [ -r /proc/sys/kernel/perf_event_paranoid ]; then
+	ap_paranoid="$(cat /proc/sys/kernel/perf_event_paranoid)"
+	case "$ap_paranoid" in
+	-1 | 0 | 1) pass "kernel.perf_event_paranoid=$ap_paranoid (async-profiler can sample the JVM)" ;;
+	*)
+		warn "kernel.perf_event_paranoid=$ap_paranoid -- async-profiler needs <= 1. Run:"
+		warn "  sudo sysctl kernel.perf_event_paranoid=1 kernel.kptr_restrict=0"
+		warn "  (persist via a file in /etc/sysctl.d/)"
+		;;
+	esac
+fi
+
+# ============================================================================
 # Done
 # ============================================================================
 
@@ -312,3 +454,5 @@ echo "  mason    : Ruby/PHP/Julia/Perl -- not used by this JVM distribution"
 echo "  devops   : sam / cfn-guard / glab -- optional; install manually if needed"
 echo "  security : osv-scanner -- optional CVE scanning; install manually if needed"
 echo "  snacks   : gs / tectonic / pdflatex -- optional PDF/LaTeX rendering"
+echo "  profiler : async-profiler -- needs kernel.perf_event_paranoid<=1 to sample a JVM"
+echo "  scala    : scalafmt / scalastyle -- only if coursier (cs) is installed"

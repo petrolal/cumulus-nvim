@@ -309,6 +309,35 @@ return {
           end,
         })
         :map("<leader>ut")
+      -- Inlay hints: reads the real vim.lsp.inlay_hint state, writes through
+      -- util/lsp_attach so the choice sticks for buffers that attach a client
+      -- later (via vim.g.tetravim_inlay_hints).
+      Snacks.toggle
+        .new({
+          id = "tetravim_inlay_hints",
+          name = "Inlay Hints",
+          get = function()
+            return vim.lsp.inlay_hint ~= nil and vim.lsp.inlay_hint.is_enabled({})
+          end,
+          set = function()
+            require("tetravim.util.lsp_attach").toggle_inlay_hints()
+          end,
+        })
+        :map("<leader>uh")
+      -- Diagnostic virtual_lines: swap the terse one-line virtual text for
+      -- the multi-line current-line rendering (core/diagnostics.lua).
+      Snacks.toggle
+        .new({
+          id = "tetravim_virtual_lines",
+          name = "Diagnostic Virtual Lines",
+          get = function()
+            return require("tetravim.core.diagnostics").virtual_lines_enabled
+          end,
+          set = function()
+            require("tetravim.core.diagnostics").toggle_virtual_lines()
+          end,
+        })
+        :map("<leader>uv")
     end,
     keys = {
       {

@@ -77,10 +77,20 @@ return {
 
       local tvlint = require("tetravim.util.lint")
 
+      -- The JVM linters (checkstyle / ktlint / scalastyle / npm-groovy-lint)
+      -- each spin up a JVM or Node process -- cheap enough on save, but too
+      -- heavy to fire on every `InsertLeave`. Mirrors the CodeLens-refresh
+      -- throttle in core/autocmds.lua: for these filetypes lint on
+      -- enter / write only, not on leaving insert mode.
+      local heavy_ft = { java = true, kotlin = true, groovy = true, scala = true, sbt = true }
+
       local lint_augroup = vim.api.nvim_create_augroup("tetravim_lint", { clear = true })
       vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
         group = lint_augroup,
         callback = function(args)
+          if args.event == "InsertLeave" and heavy_ft[vim.bo[args.buf].filetype] then
+            return
+          end
           -- honours vim.g.autolint / vim.b.autolint
           tvlint.lint_buffer(args.buf)
         end,

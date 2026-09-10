@@ -22,6 +22,11 @@ return {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
+        -- groovyls has no inlay-hint / code-lens support and no sound
+        -- classpath resolver, so there are no meaningful `settings` to add
+        -- here -- it stays default. The generic on_exit auto-restart from
+        -- lsp-core.lua and the shared lsp_attach wiring (document highlight /
+        -- signature help, both capability-gated) still apply.
         groovyls = {},
       },
     },

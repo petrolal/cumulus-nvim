@@ -22,11 +22,17 @@ return {
             storagePath = storage_path,
           },
           cmd_env = (function()
+            -- The kotlin-language-server launcher is a Gradle `application`
+            -- start script, which execs the JVM with `$JAVA_OPTS` forwarded --
+            -- so a heap ceiling here bounds KLS the same way
+            -- lsp_resilience.apply_memory_limit bounds jdtls. Without it KLS
+            -- routinely grows past 4 GiB indexing a large Gradle build.
+            local env = { JAVA_OPTS = "-Xmx2g -Xms256m" }
             local java21_home = jvm.find_java21_home()
-            if not java21_home then
-              return nil
+            if java21_home then
+              env.JAVA_HOME = java21_home
             end
-            return { JAVA_HOME = java21_home }
+            return env
           end)(),
           root_dir = function(fname_or_buf, on_dir)
             local fname = type(fname_or_buf) == "number" and vim.api.nvim_buf_get_name(fname_or_buf) or fname_or_buf
@@ -46,7 +52,10 @@ return {
             return resolved
           end,
           on_attach = function(client, bufnr)
-            client.server_capabilities.documentHighlightProvider = false
+            -- (documentHighlightProvider is left as the server advertises it --
+            -- util/lsp_attach.lua wires CursorHold symbol highlighting off it,
+            -- gated on the capability, so "highlight usages" works in Kotlin
+            -- like every other language.)
 
             local root = client.config.root_dir or vim.fn.getcwd()
             if root and root ~= "" then

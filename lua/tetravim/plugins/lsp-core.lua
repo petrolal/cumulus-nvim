@@ -34,14 +34,30 @@ return {
       -- understand them. jdtls (ftplugin/java.lua) and metals (lsp-scala.lua)
       -- inject the same table on their own start paths.
       local capabilities = require("tetravim.util.lsp_capabilities").make()
+      local resilience = require("tetravim.util.lsp_resilience")
 
       if vim.lsp.config and vim.lsp.enable then
         -- 0.11: a "*" config is merged into every named server config, so one
         -- assignment covers lua_ls, kotlin_language_server, html, cssls, ts_ls,
         -- pyright/ruff, yaml, terraform, and everything else routed here.
-        vim.lsp.config("*", { capabilities = capabilities })
+        -- Hand each merge target its own copy -- the merge mutates the table
+        -- in place, and a shared reference has leaked capabilities between
+        -- servers before.
+        vim.lsp.config("*", { capabilities = vim.deepcopy(capabilities) })
         for server, server_opts in pairs(opts.servers or {}) do
-          vim.lsp.config(server, server_opts or {})
+          server_opts = server_opts or {}
+          -- Bounded auto-restart for every generically-configured server, not
+          -- just jdtls/metals: an unexpected exit re-enables the server (max
+          -- 3 times / 180s, then it gives up and points at :LspLog). Specs
+          -- that need bespoke restart handling set their own `on_exit`.
+          if server_opts.on_exit == nil then
+            local name = server
+            server_opts.on_exit = resilience.make_on_exit(name, function()
+              pcall(vim.lsp.enable, name, false)
+              pcall(vim.lsp.enable, name)
+            end)
+          end
+          vim.lsp.config(server, server_opts)
           vim.lsp.enable(server)
         end
       else
@@ -73,6 +89,14 @@ return {
           end
           notified_clients[client.id] = true
           vim.notify(attach_messages[client.name] or (client.name .. " attached"), vim.log.levels.INFO)
+
+          -- Per-client IntelliSense wiring shared by every server routed here
+          -- (inlay hints, symbol-under-cursor document highlight, <C-k>
+          -- signature help), each capability-gated. jdtls / metals call the
+          -- same module from their own attach paths.
+          pcall(function()
+            require("tetravim.util.lsp_attach").on_attach(client, args.buf)
+          end)
         end,
       })
       -- Drop the dedupe entry when a server process detaches, so a client id
@@ -82,6 +106,12 @@ return {
         group = notify_group,
         callback = function(args)
           notified_clients[args.data.client_id] = nil
+          -- Tear down the document-highlight autocmds / reference marks this
+          -- buffer picked up on attach, so a detached server doesn't keep
+          -- firing on CursorHold.
+          pcall(function()
+            require("tetravim.util.lsp_attach").on_detach(args.buf)
+          end)
         end,
       })
     end,

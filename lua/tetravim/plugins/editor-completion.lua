@@ -53,6 +53,7 @@ return {
     event = { "InsertEnter", "CmdlineEnter" },
     dependencies = {
       "hrsh7th/cmp-nvim-lsp",
+      "hrsh7th/cmp-nvim-lsp-signature-help",
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
       "hrsh7th/cmp-cmdline",
@@ -61,6 +62,7 @@ return {
     },
     opts = function(_, opts)
       local cmp = require("cmp")
+      local compare = require("cmp.config.compare")
       local luasnip = require("luasnip")
 
       -- Popup menu behaviour: show even for a single match, never
@@ -107,7 +109,9 @@ return {
         end,
       }
 
-      opts.completion = { completeopt = "menu,menuone,noselect" }
+      -- `completion.completeopt` is left at cmp's default
+      -- ("menu,menuone,noselect"), which already matches `vim.opt.completeopt`
+      -- set above -- no need to restate it here.
 
       opts.window = {
         completion = cmp.config.window.bordered(),
@@ -120,6 +124,7 @@ return {
           item.kind = string.format("%s %s", kind_icons[item.kind] or "", item.kind or "")
           item.menu = ({
             nvim_lsp = "[LSP]",
+            nvim_lsp_signature_help = "[Sig]",
             luasnip = "[Snip]",
             buffer = "[Buf]",
             path = "[Path]",
@@ -164,11 +169,35 @@ return {
 
       opts.sources = cmp.config.sources({
         { name = "nvim_lsp", priority = 1000 },
+        -- Shows the current parameter's signature as a virtual "completion"
+        -- entry while typing call args -- complements the <C-k> on-demand
+        -- signature help wired in util/lsp_attach.lua.
+        { name = "nvim_lsp_signature_help", priority = 900 },
         { name = "luasnip", priority = 750 },
         { name = "path", priority = 500 },
       }, {
         { name = "buffer", priority = 250, keyword_length = 3 },
       })
+
+      -- Deterministic ranking: exact prefix match first, then cmp's fuzzy
+      -- score, then most-recently-used and same-scope locality (so a symbol
+      -- you just picked / one defined nearby floats up), before falling back
+      -- to kind / alphabetical. `recently_used` above `score` is what makes
+      -- the menu feel like it learns within a session.
+      opts.sorting = {
+        priority_weight = 2,
+        comparators = {
+          compare.offset,
+          compare.exact,
+          compare.score,
+          compare.recently_used,
+          compare.locality,
+          compare.kind,
+          compare.sort_text,
+          compare.length,
+          compare.order,
+        },
+      }
 
       -- Guard against a stray "emoji" source contributed by another spec
       -- (kept from the previous stub -- harmless if never present).

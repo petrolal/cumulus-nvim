@@ -47,6 +47,11 @@ vim.opt.cursorline = true
 vim.opt.scrolloff = 6
 vim.opt.sidescrolloff = 8
 
+-- Idle delay before `CursorHold` fires. The default 4s makes LSP
+-- symbol-under-cursor highlighting (wired per client in util/lsp_attach.lua)
+-- feel broken; 300ms is the usual IDE-like "highlight usages" cadence.
+vim.opt.updatetime = 300
+
 -- Persistent undo: keep the full undo tree on disk so it survives a restart.
 -- This is what turns undotree (editor-undotree.lua) into a real "Local
 -- History" -- time-travel through past edits of a file days later, not just

@@ -21,13 +21,43 @@ return {
       -- resolvable documentation for the popup.
       metals_config.capabilities = require("tetravim.util.lsp_capabilities").make()
 
+      -- Surface the implicits / inferred types Metals can compute -- this is
+      -- the Scala equivalent of jdtls parameter-name inlay hints, and the
+      -- super-method lens is genuinely useful in deep trait hierarchies. The
+      -- excluded packages keep completion / search from drowning in the
+      -- akka-javadsl shims that a Scala project never calls.
+      metals_config.settings = {
+        showImplicitArguments = true,
+        showImplicitConversionsAndClasses = true,
+        showInferredType = true,
+        superMethodLensesEnabled = true,
+        excludedPackages = { "akka.actor.typed.javadsl", "com.github.swagger.akka.javadsl" },
+      }
+
       metals_config.on_attach = function(client, bufnr)
         -- Mirrors jdtls.setup_dap({ hotcodereplace = "auto" }) in
         -- ftplugin/java.lua: registers dap.adapters.scala and
         -- dap.configurations.scala from Metals' own DAP discovery, so no
         -- manual launch JSON is ever required (AC-1).
         require("metals").setup_dap()
+
+        -- Same per-client IntelliSense wiring every lsp-core.lua server gets
+        -- (inlay hints / document highlight / <C-k> signature help). Metals
+        -- attaches through its own path, so call it here explicitly.
+        pcall(function()
+          require("tetravim.util.lsp_attach").on_attach(client, bufnr)
+        end)
       end
+
+      -- Bounded auto-restart (max 3 / 180s) if the Metals BSP process exits
+      -- unexpectedly, matching the jdtls handling in ftplugin/java.lua.
+      metals_config.on_exit = require("tetravim.util.lsp_resilience").make_on_exit("metals", function()
+        vim.schedule(function()
+          pcall(function()
+            require("metals").initialize_or_attach(metals_config)
+          end)
+        end)
+      end)
 
       return metals_config
     end,
