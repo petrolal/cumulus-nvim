@@ -10,25 +10,16 @@
 
 local config = vim.fn.stdpath("config")
 
-describe("headless setup script (Story 5.2)", function()
-  local path = config .. "/scripts/headless-setup.sh"
-
-  it("is present and executable", function()
-    assert.equals(1, vim.fn.filereadable(path))
-    assert.equals(1, vim.fn.executable(path))
+describe("native headless setup module (Story 5.2)", function()
+  it("tetravim.core.setup provides native provisioning pipeline", function()
+    local setup = require("tetravim.core.setup")
+    assert.is_table(setup)
+    assert.is_function(setup.run)
+    assert.is_function(setup.setup)
   end)
 
-  it("runs non-interactively: sets TETRAVIM_HEADLESS and drives nvim --headless", function()
-    local src = table.concat(vim.fn.readfile(path), "\n")
-    assert.is_truthy(src:match("TETRAVIM_HEADLESS=1"))
-    assert.is_truthy(src:match("%-%-headless"))
-    assert.is_truthy(src:match("Lazy!?%s+sync"))
-  end)
-
-  it("provisions the Mason tool-chain and Tree-sitter parsers", function()
-    local src = table.concat(vim.fn.readfile(path), "\n")
-    assert.is_truthy(src:match("MasonToolsInstall"))
-    assert.is_truthy(src:match("nvim%-treesitter"))
+  it("registers :TetraVimSetup command", function()
+    assert.equals(2, vim.fn.exists(":TetraVimSetup"))
   end)
 end)
 

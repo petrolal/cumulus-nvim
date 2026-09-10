@@ -28,11 +28,12 @@ Welcome to the **TetraVim** documentation repository.
 
 ### Headless Setup & Telemetry (Story 5.2)
 
-`scripts/headless-setup.sh` provisions TetraVim non-interactively (Codespaces / Coder / CI images) — no UI, no TTY. It runs four steps: `Lazy! sync` (aborts the script on failure), `MasonToolsInstall` (logs a warning and continues), Tree-sitter parser install (logs a warning and continues), then a machine-readable health snapshot. It exports `TETRAVIM_HEADLESS=1`, which `tetravim.core.options` bridges to `g:tetravim_headless`. When a best-effort step is skipped the script still exits 0 but ends with a `DEGRADED` summary naming what did not install.
+TetraVim provisions non-interactively (Codespaces / Coder / CI images) via its native setup module — no UI, no TTY. It runs five steps: `Lazy! sync`, `MasonToolsInstall`, Quarkus/MicroProfile LSP jar fetching, Tree-sitter parser install, and a machine-readable health snapshot. Setting `TETRAVIM_HEADLESS=1` bridges to `g:tetravim_headless`.
 
 ```sh
-./scripts/headless-setup.sh
+nvim --headless -u init.lua -c "lua require('tetravim.core.setup').run()" -c "qa!"
 ```
+*(Or inside Neovim: `:TetraVimSetup`)*
 
 The healthcheck is also available as machine-readable JSON for compliance gating — `:CheckHealthJson`, or `require('tetravim.core.health').json()` — emitting one JSON object with `neovim_version`, `lsp_clients`, `plugin_count`, `pending_async_tasks`, and `telemetry_enabled`.
 

@@ -408,7 +408,11 @@ describe("tetravim HTTP client (SPEC-3.2)", function()
 
       assert.is_true(#vim.api.nvim_list_wins() > win_count_before, "<leader>ahj must open a new window")
       local win = vim.api.nvim_get_current_win()
-      assert.are.equal("", vim.api.nvim_win_get_config(win).relative, "result window must be a real split, not floating")
+      assert.are.equal(
+        "",
+        vim.api.nvim_win_get_config(win).relative,
+        "result window must be a real split, not floating"
+      )
 
       local buf = vim.api.nvim_win_get_buf(win)
       local text = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n")

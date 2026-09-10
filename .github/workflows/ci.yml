@@ -40,24 +40,14 @@ jobs:
 
       - name: Shell syntax (bash -n)
         run: |
-          rc=0
-          for f in bootstrap.sh scripts/*.sh; do
-            [ -e "$f" ] || continue
-            if bash -n "$f"; then
-              echo "ok   $f"
-            else
-              echo "FAIL $f"
-              rc=1
-            fi
-          done
-          exit $rc
+          bash -n bootstrap.sh
 
       - name: shellcheck (advisory, non-blocking)
         continue-on-error: true
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          shellcheck -S warning bootstrap.sh scripts/*.sh || true
+          shellcheck -S warning bootstrap.sh || true
 
   # --------------------------------------------------------------------------
   # The plenary busted spec suite (lua/tetravim/tests/*_spec.lua). "stable" is
@@ -139,13 +129,10 @@ jobs:
           if-no-files-found: ignore
 
   # --------------------------------------------------------------------------
-  # scripts/validate.sh orchestrator (runs headless-setup.sh then the
-  # plenary busted suite). All former validate-*.sh component suites have been
-  # migrated to lua/tetravim/tests/*_spec.lua and are covered by the `test`
-  # job above.
+  # Native headless setup & provisioning smoke test (tetravim.core.setup)
   # --------------------------------------------------------------------------
   smoke:
-    name: Validation suite (scripts/validate.sh)
+    name: Native Setup & Provisioning Smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -174,33 +161,9 @@ jobs:
       - name: Install tree-sitter CLI
         run: npm install -g tree-sitter-cli
 
-      - name: Headless provisioning (best-effort, DEGRADED-tolerant)
-        run: bash scripts/headless-setup.sh
+      - name: Native headless provisioning (tetravim.core.setup)
+        run: nvim --headless -u init.lua -c "lua require('tetravim.core.setup').run()" -c "qa!"
 
-      - name: Run validation scripts
-        run: |
-          set -uo pipefail
-          failed=()
-
-          run() {
-            echo "::group::$1"
-            if bash "$1" </dev/null; then
-              echo "PASS $1"
-            else
-              echo "FAIL $1"
-              failed+=("$1")
-            fi
-            echo "::endgroup::"
-          }
-
-          # All validate-*.sh component suites are now migrated to Plenary
-          # specs in lua/tetravim/tests/ and run in the `test` job above.
-          # Only the orchestration script remains.
-          run scripts/validate.sh
-
-          if ((${#failed[@]})); then
-            printf '::error::validation failure: %s\n' "${failed[*]}"
-            exit 1
-          fi
-          echo "All validation scripts passed."
+      - name: Verify health snapshot
+        run: nvim --headless -u init.lua -c "lua io.write(require('tetravim.core.health').json() .. '\n')" -c "qa!"
 

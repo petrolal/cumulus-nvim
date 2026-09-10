@@ -31,10 +31,10 @@ return {
         "markdown",
         "markdown_inline",
         "query",
-        "regex",   -- required by noice.nvim (cmdline regex highlighting) and Snacks.picker
-        "latex",   -- required by Snacks.image for LaTeX math expression rendering
-        "scss",    -- required by Snacks.image for SCSS image rendering
-        "typst",   -- required by Snacks.image for Typst document rendering
+        "regex", -- required by noice.nvim (cmdline regex highlighting) and Snacks.picker
+        "latex", -- required by Snacks.image for LaTeX math expression rendering
+        "scss", -- required by Snacks.image for SCSS image rendering
+        "typst", -- required by Snacks.image for Typst document rendering
         -- NOTE: "norg" (Neorg) has no upstream nvim-treesitter grammar; install
         -- via the neorg plugin (if used) or skip -- Snacks.image falls back gracefully.
       },

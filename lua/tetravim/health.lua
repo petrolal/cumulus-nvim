@@ -742,11 +742,11 @@ function M.check()
 
   vim.health.start("TetraVim Headless Setup & Telemetry")
 
-  local setup_script = vim.fn.stdpath("config") .. "/scripts/headless-setup.sh"
-  if vim.fn.executable(setup_script) == 1 then
-    vim.health.ok("scripts/headless-setup.sh: present and executable (non-interactive provisioning)")
+  local setup_ok, setup_mod = pcall(require, "tetravim.core.setup")
+  if setup_ok and type(setup_mod.run) == "function" then
+    vim.health.ok("tetravim.core.setup: native provisioning pipeline available (:TetraVimSetup)")
   else
-    vim.health.warn("scripts/headless-setup.sh: missing or not executable")
+    vim.health.warn("tetravim.core.setup: failed to load")
   end
 
   local json_ok, core_health = pcall(require, "tetravim.core.health")

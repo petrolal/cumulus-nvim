@@ -67,27 +67,10 @@ mkdir -p "$(dirname "$NVIM_CONFIG")"
 ln -sf "$REPO_DIR" "$NVIM_CONFIG"
 pass "Config linked: $NVIM_CONFIG -> $REPO_DIR"
 
-if nvim --headless "+Lazy! sync" +qa 2>/dev/null; then
-	pass "Plugins synced"
+if nvim --headless -u "$NVIM_CONFIG/init.lua" -c "lua require('tetravim.core.setup').run()" -c "qa!" 2>/dev/null; then
+	pass "TetraVim native setup complete (plugins synced, Mason tools, LSP jars, Tree-sitter parsers)"
 else
-	warn "Plugin sync had warnings (run :Lazy in nvim to check)"
-fi
-
-# Ensure Mason tools are installed (grpcurl is not a Mason package -- see below)
-if nvim --headless +'MasonToolsInstall' +'qa!' 2>/dev/null; then
-	pass "Mason tools installed (jdtls, linters, etc.)"
-else
-	warn "Mason tools install failed – you may need to run :MasonToolsInstall manually"
-fi
-
-# Quarkus / MicroProfile language-server jars (pulled natively from Open VSX via Lua).
-# Best-effort: exits 0 on failure so Spring Boot / jdtls remain unaffected.
-if nvim --headless -u "$NVIM_CONFIG/init.lua" \
-	-c "lua local ok = require('tetravim.util.jvm_frameworks').fetch_jars({ sync = true }); if not ok then os.exit(1) end" \
-	-c "qa!" 2>/dev/null; then
-	pass "Quarkus / MicroProfile language servers fetched"
-else
-	warn "Quarkus / MicroProfile jar fetch skipped -- run :TetraVimFetchJvmLspJars in nvim later"
+	warn "TetraVim setup had warnings -- run :TetraVimSetup inside nvim to inspect"
 fi
 
 # ============================================================================

@@ -19,16 +19,13 @@ development).
 # Full dependency install (Neovim, npm/go/python tools, Mason, Tree-sitter, scanners)
 bash bootstrap.sh
 
-# Non-interactive provisioning for CI / Codespaces / Coder (no TTY, exits 0 with a
-# DEGRADED summary if best-effort steps fail)
-bash scripts/headless-setup.sh
-
-# Full test suite orchestrator (runs all Plenary busted specs in lua/tetravim/tests/)
-bash scripts/validate.sh
+# Native non-interactive setup & provisioning (Lazy sync, Mason tools, LSP jars, TS parsers)
+nvim --headless -u init.lua -c "lua require('tetravim.core.setup').run()" -c "qa!"
 
 # Direct plenary busted suite execution
 nvim --headless -u init.lua -c "Lazy! load plenary.nvim" \
   -c "PlenaryBustedDirectory lua/tetravim/tests/" -c "qa"
+
 # Single test file
 nvim --headless -u init.lua -c "Lazy! load plenary.nvim" \
   -c "PlenaryBustedFile lua/tetravim/tests/theme_integration_spec.lua" -c "qa"
@@ -111,8 +108,8 @@ JVM framework config intelligence (`application.properties` / `application.yml` 
   `stdpath("data")/tetravim/jvm-lsp`, layout `quarkus/{server,jars}` +
   `microprofile/{server,jars}`). The spec loads but stays **dormant** (no server
   spawned) until those jars exist; each server is a separate ~1 GiB JVM on top of
-  jdtls, so activation is opt-in. The provisioning scripts
-  (`bootstrap.sh`, `scripts/bootstrap.sh`, `scripts/headless-setup.sh`) call
+  jdtls, so activation is opt-in. The provisioning pipeline
+  (`bootstrap.sh`, `tetravim.core.setup`) calls
   `jvm_frameworks.fetch_jars()` headlessly best-effort.
 - **Micronaut** — intentionally **unsupported**: no viable Neovim language server
   exists. Do not add one.

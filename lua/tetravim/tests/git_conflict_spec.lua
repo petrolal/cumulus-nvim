@@ -207,8 +207,10 @@ describe("SPEC-4.1 Advanced Git Conflict Resolution (runtime / child-nvim)", fun
   end)
 
   -- [1/7] Plugin loads; :Diffview* commands + <leader>gc* keymaps resolve. --
-  it("[1/7] diffview.nvim loads; :Diffview* commands + <leader>gc* keymaps resolve; all keys under <leader>g", function()
-    local code = [==[
+  it(
+    "[1/7] diffview.nvim loads; :Diffview* commands + <leader>gc* keymaps resolve; all keys under <leader>g",
+    function()
+      local code = [==[
 local ok, err = pcall(function()
   assert(pcall(require, 'diffview'), 'diffview not resolvable after Lazy! load')
   assert(vim.fn.exists(':DiffviewOpen') == 2, ':DiffviewOpen not registered')
@@ -236,11 +238,12 @@ local ok, err = pcall(function()
 end)
 if not ok then io.stderr:write('FAIL: ' .. tostring(err) .. '\n'); vim.cmd('cquit 1') end
 ]==]
-    assert.is_true(
-      headless(code, { "Lazy! load diffview.nvim" }),
-      "stage 1: diffview.nvim must load cleanly with all Diffview* commands and <leader>gc* keymaps"
-    )
-  end)
+      assert.is_true(
+        headless(code, { "Lazy! load diffview.nvim" }),
+        "stage 1: diffview.nvim must load cleanly with all Diffview* commands and <leader>gc* keymaps"
+      )
+    end
+  )
 
   -- [2/7] :checkhealth tetravim reports the Advanced Git Conflict Resolution section. --
   it("[2/7] :checkhealth tetravim reports the Advanced Git Conflict Resolution section", function()
@@ -306,7 +309,8 @@ if not ok then io.stderr:write('FAIL: ' .. tostring(err) .. '\n'); vim.cmd('cqui
 
   -- [4a/7] git binary absent: guard() returns false + install/PATH ERROR. --
   it("[4/7a] git reported absent: guard() returns false with install/PATH ERROR", function()
-    local patch = "vim.fn.executable = (function(o) return function(n) if n == 'git' then return 0 end return o(n) end end)(vim.fn.executable)"
+    local patch =
+      "vim.fn.executable = (function(o) return function(n) if n == 'git' then return 0 end return o(n) end end)(vim.fn.executable)"
     local code = [==[
 local ok, err = pcall(function()
   assert(vim.fn.executable('git') ~= 1, 'precondition: git must report as not executable')
@@ -339,7 +343,8 @@ if not ok then io.stderr:write('FAIL: ' .. tostring(err) .. '\n'); vim.cmd('cqui
 
   -- [4b/7] git binary absent: :checkhealth reports git NOT found. --
   it("[4/7b] git reported absent: :checkhealth tetravim reports git NOT found", function()
-    local patch = "vim.fn.executable = (function(o) return function(n) if n == 'git' then return 0 end return o(n) end end)(vim.fn.executable)"
+    local patch =
+      "vim.fn.executable = (function(o) return function(n) if n == 'git' then return 0 end return o(n) end end)(vim.fn.executable)"
     local code = [==[
 local ok, err = pcall(function()
   local out = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), '\n'):lower()
@@ -485,9 +490,9 @@ if not ok then io.stderr:write('FAIL: ' .. tostring(err) .. '\n'); vim.cmd('cqui
     table.insert(tmp_dirs, resolve_repo)
 
     -- Verify fixture: must have exactly 2 conflict markers.
-    local marker_count = tonumber(vim.fn.trim(vim.fn.system(
-      "grep -c '^<<<<<<<' " .. resolve_repo .. "/file.txt 2>/dev/null || echo 0"
-    ))) or 0
+    local marker_count = tonumber(
+      vim.fn.trim(vim.fn.system("grep -c '^<<<<<<<' " .. resolve_repo .. "/file.txt 2>/dev/null || echo 0"))
+    ) or 0
     if marker_count ~= 2 then
       -- Single-line diff may coalesce; skip gracefully (setup variance).
       pending("fixture did not produce 2 distinct conflict regions (got " .. marker_count .. "); skipping")
