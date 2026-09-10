@@ -3,19 +3,13 @@
 ## Quick Reference
 
 ### For End Users
+
 ```bash
 bash bootstrap.sh
 ```
+
 - Syncs all Lazy.nvim plugins headlessly
 - Prepares your Neovim environment
-
-### For Contributors & Local Development
-```bash
-bash scripts/dev-init.sh
-```
-- Symlinks `~/.config/nvim` → repository
-- Syncs plugins with Lazy.nvim
-- Fast setup for editing configuration in-place
 
 ---
 
@@ -42,4 +36,3 @@ or a plugin the busted subprocess cannot load (`cmp`, `dap`, `conform`,
   - `bash scripts/validate-4-1.sh`: Git 3-way conflict resolution (runtime-only)
   - `bash scripts/validate-completion.sh`: nvim-cmp + LuaSnip IntelliSense wiring (runtime-only)
   - `bash scripts/validate-dap-jvm.sh`: JVM DAP debugger & breakpoint controls (runtime-only)
-

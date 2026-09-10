@@ -5,33 +5,33 @@ set -e
 
 echo "=== TetraVim Neovim Distribution Smoke Test ==="
 
-echo "[1/7] Verifying Shell Scripts Syntax (bootstrap.sh, scripts/bootstrap.sh, headless-setup.sh, dev-init.sh, validate.sh)..."
-if bash -n bootstrap.sh && bash -n scripts/bootstrap.sh && bash -n scripts/headless-setup.sh && bash -n scripts/dev-init.sh && bash -n scripts/validate.sh; then
-  echo "✔ Shell scripts syntax PASSED."
+echo "[1/7] Verifying Shell Scripts Syntax (bootstrap.sh, scripts/bootstrap.sh, headless-setup.sh,  validate.sh)..."
+if bash -n bootstrap.sh && bash -n scripts/bootstrap.sh && bash -n scripts/headless-setup.sh && bash && bash -n scripts/validate.sh; then
+	echo "✔ Shell scripts syntax PASSED."
 else
-  echo "✖ Shell scripts syntax FAILED."
-  exit 1
+	echo "✖ Shell scripts syntax FAILED."
+	exit 1
 fi
 
 echo "[1.1/7] Verifying bootstrap dependency coverage (async-profiler, ripgrep, health probe)..."
 cov_fail=0
 for script in bootstrap.sh scripts/bootstrap.sh; do
-  if ! grep -q "async-profiler" "$script"; then
-    echo "✖ $script does not provision async-profiler."
-    cov_fail=1
-  fi
-  if ! grep -Eq "ripgrep|[^a-z]rg[^a-z]" "$script"; then
-    echo "✖ $script does not provision ripgrep."
-    cov_fail=1
-  fi
+	if ! grep -q "async-profiler" "$script"; then
+		echo "✖ $script does not provision async-profiler."
+		cov_fail=1
+	fi
+	if ! grep -Eq "ripgrep|[^a-z]rg[^a-z]" "$script"; then
+		echo "✖ $script does not provision ripgrep."
+		cov_fail=1
+	fi
 done
 if ! grep -q "async-profiler" lua/tetravim/health.lua; then
-  echo "✖ lua/tetravim/health.lua has no async-profiler probe."
-  cov_fail=1
+	echo "✖ lua/tetravim/health.lua has no async-profiler probe."
+	cov_fail=1
 fi
 if [ "$cov_fail" -ne 0 ]; then
-  echo "✖ Bootstrap dependency coverage FAILED."
-  exit 1
+	echo "✖ Bootstrap dependency coverage FAILED."
+	exit 1
 fi
 echo "✔ Bootstrap dependency coverage PASSED."
 
@@ -463,16 +463,15 @@ echo "✔ Native DevOps suite PASSED."
 
 echo "[7/7] Verifying Visual Test Runner & JaCoCo Coverage (SPEC-1.3) via test_coverage_spec.lua..."
 if nvim --headless -u init.lua \
-  -c "lua require('plenary.busted')" \
-  -c "PlenaryBustedDirectory lua/tetravim/tests/test_coverage_spec.lua" \
-  -c "qa"; then
-  echo "✔ Test runner & coverage specs PASSED."
+	-c "lua require('plenary.busted')" \
+	-c "PlenaryBustedDirectory lua/tetravim/tests/test_coverage_spec.lua" \
+	-c "qa"; then
+	echo "✔ Test runner & coverage specs PASSED."
 else
-  echo "✖ Test runner & coverage specs FAILED."
-  exit 1
+	echo "✖ Test runner & coverage specs FAILED."
+	exit 1
 fi
 
 echo "=========================================="
 echo " ALL VALIDATIONS PASSED SUCCESSFULLY!"
 echo "=========================================="
-

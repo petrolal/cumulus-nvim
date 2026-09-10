@@ -19,9 +19,6 @@ development).
 # Full dependency install (Neovim, npm/go/python tools, Mason, Tree-sitter, scanners)
 bash bootstrap.sh
 
-# Local dev: symlink ~/.config/nvim -> repo, then sync plugins
-bash scripts/dev-init.sh
-
 # Non-interactive provisioning for CI / Codespaces / Coder (no TTY, exits 0 with a
 # DEGRADED summary if best-effort steps fail)
 bash scripts/headless-setup.sh
@@ -68,17 +65,17 @@ file returns a lazy.nvim spec (single spec table or a list of them). `defaults.l
 
 ### Directory map
 
-| Path | Role |
-| --- | --- |
-| `lua/tetravim/core/` | Editor bootstrap: options, global keymaps, autocmds, diagnostics, health JSON, devops keymap engine, `lang-keymaps` |
-| `lua/tetravim/plugins/` | One lazy.nvim spec file per concern. Prefixes: `lsp-*`, `tools-*`, `editor-*`, `ui-*`, `cloud-*`, `core-*` |
-| `lua/tetravim/util/` | Pure Lua logic modules (`jvm`, `spring`, `refactor`, `extract`, `filetemplate`, `db`, `http`, `grpc`, `cve`, `sonar`, `forge`, `lsp_async`, `lsp_resilience`, `lsp_capabilities`, `format`, `git`, `build`, `split`, …). Keymaps call into these; business logic lives here, not in the keymap files |
-| `lua/tetravim/theme/` | `tetris.lua` = canonical palette + highlight table; `init.lua` = loader/persistence shim |
-| `colors/tetravim.lua` | `:colorscheme tetravim` entry point |
-| `lua/tetravim/tests/` | `*_spec.lua` plenary busted specs |
-| `ftplugin/*.lua` | Per-filetype auto-launchers (notably `java.lua` starting `nvim-jdtls`) |
-| `scripts/` | Bootstrap / headless / `validate-*.sh` scripts |
-| `docs/README.md` | Stale — references removed `_bmad-output/*` planning artifacts that no longer exist |
+| Path                    | Role                                                                                                                                                                                                                                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lua/tetravim/core/`    | Editor bootstrap: options, global keymaps, autocmds, diagnostics, health JSON, devops keymap engine, `lang-keymaps`                                                                                                                                                                                  |
+| `lua/tetravim/plugins/` | One lazy.nvim spec file per concern. Prefixes: `lsp-*`, `tools-*`, `editor-*`, `ui-*`, `cloud-*`, `core-*`                                                                                                                                                                                           |
+| `lua/tetravim/util/`    | Pure Lua logic modules (`jvm`, `spring`, `refactor`, `extract`, `filetemplate`, `db`, `http`, `grpc`, `cve`, `sonar`, `forge`, `lsp_async`, `lsp_resilience`, `lsp_capabilities`, `format`, `git`, `build`, `split`, …). Keymaps call into these; business logic lives here, not in the keymap files |
+| `lua/tetravim/theme/`   | `tetris.lua` = canonical palette + highlight table; `init.lua` = loader/persistence shim                                                                                                                                                                                                             |
+| `colors/tetravim.lua`   | `:colorscheme tetravim` entry point                                                                                                                                                                                                                                                                  |
+| `lua/tetravim/tests/`   | `*_spec.lua` plenary busted specs                                                                                                                                                                                                                                                                    |
+| `ftplugin/*.lua`        | Per-filetype auto-launchers (notably `java.lua` starting `nvim-jdtls`)                                                                                                                                                                                                                               |
+| `scripts/`              | Bootstrap / headless / `validate-*.sh` scripts                                                                                                                                                                                                                                                       |
+| `docs/README.md`        | Stale — references removed `_bmad-output/*` planning artifacts that no longer exist                                                                                                                                                                                                                  |
 
 ### Keymap system
 
@@ -150,6 +147,7 @@ front-end (nvim-cmp + LuaSnip + friendly-snippets + `cmp-nvim-lsp`/`-buffer`/
 `vim-dadbod-completion` on top buffer-locally via `tools-dadbod.lua`.
 
 Resilience layer:
+
 - `util/lsp_resilience` — bounds the JDTLS JVM heap (`apply_memory_limit`) and
   auto-restarts a crashed server (max 3 restarts / 180s, then stops and points at
   `:LspLog`). `on_attach` calls `reset()` to open a fresh window.
