@@ -31,8 +31,7 @@ end
 -- Prefer JetBrains' official kotlin-lsp (intellij-server) when installed;
 -- fall back to fwcd/kotlin-language-server otherwise.
 local mason_server_bin = vim.fn.stdpath("data") .. "/mason/bin/intellij-server"
-local has_kotlin_lsp = vim.fn.executable("intellij-server") == 1
-  or vim.fn.filereadable(mason_server_bin) == 1
+local has_kotlin_lsp = vim.fn.executable("intellij-server") == 1 or vim.fn.filereadable(mason_server_bin) == 1
 local kotlin_lsp_bin = vim.fn.filereadable(mason_server_bin) == 1 and mason_server_bin or "intellij-server"
 
 return {

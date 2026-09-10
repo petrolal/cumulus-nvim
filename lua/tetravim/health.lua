@@ -36,6 +36,29 @@ function M.check()
     end
   end
 
+  vim.health.start("TetraVim Tree-sitter Engine")
+
+  -- nvim-treesitter is pinned to the "main" branch (lazy-lock.json), which
+  -- compiles every parser by shelling out to the `tree-sitter` CLI
+  -- (`tree-sitter build`). A missing CLI fails parser install for *every*
+  -- language with `ENOENT ... 'tree-sitter'`.
+  if vim.fn.executable("tree-sitter") == 1 then
+    vim.health.ok("tree-sitter CLI: found on $PATH (parser compilation available)")
+  else
+    vim.health.warn(
+      "tree-sitter CLI: NOT found on $PATH -- parser install will fail. "
+        .. "Install with `npm install -g tree-sitter-cli` or `:MasonInstall tree-sitter-cli`"
+    )
+  end
+
+  for _, lang in ipairs({ "lua", "vim", "markdown", "query" }) do
+    if pcall(vim.treesitter.get_string_parser, "", lang) then
+      vim.health.ok(string.format("%s Tree-sitter parser: installed", lang))
+    else
+      vim.health.warn(string.format("%s Tree-sitter parser: NOT installed. Suggestion: :TSInstall %s", lang, lang))
+    end
+  end
+
   vim.health.start("Gradle Wrapper & Build Lock")
 
   local uv = vim.uv

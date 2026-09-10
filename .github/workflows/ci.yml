@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: stylua --check
-        uses: JohnnyMorganz/stylua-action@v4
+        uses: JohnnyMorganz/stylua-action@v5
         with:
           token: ${{ github.token }}
           version: latest
@@ -95,8 +95,18 @@ jobs:
           mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}"
           ln -sf "$GITHUB_WORKSPACE" "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 
+      - name: Install tree-sitter CLI
+        run: npm install -g tree-sitter-cli
+
       - name: Sync plugins
         run: nvim --headless -u init.lua "+Lazy! sync" +qa
+
+      - name: Install Tree-sitter parsers
+        run: |
+          nvim --headless -u init.lua \
+            -c "Lazy! load nvim-treesitter" \
+            -c "lua local t = require('nvim-treesitter').install({ 'java', 'kotlin', 'scala', 'lua', 'regex' }); if t and t.wait then t:wait(120000) end" \
+            -c "qa!"
 
       - name: Run plenary busted suite
         run: |
@@ -160,6 +170,9 @@ jobs:
         run: |
           mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}"
           ln -sf "$GITHUB_WORKSPACE" "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+
+      - name: Install tree-sitter CLI
+        run: npm install -g tree-sitter-cli
 
       - name: Headless provisioning (best-effort, DEGRADED-tolerant)
         run: bash scripts/headless-setup.sh

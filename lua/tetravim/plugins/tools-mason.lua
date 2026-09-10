@@ -74,6 +74,13 @@ local ensure_installed = {
   "ltex-ls",
   -- Jinja2 / Django template format + lint (bundled template-engine support).
   "djlint",
+  -- nvim-treesitter's "main" branch (see lazy-lock.json + core-treesitter.lua)
+  -- compiles every parser by shelling out to the `tree-sitter` CLI
+  -- (`tree-sitter build`); without it, parser install fails with
+  -- `ENOENT ... 'tree-sitter'`. mason.nvim prepends mason/bin to Neovim's
+  -- $PATH, so this is the zero-npm fallback for the CLI the bootstrap scripts
+  -- also install globally via `npm install -g tree-sitter-cli`.
+  "tree-sitter-cli",
 }
 -- NOTE: Deno's LSP is the `deno` runtime itself -- there is no Mason package.
 -- lsp-deno.lua registers denols only when `deno` is already on $PATH.

@@ -370,10 +370,7 @@ class KotlinService(
       vim.notify = orig_notify
 
       assert.is_true(#notified >= 1)
-      assert.are.equal(
-        "Spring Boot: demo-app (maven) — com.example.DemoApplication",
-        notified[1].msg
-      )
+      assert.are.equal("Spring Boot: demo-app (maven) — com.example.DemoApplication", notified[1].msg)
     end)
 
     it("<leader>jrd (launch_debug) registers a config and calls dap.continue()", function()

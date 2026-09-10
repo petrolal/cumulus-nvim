@@ -68,13 +68,18 @@ else
 fi
 
 log "4/5  Installing Tree-sitter parsers..."
+# nvim-treesitter's pinned "main" branch compiles each parser via the
+# `tree-sitter` CLI (`tree-sitter build`). It comes from the `tree-sitter-cli`
+# Mason package installed in step 2/5 (mason.nvim drops mason/bin onto the
+# $PATH of the nvim invocation below); a missing CLI fails every parser with
+# `ENOENT ... 'tree-sitter'`.
 if nvim --headless -u "$INIT_LUA" \
 	-c "Lazy! load nvim-treesitter" \
-	-c "lua require('nvim-treesitter.install').install({ 'java', 'kotlin', 'scala', 'lua', 'regex' }):wait(300000)" \
+	-c "lua require('nvim-treesitter').install({ 'java', 'kotlin', 'scala', 'lua', 'regex' }):wait(300000)" \
 	-c "qa!"; then
 	log "     Parsers installed."
 else
-	log "     WARNING: parser install reported errors -- run ':TSInstall java kotlin scala' inside nvim."
+	log "     WARNING: parser install reported errors -- ensure the 'tree-sitter' CLI is present (Mason: tree-sitter-cli), then run ':TSInstall java kotlin scala' inside nvim."
 	DEGRADED+=("Tree-sitter parsers")
 fi
 

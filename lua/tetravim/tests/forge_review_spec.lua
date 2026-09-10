@@ -97,9 +97,11 @@ describe("util/forge shell dispatch (pure, all IO mocked)", function()
           cb({ code = 0, stdout = "#123 mock\tmock-ref\tmock-base\n" })
         end
       end
-      return { wait = function()
-        return { code = 0, stdout = "github" }
-      end }
+      return {
+        wait = function()
+          return { code = 0, stdout = "github" }
+        end,
+      }
     end
     save(vim, "schedule_wrap")
     vim.schedule_wrap = function(cb)

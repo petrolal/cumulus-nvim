@@ -100,6 +100,7 @@ else
 	npm_global_install neovim            # Node.js provider for Neovim
 	npm_global_install prettier          # conform formatter: js/ts/yaml/json/md/css/html
 	npm_global_install sonarqube-scanner # `sonar-scanner` CLI: <leader>xsp whole-codebase Sonar scan (connected mode)
+	npm_global_install tree-sitter-cli   # `tree-sitter` CLI: nvim-treesitter "main" branch compiles every parser via `tree-sitter build`
 fi
 
 # ============================================================================
@@ -159,10 +160,20 @@ section "Tree-sitter parsers"
 
 # nvim-treesitter lazy-loads, so :TSInstall is unavailable headlessly.
 # Use the Lua install API with explicit load and a 30-second timeout.
+#
+# The pinned "main" branch (lazy-lock.json) compiles every parser by shelling
+# out to the `tree-sitter` CLI (`tree-sitter build`); without it on $PATH the
+# install fails for every parser with `ENOENT ... 'tree-sitter'`. It's
+# installed above via `npm install -g tree-sitter-cli` (and Mason ships a
+# `tree-sitter-cli` package as a fallback).
+if ! command -v tree-sitter >/dev/null 2>&1; then
+	warn "'tree-sitter' CLI not on \$PATH -- parser compilation will fail."
+	warn "Install it with:  npm install -g tree-sitter-cli   (or :MasonInstall tree-sitter-cli)"
+fi
 
 nvim --headless -u "$NVIM_CONFIG/init.lua" \
 	-c "Lazy! load nvim-treesitter" \
-	-c "lua require('nvim-treesitter.install').install({'regex'}):wait(30000)" \
+	-c "lua require('nvim-treesitter').install({ 'regex' }):wait(30000)" \
 	-c "qa!" 2>/dev/null || true
 
 # Verify it's now loadable
@@ -171,7 +182,7 @@ if nvim --headless -u "$NVIM_CONFIG/init.lua" \
 	-c "qa!" 2>/dev/null | grep -q "^true"; then
 	pass "regex Tree-sitter parser ready"
 else
-	warn "TSInstall regex may need to be run manually inside nvim (:TSInstall regex)"
+	warn "regex parser not ready -- check 'tree-sitter' is on \$PATH, then run ':TSInstall regex' inside nvim"
 fi
 
 # ============================================================================
