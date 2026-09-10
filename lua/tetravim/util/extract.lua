@@ -3,18 +3,20 @@ local M = {}
 local refactor = require("tetravim.util.refactor")
 local action_lock = require("tetravim.util.action_lock")
 
+local ui = require("tetravim.util.ui")
+
 M.ACTION_TIMEOUT_MS = 10000
 
 local function notify_err(msg)
-  vim.notify(msg, vim.log.levels.ERROR, { title = "TetraVim Extract" })
+  ui.notify_err(msg, "TetraVim Extract")
 end
 
 local function notify_warn(msg)
-  vim.notify(msg, vim.log.levels.WARN, { title = "TetraVim Extract" })
+  ui.notify_warn(msg, "TetraVim Extract")
 end
 
 local function notify_info(msg)
-  vim.notify(msg, vim.log.levels.INFO, { title = "TetraVim Extract" })
+  ui.notify_info(msg, "TetraVim Extract")
 end
 
 --- Proceed with a single, already-disambiguated code action: apply it

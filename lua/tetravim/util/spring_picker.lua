@@ -6,6 +6,8 @@ local spring = require("tetravim.util.spring")
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 --- Check and acquire all telescope modules in a single pcall guard.
 ---@return table|nil
 local function get_telescope()
@@ -21,7 +23,7 @@ local function get_telescope()
   end)
 
   if not ok or not tel then
-    vim.notify("telescope.nvim is required for Spring pickers", vim.log.levels.WARN)
+    ui.notify_warn("telescope.nvim is required for Spring pickers")
     return nil
   end
 
@@ -39,7 +41,7 @@ function M.pick_endpoint(opts)
 
   local root_info = spring.detect_root()
   if not root_info then
-    vim.notify("No Maven/Gradle project root found", vim.log.levels.INFO)
+    ui.notify_info("No Maven/Gradle project root found")
     return
   end
 
@@ -49,7 +51,7 @@ function M.pick_endpoint(opts)
     end
 
     if #endpoints == 0 then
-      vim.notify("No Spring Boot / JAX-RS endpoints found in project", vim.log.levels.INFO)
+      ui.notify_info("No Spring Boot / JAX-RS endpoints found in project")
       return
     end
 
@@ -114,7 +116,7 @@ function M.pick_bean(opts)
 
   local root_info = spring.detect_root()
   if not root_info then
-    vim.notify("No Maven/Gradle project root found", vim.log.levels.INFO)
+    ui.notify_info("No Maven/Gradle project root found")
     return
   end
 
@@ -124,7 +126,7 @@ function M.pick_bean(opts)
     end
 
     if #beans == 0 then
-      vim.notify("No Spring stereotypes (@Component, @Service, etc.) found", vim.log.levels.INFO)
+      ui.notify_info("No Spring stereotypes (@Component, @Service, etc.) found")
       return
     end
 
@@ -220,19 +222,18 @@ end
 function M.detect_app()
   local root_info = spring.detect_root()
   if not root_info then
-    vim.notify("No Maven/Gradle project root found", vim.log.levels.INFO)
+    ui.notify_info("No Maven/Gradle project root found")
     return
   end
 
   spring.find_main_class(root_info.root, function(main_class)
     if not main_class then
-      vim.notify("No Spring Boot application found in project", vim.log.levels.INFO)
+      ui.notify_info("No Spring Boot application found in project")
       return
     end
 
-    vim.notify(
-      string.format("Spring Boot: %s (%s) — %s", root_info.project_name, root_info.build_tool, main_class),
-      vim.log.levels.INFO
+    ui.notify_info(
+      string.format("Spring Boot: %s (%s) — %s", root_info.project_name, root_info.build_tool, main_class)
     )
   end)
 end

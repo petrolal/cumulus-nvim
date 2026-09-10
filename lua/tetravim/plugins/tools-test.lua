@@ -3,48 +3,50 @@
 -- Integrates neotest with neotest-java for visual test tree discovery,
 -- nearest test execution, and DAP debugging across JVM projects.
 
+local ui = require("tetravim.util.ui")
+
 local function run_nearest()
   local ok, neotest = pcall(require, "neotest")
   if not ok then
-    vim.notify("neotest is not available", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("neotest is not available", "TetraVim Test")
     return
   end
   local file = vim.api.nvim_buf_get_name(0)
   if not file or file == "" or vim.bo.buftype ~= "" then
-    vim.notify("Current buffer is not a valid test file", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("Current buffer is not a valid test file", "TetraVim Test")
     return
   end
   local call_ok, err = pcall(function()
     neotest.run.run()
   end)
   if not call_ok then
-    vim.notify("Failed to run nearest test: " .. tostring(err), vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("Failed to run nearest test: " .. tostring(err), "TetraVim Test")
   end
 end
 
 local function run_file()
   local ok, neotest = pcall(require, "neotest")
   if not ok then
-    vim.notify("neotest is not available", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("neotest is not available", "TetraVim Test")
     return
   end
   local file = vim.api.nvim_buf_get_name(0)
   if not file or file == "" or vim.bo.buftype ~= "" then
-    vim.notify("Current buffer is not a runnable test file", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("Current buffer is not a runnable test file", "TetraVim Test")
     return
   end
   local call_ok, err = pcall(function()
     neotest.run.run(file)
   end)
   if not call_ok then
-    vim.notify("Failed to run test file: " .. tostring(err), vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("Failed to run test file: " .. tostring(err), "TetraVim Test")
   end
 end
 
 local function toggle_summary()
   local ok, neotest = pcall(require, "neotest")
   if not ok then
-    vim.notify("neotest is not available", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("neotest is not available", "TetraVim Test")
     return
   end
   pcall(function()
@@ -55,7 +57,7 @@ end
 local function toggle_output()
   local ok, neotest = pcall(require, "neotest")
   if not ok then
-    vim.notify("neotest is not available", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("neotest is not available", "TetraVim Test")
     return
   end
   pcall(function()
@@ -66,19 +68,19 @@ end
 local function debug_nearest()
   local ok, neotest = pcall(require, "neotest")
   if not ok then
-    vim.notify("neotest is not available", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("neotest is not available", "TetraVim Test")
     return
   end
   local dap_ok, _ = pcall(require, "dap")
   if not dap_ok then
-    vim.notify("DAP debugger is not configured", vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("DAP debugger is not configured", "TetraVim Test")
     return
   end
   local call_ok, err = pcall(function()
     neotest.run.run({ strategy = "dap" })
   end)
   if not call_ok then
-    vim.notify("Failed to debug nearest test: " .. tostring(err), vim.log.levels.WARN, { title = "TetraVim Test" })
+    ui.notify_warn("Failed to debug nearest test: " .. tostring(err), "TetraVim Test")
   end
 end
 

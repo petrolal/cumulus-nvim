@@ -45,6 +45,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 M.STEREOTYPE_ANNOTATIONS = {
   "Component",
   "Service",
@@ -367,7 +369,7 @@ local SCAN_UNAVAILABLE_MSG =
   "Spring-reference scan unavailable (neither 'rg' nor 'grep' could be run) -- XML/@Autowired/stereotype coverage may be incomplete for this rename"
 
 local function warn_scan_unavailable()
-  vim.notify(SCAN_UNAVAILABLE_MSG, vim.log.levels.WARN, { title = "TetraVim Refactor" })
+  ui.notify_warn(SCAN_UNAVAILABLE_MSG, "TetraVim Refactor")
 end
 
 --- Find candidate files under `root` that mention `symbol` as a whole word,
@@ -553,10 +555,10 @@ function M.scan_root_async(root, symbol, old_package, callback)
     local HEARTBEAT_THRESHOLD = 40
     local show_heartbeat = #unique_files >= HEARTBEAT_THRESHOLD
     if show_heartbeat then
-      vim.notify(
+      ui.notify_info(
         string.format("Scanning %d file(s) for Spring references to '%s'...", #unique_files, symbol),
-        vim.log.levels.INFO,
-        { id = SCAN_NOTIFY_ID, title = "TetraVim Refactor" }
+        "TetraVim Refactor",
+        { id = SCAN_NOTIFY_ID }
       )
     end
 
@@ -638,34 +640,33 @@ function M.scan_root_async(root, symbol, old_package, callback)
       file_idx = chunk_end + 1
       if file_idx <= #unique_files then
         if show_heartbeat then
-          vim.notify(
+          ui.notify_info(
             string.format(
               "Scanning for Spring references to '%s'... (%d/%d files)",
               symbol,
               math.min(file_idx - 1, #unique_files),
               #unique_files
             ),
-            vim.log.levels.INFO,
-            { id = SCAN_NOTIFY_ID, title = "TetraVim Refactor" }
+            "TetraVim Refactor",
+            { id = SCAN_NOTIFY_ID }
           )
         end
         vim.schedule(process_chunk)
       else
         if show_heartbeat then
-          vim.notify(
+          ui.notify_info(
             string.format("Spring-reference scan complete (%d file(s), %d match(es))", #unique_files, #items),
-            vim.log.levels.INFO,
-            { id = SCAN_NOTIFY_ID, title = "TetraVim Refactor" }
+            "TetraVim Refactor",
+            { id = SCAN_NOTIFY_ID }
           )
         end
         if #failed_files > 0 then
-          vim.notify(
+          ui.notify_warn(
             "Spring-reference scan could not read "
               .. #failed_files
               .. " candidate file(s), coverage may be incomplete: "
               .. table.concat(failed_files, ", "),
-            vim.log.levels.WARN,
-            { title = "TetraVim Refactor" }
+            "TetraVim Refactor"
           )
         end
         callback(items)

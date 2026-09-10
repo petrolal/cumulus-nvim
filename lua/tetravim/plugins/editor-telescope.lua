@@ -1,5 +1,7 @@
 -- TetraVim Telescope & Ripgrep Integration (Story 16.1, 16.2 & Story 22.1)
 
+local ui = require("tetravim.util.ui")
+
 return {
   {
     "nvim-telescope/telescope.nvim",
@@ -74,7 +76,7 @@ return {
       vim.api.nvim_create_user_command("TelescopeMavenModules", function()
         local modules = discover_modules(vim.fn.getcwd(), { "pom.xml" })
         if #modules == 0 then
-          vim.notify("No Maven modules found", vim.log.levels.WARN)
+          ui.notify_warn("No Maven modules found")
           return
         end
 
@@ -95,7 +97,7 @@ return {
             if vim.fn.filereadable(build_file) == 1 then
               vim.cmd("edit " .. vim.fn.fnameescape(build_file))
             else
-              vim.notify("Build file not found for module: " .. choice.name, vim.log.levels.WARN)
+              ui.notify_warn("Build file not found for module: " .. choice.name)
             end
           end
         end)
@@ -104,7 +106,7 @@ return {
       vim.api.nvim_create_user_command("TelescopeGradleModules", function()
         local modules = discover_modules(vim.fn.getcwd(), { "build.gradle", "build.gradle.kts" })
         if #modules == 0 then
-          vim.notify("No Gradle modules found", vim.log.levels.WARN)
+          ui.notify_warn("No Gradle modules found")
           return
         end
 
@@ -128,7 +130,7 @@ return {
             if vim.fn.filereadable(build_file) == 1 then
               vim.cmd("edit " .. vim.fn.fnameescape(build_file))
             else
-              vim.notify("Build file not found for module: " .. choice.name, vim.log.levels.WARN)
+              ui.notify_warn("Build file not found for module: " .. choice.name)
             end
           end
         end)

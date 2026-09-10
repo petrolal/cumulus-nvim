@@ -213,7 +213,8 @@ describe("DevOps Module - Error Handling", function()
 
   it("should notify user on missing tools", function()
     local code = io.open("lua/tetravim/core/devops.lua"):read("*a")
-    assert.truthy(code:find("vim.notify"))
+    -- Notifications route through the util/ui facade, not raw vim.notify.
+    assert.truthy(code:find("ui%.notify"))
   end)
 
   it("should provide helpful error messages", function()

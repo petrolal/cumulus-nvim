@@ -15,6 +15,8 @@ local parse = require("tetravim.util.spring.parse")
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 M.SCAN_TIMEOUT_MS = 15000
 
 -- Tree-sitter primitives still needed by `M.find_main_class` below.
@@ -44,7 +46,7 @@ function M._candidate_files_async(root, regex_pattern, cb)
   local has_grep = vim.fn.executable("grep") == 1
 
   if not has_rg and not has_grep then
-    vim.notify("ripgrep or grep required for Spring discovery", vim.log.levels.WARN)
+    ui.notify_warn("ripgrep or grep required for Spring discovery")
     vim.schedule(function()
       cb(nil)
     end)
@@ -96,12 +98,12 @@ function M._candidate_files_async(root, regex_pattern, cb)
         elseif result.code == 1 then
           finish({})
         else
-          vim.notify("Spring discovery scan failed or timed out", vim.log.levels.WARN)
+          ui.notify_warn("Spring discovery scan failed or timed out")
           finish(nil)
         end
       end)
       if not ok or not handle then
-        vim.notify("Spring discovery scan failed to start grep", vim.log.levels.WARN)
+        ui.notify_warn("Spring discovery scan failed to start grep")
         finish(nil)
       end
     end)
@@ -200,7 +202,7 @@ end
 ---@param cb fun(main_class: string|nil)
 function M.find_main_class(root, cb)
   if not M.has_parser("java") then
-    vim.notify("Tree-sitter java parser not available", vim.log.levels.WARN)
+    ui.notify_warn("Tree-sitter java parser not available")
     vim.schedule(function()
       cb(nil)
     end)
@@ -221,7 +223,7 @@ function M.find_main_class(root, cb)
       end
     end
     if has_kotlin and not M.has_parser("kotlin") then
-      vim.notify("Tree-sitter kotlin parser not available", vim.log.levels.WARN)
+      ui.notify_warn("Tree-sitter kotlin parser not available")
       cb(nil)
       return
     end
@@ -355,7 +357,7 @@ end
 ---@param cb fun(endpoints: table[]|nil)
 function M._find_endpoints_scan(root, cb)
   if not M.has_parser("java") then
-    vim.notify("Tree-sitter java parser not available", vim.log.levels.WARN)
+    ui.notify_warn("Tree-sitter java parser not available")
     vim.schedule(function()
       cb(nil)
     end)
@@ -384,7 +386,7 @@ function M._find_endpoints_scan(root, cb)
       end
     end
     if has_kotlin and not M.has_parser("kotlin") then
-      vim.notify("Tree-sitter kotlin parser not available", vim.log.levels.WARN)
+      ui.notify_warn("Tree-sitter kotlin parser not available")
       cb(nil)
       return
     end
@@ -412,7 +414,7 @@ end
 ---@param cb fun(beans: table[]|nil)
 function M._find_beans_scan(root, cb)
   if not M.has_parser("java") then
-    vim.notify("Tree-sitter java parser not available", vim.log.levels.WARN)
+    ui.notify_warn("Tree-sitter java parser not available")
     vim.schedule(function()
       cb(nil)
     end)
@@ -438,7 +440,7 @@ function M._find_beans_scan(root, cb)
       end
     end
     if has_kotlin and not M.has_parser("kotlin") then
-      vim.notify("Tree-sitter kotlin parser not available", vim.log.levels.WARN)
+      ui.notify_warn("Tree-sitter kotlin parser not available")
       cb(nil)
       return
     end

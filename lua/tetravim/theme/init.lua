@@ -14,6 +14,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 --- Canonical colourscheme name. Kept as a function because call sites
 --- historically treated the return value as an opaque theme token; there
 --- is now exactly one value.
@@ -27,7 +29,7 @@ end
 function M.apply()
   local ok, tetris = pcall(require, "tetravim.theme.tetris")
   if not ok then
-    vim.notify("tetravim.theme.tetris failed to load: " .. tostring(tetris), vim.log.levels.ERROR)
+    ui.notify_err("tetravim.theme.tetris failed to load: " .. tostring(tetris))
     return
   end
 

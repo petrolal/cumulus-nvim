@@ -16,6 +16,8 @@
 -- show/hide bookkeeping required.
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 -- Each entry: { filetypes = {...}, group = "<leader>cX", label = "...", icon = "...",
 --               keys = { { lhs, rhs, desc }, ... } }
 local stacks = {}
@@ -66,9 +68,9 @@ function M.setup()
             -- a condition that fails persistently would otherwise spam a
             -- fresh toast per invocation. Give it a stable per-stack id so
             -- repeats replace the previous toast instead of stacking.
-            vim.notify(
+            ui.notify_warn(
               "TetraVim: lang_keymaps condition for " .. tostring(stack.group) .. " failed: " .. tostring(res),
-              vim.log.levels.WARN,
+              nil,
               { id = "tetravim_lang_keymaps_condition_" .. tostring(stack.group) }
             )
           end
@@ -95,9 +97,9 @@ function M.setup()
             local mode = k.mode or "n"
             local ok, err = pcall(vim.keymap.set, mode, k[1], k[2], { buffer = buf, desc = k[3] })
             if not ok then
-              vim.notify(
+              ui.notify_warn(
                 "TetraVim: failed to set keymap " .. k[1] .. " for buffer " .. tostring(buf) .. ": " .. tostring(err),
-                vim.log.levels.WARN,
+                nil,
                 { id = "tetravim_lang_keymaps_set_" .. tostring(buf) .. "_" .. k[1] }
               )
             end

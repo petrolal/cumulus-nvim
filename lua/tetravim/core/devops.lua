@@ -8,6 +8,8 @@ local M = {}
 
 local term = require("tetravim.util.term")
 
+local ui = require("tetravim.util.ui")
+
 -- =============================================================================
 -- Native Root Discovery (vim.fs upward marker search)
 -- =============================================================================
@@ -119,12 +121,12 @@ end
 local function with_root(finder, missing_msg, callback)
   local root = finder()
   if not root then
-    vim.notify(missing_msg, vim.log.levels.WARN, { title = "TetraVim DevOps" })
+    ui.notify_warn(missing_msg, "TetraVim DevOps")
     return
   end
   local ok, err = pcall(callback, root)
   if not ok then
-    vim.notify("Error executing operation: " .. err, vim.log.levels.ERROR, { title = "TetraVim DevOps" })
+    ui.notify_err("Error executing operation: " .. err, "TetraVim DevOps")
   end
 end
 
@@ -144,10 +146,9 @@ end
 local function with_tf(callback)
   local tf = M.get_tf_cmd()
   if not tf then
-    vim.notify(
+    ui.notify_warn(
       "Neither 'tofu' nor 'terraform' was found in your PATH. Please install OpenTofu or Terraform.",
-      vim.log.levels.WARN,
-      { title = "TetraVim DevOps" }
+      "TetraVim DevOps"
     )
     return
   end
@@ -187,7 +188,7 @@ function M.terraform_fmt()
     if is_tf_file and vim.fn.filereadable(file) == 1 then
       local ok_save, err_save = pcall(vim.cmd, "update")
       if not ok_save then
-        vim.notify("Failed to save file: " .. err_save, vim.log.levels.ERROR, { title = "TetraVim DevOps" })
+        ui.notify_err("Failed to save file: " .. err_save, "TetraVim DevOps")
         return
       end
       -- Async (canonical vim.system + vim.schedule pattern): a slow disk /
@@ -200,31 +201,23 @@ function M.terraform_fmt()
           if out.code == 0 then
             local ok_reload, err_reload = pcall(vim.cmd, "edit!")
             if not ok_reload then
-              vim.notify(
-                "Formatted, but failed to reload buffer: " .. tostring(err_reload),
-                vim.log.levels.WARN,
-                { title = "TetraVim DevOps" }
-              )
+              ui.notify_warn("Formatted, but failed to reload buffer: " .. tostring(err_reload), "TetraVim DevOps")
             else
-              vim.notify("Formatted with " .. tf .. " fmt", vim.log.levels.INFO, { title = "TetraVim DevOps" })
+              ui.notify_info("Formatted with " .. tf .. " fmt", "TetraVim DevOps")
             end
           elseif timed_out then
-            vim.notify(tf .. " fmt timed out after 15s", vim.log.levels.ERROR, { title = "TetraVim DevOps" })
+            ui.notify_err(tf .. " fmt timed out after 15s", "TetraVim DevOps")
           else
             local msg = (out.stderr and out.stderr ~= "" and out.stderr) or out.stdout or "unknown error"
-            vim.notify("Formatting error: " .. vim.trim(msg), vim.log.levels.ERROR, { title = "TetraVim DevOps" })
+            ui.notify_err("Formatting error: " .. vim.trim(msg), "TetraVim DevOps")
           end
         end)
       end)
     else
       if not is_tf_file then
-        vim.notify(
-          "Current file is not a Terraform (.tf, .tofu, .tfvars) file.",
-          vim.log.levels.WARN,
-          { title = "TetraVim DevOps" }
-        )
+        ui.notify_warn("Current file is not a Terraform (.tf, .tofu, .tfvars) file.", "TetraVim DevOps")
       elseif vim.fn.filereadable(file) ~= 1 then
-        vim.notify("Cannot read file: " .. file, vim.log.levels.WARN, { title = "TetraVim DevOps" })
+        ui.notify_warn("Cannot read file: " .. file, "TetraVim DevOps")
       end
       M.run_term(tf .. " fmt", { cwd = root })
     end
@@ -236,11 +229,7 @@ function M.terraform_lint()
     if vim.fn.executable("tflint") == 1 then
       M.run_term("tflint", { cwd = root })
     else
-      vim.notify(
-        "tflint is not installed in PATH. Install via Mason (:MasonInstall tflint).",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
-      )
+      ui.notify_warn("tflint is not installed in PATH. Install via Mason (:MasonInstall tflint).", "TetraVim DevOps")
     end
   end)
 end
@@ -252,11 +241,7 @@ function M.terraform_security()
     elseif vim.fn.executable("tfsec") == 1 then
       M.run_term("tfsec .", { cwd = root })
     else
-      vim.notify(
-        "Neither 'trivy' nor 'tfsec' is installed in PATH.",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
-      )
+      ui.notify_warn("Neither 'trivy' nor 'tfsec' is installed in PATH.", "TetraVim DevOps")
     end
   end)
 end
@@ -320,11 +305,7 @@ function M.cfn_validate()
   with_cfn(function(root)
     local file = resolve_cfn_target_file(root)
     if not file then
-      vim.notify(
-        "No CloudFormation/SAM template file found to validate.",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
-      )
+      ui.notify_warn("No CloudFormation/SAM template file found to validate.", "TetraVim DevOps")
       return
     end
     local cwd = root or vim.fs.normalize(vim.fn.fnamemodify(file, ":h"))
@@ -336,10 +317,9 @@ function M.cfn_validate()
     elseif vim.fn.executable("cfn-lint") == 1 then
       M.run_term("cfn-lint " .. vim.fn.shellescape(file), { cwd = cwd })
     else
-      vim.notify(
+      ui.notify_warn(
         "Neither 'aws' CLI nor 'cfn-lint' was found in PATH. Please install the AWS CLI or cfn-lint (:MasonInstall cfn-lint).",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -355,10 +335,9 @@ function M.cfn_lint()
         M.run_term("cfn-lint", { cwd = root })
       end
     else
-      vim.notify(
+      ui.notify_warn(
         "cfn-lint is not installed in PATH. Install via Mason (:MasonInstall cfn-lint) or pip ('pip install cfn-lint').",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -369,10 +348,9 @@ function M.sam_validate()
     if vim.fn.executable("sam") == 1 then
       M.run_term("sam validate", { cwd = root })
     else
-      vim.notify(
+      ui.notify_warn(
         "AWS SAM CLI ('sam') is not installed in PATH. Visit https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -383,10 +361,9 @@ function M.sam_build()
     if vim.fn.executable("sam") == 1 then
       M.run_term("sam build", { cwd = root })
     else
-      vim.notify(
+      ui.notify_warn(
         "AWS SAM CLI ('sam') is not installed in PATH. Visit https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -395,10 +372,9 @@ end
 function M.sam_local_invoke()
   with_cfn(function(root)
     if vim.fn.executable("sam") ~= 1 then
-      vim.notify(
+      ui.notify_warn(
         "AWS SAM CLI ('sam') is not installed in PATH. Visit https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
       return
     end
@@ -422,10 +398,9 @@ function M.sam_local_invoke()
           return
         elseif input ~= "" then
           if not input:match("^[a-zA-Z0-9_-]+$") then
-            vim.notify(
+            ui.notify_warn(
               "Invalid Lambda function name. Only alphanumeric, underscore, and hyphen allowed.",
-              vim.log.levels.WARN,
-              { title = "TetraVim DevOps" }
+              "TetraVim DevOps"
             )
             return
           end
@@ -443,10 +418,9 @@ function M.sam_local_start_api()
     if vim.fn.executable("sam") == 1 then
       M.run_term("sam local start-api", { cwd = root })
     else
-      vim.notify(
+      ui.notify_warn(
         "AWS SAM CLI ('sam') is not installed in PATH. Visit https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -457,19 +431,14 @@ function M.cfn_guard_validate()
     if vim.fn.executable("cfn-guard") == 1 then
       local file = resolve_cfn_target_file(root) or (vim.fn.expand("%:p") ~= "" and vim.fn.expand("%:p") or nil)
       if not file then
-        vim.notify(
-          "No CloudFormation template found to validate with cfn-guard.",
-          vim.log.levels.WARN,
-          { title = "TetraVim DevOps" }
-        )
+        ui.notify_warn("No CloudFormation template found to validate with cfn-guard.", "TetraVim DevOps")
         return
       end
       M.run_term("cfn-guard validate --template " .. vim.fn.shellescape(file), { cwd = root })
     else
-      vim.notify(
+      ui.notify_warn(
         "cfn-guard is not installed in PATH. Install CloudFormation Guard via cargo or homebrew ('brew install cloudformation-guard').",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -530,13 +499,13 @@ function M.ansible_syntax_check()
   with_ansible(function(root)
     local file = resolve_ansible_target_file(root)
     if not file then
-      vim.notify("No Ansible playbook found to check syntax.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("No Ansible playbook found to check syntax.", "TetraVim DevOps")
       return
     end
     if vim.fn.executable("ansible-playbook") == 1 then
       M.run_term("ansible-playbook --syntax-check " .. vim.fn.shellescape(file), { cwd = root })
     else
-      vim.notify("ansible-playbook is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("ansible-playbook is not installed in PATH.", "TetraVim DevOps")
     end
   end)
 end
@@ -551,10 +520,9 @@ function M.ansible_lint()
         M.run_term("ansible-lint", { cwd = root })
       end
     else
-      vim.notify(
+      ui.notify_warn(
         "ansible-lint is not installed in PATH. Install via Mason (:MasonInstall ansible-lint).",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -564,13 +532,13 @@ function M.ansible_dry_run()
   with_ansible(function(root)
     local file = resolve_ansible_target_file(root)
     if not file then
-      vim.notify("No Ansible playbook found to dry run.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("No Ansible playbook found to dry run.", "TetraVim DevOps")
       return
     end
     if vim.fn.executable("ansible-playbook") == 1 then
       M.run_term("ansible-playbook --check " .. vim.fn.shellescape(file), { cwd = root })
     else
-      vim.notify("ansible-playbook is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("ansible-playbook is not installed in PATH.", "TetraVim DevOps")
     end
   end)
 end
@@ -579,13 +547,13 @@ function M.ansible_run_playbook()
   with_ansible(function(root)
     local file = resolve_ansible_target_file(root)
     if not file then
-      vim.notify("No Ansible playbook found to run.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("No Ansible playbook found to run.", "TetraVim DevOps")
       return
     end
     if vim.fn.executable("ansible-playbook") == 1 then
       M.run_term("ansible-playbook " .. vim.fn.shellescape(file), { cwd = root })
     else
-      vim.notify("ansible-playbook is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("ansible-playbook is not installed in PATH.", "TetraVim DevOps")
     end
   end)
 end
@@ -595,7 +563,7 @@ function M.ansible_inventory_graph()
     if vim.fn.executable("ansible-inventory") == 1 then
       M.run_term("ansible-inventory --graph", { cwd = root })
     else
-      vim.notify("ansible-inventory is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("ansible-inventory is not installed in PATH.", "TetraVim DevOps")
     end
   end)
 end
@@ -609,10 +577,9 @@ function M.ansible_doc_lookup()
         end
         if input ~= "" then
           if not input:match("^[a-z0-9_.:-]+$") then
-            vim.notify(
+            ui.notify_warn(
               "Invalid Ansible module name. Use lowercase alphanumeric, dots, underscores, hyphens, or colons.",
-              vim.log.levels.WARN,
-              { title = "TetraVim DevOps" }
+              "TetraVim DevOps"
             )
             return
           end
@@ -620,7 +587,7 @@ function M.ansible_doc_lookup()
         end
       end)
     else
-      vim.notify("ansible-doc is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("ansible-doc is not installed in PATH.", "TetraVim DevOps")
     end
   end)
 end
@@ -628,7 +595,7 @@ end
 function M.ansible_vault_action()
   with_ansible(function(root)
     if vim.fn.executable("ansible-vault") ~= 1 then
-      vim.notify("ansible-vault is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("ansible-vault is not installed in PATH.", "TetraVim DevOps")
       return
     end
     local file = vim.fn.expand("%:p")
@@ -651,10 +618,9 @@ function M.ansible_vault_action()
         end
         if input ~= "" then
           if input:match("^/") or input:match("%.%.") then
-            vim.notify(
+            ui.notify_warn(
               "Invalid path. Use relative paths within the project (e.g., 'vault/secrets.yml').",
-              vim.log.levels.WARN,
-              { title = "TetraVim DevOps" }
+              "TetraVim DevOps"
             )
             return
           end
@@ -695,11 +661,7 @@ function M.docker_build()
     local target_dir_name = raw_name:lower():gsub("[^%w%._%-]", "-"):gsub("^%-+", ""):gsub("%-+$", "")
     if target_dir_name == "" then
       target_dir_name = "app"
-      vim.notify(
-        "Using default image name 'app' (root directory name was unprintable)",
-        vim.log.levels.INFO,
-        { title = "TetraVim DevOps" }
-      )
+      ui.notify_info("Using default image name 'app' (root directory name was unprintable)", "TetraVim DevOps")
     end
     M.run_term("docker build -t " .. vim.fn.shellescape(target_dir_name) .. " .", { cwd = root })
   end)
@@ -716,10 +678,9 @@ function M.docker_lint()
         M.run_term("hadolint " .. fallback, { cwd = root })
       end
     else
-      vim.notify(
+      ui.notify_warn(
         "hadolint is not installed in PATH. Install via Mason (:MasonInstall hadolint).",
-        vim.log.levels.WARN,
-        { title = "TetraVim DevOps" }
+        "TetraVim DevOps"
       )
     end
   end)
@@ -738,7 +699,7 @@ function M.helm_lint()
     if vim.fn.executable("helm") == 1 then
       M.run_term("helm lint .", { cwd = root })
     else
-      vim.notify("helm CLI is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("helm CLI is not installed in PATH.", "TetraVim DevOps")
     end
   end)
 end
@@ -748,7 +709,7 @@ function M.helm_template()
     if vim.fn.executable("helm") == 1 then
       M.run_term("helm template .", { cwd = root })
     else
-      vim.notify("helm CLI is not installed in PATH.", vim.log.levels.WARN, { title = "TetraVim DevOps" })
+      ui.notify_warn("helm CLI is not installed in PATH.", "TetraVim DevOps")
     end
   end)
 end

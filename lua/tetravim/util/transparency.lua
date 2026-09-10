@@ -8,6 +8,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 M.enabled = false
 
 -- Groups whose background is cleared. Foreground-only groups (syntax,
@@ -72,7 +74,7 @@ end
 --- Flip transparency on/off and announce the new state.
 function M.toggle()
   M.set(not M.enabled)
-  vim.notify("Transparency " .. (M.enabled and "ON" or "OFF"), vim.log.levels.INFO)
+  ui.notify_info("Transparency " .. (M.enabled and "ON" or "OFF"))
 end
 
 return M

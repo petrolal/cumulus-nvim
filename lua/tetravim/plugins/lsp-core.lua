@@ -8,6 +8,8 @@
 -- language server is genuinely running vs. just configured. This notifies
 -- once per server *process* (deduped by client id, not by buffer) the first
 -- time each one attaches.
+local ui = require("tetravim.util.ui")
+
 local attach_messages = {
   jdtls = "JDTLS attached -- test runner & refactor keymaps are ready",
   kotlin_lsp = "Kotlin LSP (JetBrains) attached",
@@ -107,7 +109,7 @@ return {
             return
           end
           notified_clients[client.id] = true
-          vim.notify(attach_messages[client.name] or (client.name .. " attached"), vim.log.levels.INFO)
+          ui.notify_info(attach_messages[client.name] or (client.name .. " attached"))
 
           -- Per-client IntelliSense wiring shared by every server routed here
           -- (inlay hints, symbol-under-cursor document highlight, <C-k>

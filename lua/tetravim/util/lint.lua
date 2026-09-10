@@ -35,9 +35,11 @@ function M.info(buf)
     ("global: %s"):format(gal and "enabled" or "disabled"),
     ("buffer: %s"):format(bal == nil and "inherit" or (bal and "enabled" or "disabled")),
   }
-  vim.notify(table.concat(lines, "\n"), enabled and vim.log.levels.INFO or vim.log.levels.WARN, {
-    title = "Autolint (" .. (enabled and "enabled" or "disabled") .. ")",
-  })
+  ui.notify(
+    table.concat(lines, "\n"),
+    enabled and vim.log.levels.INFO or vim.log.levels.WARN,
+    "Autolint (" .. (enabled and "enabled" or "disabled") .. ")"
+  )
 end
 
 ---@param buf boolean If true, toggle for the current buffer only; otherwise toggle globally.

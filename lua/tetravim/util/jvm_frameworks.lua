@@ -25,6 +25,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 --- Base directory the Quarkus / MicroProfile jars are unpacked into.
 ---@return string
 function M.dir()
@@ -139,7 +141,7 @@ function M.fetch_jars(opts, on_complete)
 
   local function notify(msg, level)
     if not silent then
-      vim.notify("[TetraVim JVM LSP] " .. msg, level or vim.log.levels.INFO)
+      ui.notify("[TetraVim JVM LSP] " .. msg, level or vim.log.levels.INFO)
     end
   end
 

@@ -3,6 +3,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 --- Insert configuration into table, deduplicating by non-nil name.
 ---@param configs table[]
 ---@param new_config table|nil
@@ -26,20 +28,20 @@ M.dedup_insert = dedup_insert
 function M.launch_debug()
   local ok_spring, spring = pcall(require, "tetravim.util.spring")
   if not ok_spring or not spring then
-    vim.notify("Spring module unavailable", vim.log.levels.WARN)
+    ui.notify_warn("Spring module unavailable")
     return
   end
 
   local ok_dap, dap = pcall(require, "dap")
   if not ok_dap or not dap then
-    vim.notify("nvim-dap is not installed", vim.log.levels.WARN)
+    ui.notify_warn("nvim-dap is not installed")
     return
   end
 
   local cwd = vim.fn.getcwd()
   spring.build_dap_config(cwd, function(dap_result)
     if not dap_result or not dap_result.launch then
-      vim.notify("Failed to generate debug configuration", vim.log.levels.WARN)
+      ui.notify_warn("Failed to generate debug configuration")
       return
     end
 

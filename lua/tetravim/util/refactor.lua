@@ -36,6 +36,8 @@ local M = {}
 
 local action_lock = require("tetravim.util.action_lock")
 
+local ui = require("tetravim.util.ui")
+
 --- How long to wait for a textDocument/rename response before giving up
 --- and notifying the user, rather than leaving the flow silently hanging
 --- forever if the server never replies.
@@ -48,15 +50,15 @@ local JVM_CLIENT_NAMES = {
 }
 
 local function notify_err(msg)
-  vim.notify(msg, vim.log.levels.ERROR, { title = "TetraVim Refactor" })
+  ui.notify_err(msg, "TetraVim Refactor")
 end
 
 local function notify_warn(msg)
-  vim.notify(msg, vim.log.levels.WARN, { title = "TetraVim Refactor" })
+  ui.notify_warn(msg, "TetraVim Refactor")
 end
 
 local function notify_info(msg)
-  vim.notify(msg, vim.log.levels.INFO, { title = "TetraVim Refactor" })
+  ui.notify_info(msg, "TetraVim Refactor")
 end
 
 --- A rename target must be a bare Java/Kotlin identifier -- no whitespace,

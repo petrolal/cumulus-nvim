@@ -8,6 +8,8 @@
 -- previously had to be manually re-applied across both files.
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 -- Cold local-repo/offline-mirror resolution can legitimately take a while,
 -- but a stuck mvn/gradle process (hung proxy auth, dead network) must not
 -- hide the gated java/kotlin/maven keymaps (lang_keymaps.lua) forever.
@@ -31,7 +33,7 @@ local HEARTBEAT_INTERVAL_MS = 5000
 function M.run(opts)
   local sync_state = require("tetravim.util.build_sync_state")
 
-  vim.notify(opts.tool_label .. ": syncing dependencies...", vim.log.levels.INFO, { id = opts.notify_id })
+  ui.notify_info(opts.tool_label .. ": syncing dependencies...", nil, { id = opts.notify_id })
   local timed_out = false
   local timer = vim.uv.new_timer()
   -- Independent from `timer` (the timeout-kill timer) above -- this one only
@@ -93,16 +95,12 @@ function M.run(opts)
       -- failure so a broken/offline sync doesn't hide them forever.
       sync_state.mark_ready()
       if result.code == 0 then
-        vim.notify(opts.tool_label .. ": dependencies synced", vim.log.levels.INFO, { id = opts.notify_id })
+        ui.notify_info(opts.tool_label .. ": dependencies synced", nil, { id = opts.notify_id })
       else
         local detail = (result.stderr ~= "" and result.stderr)
           or (result.stdout ~= "" and result.stdout)
           or ("exit code " .. result.code)
-        vim.notify(
-          opts.tool_label .. ": dependency sync failed\n" .. detail,
-          vim.log.levels.ERROR,
-          { id = opts.notify_id }
-        )
+        ui.notify_err(opts.tool_label .. ": dependency sync failed\n" .. detail, nil, { id = opts.notify_id })
       end
     end)
   end)
@@ -113,9 +111,9 @@ function M.run(opts)
       HEARTBEAT_INTERVAL_MS,
       vim.schedule_wrap(function()
         local elapsed_seconds = math.floor((vim.uv.now() - started) / 1000)
-        vim.notify(
+        ui.notify_info(
           opts.tool_label .. ": syncing dependencies... (" .. elapsed_seconds .. "s)",
-          vim.log.levels.INFO,
+          nil,
           { id = opts.notify_id }
         )
       end)
@@ -142,9 +140,9 @@ function M.run(opts)
         -- resolves on schedule regardless of whether the kill signal is
         -- ever actually observed to take effect.
         sync_state.mark_ready()
-        vim.notify(
+        ui.notify_err(
           opts.tool_label .. ": dependency sync timed out after " .. (SYNC_TIMEOUT_MS / 1000) .. "s",
-          vim.log.levels.ERROR,
+          nil,
           { id = opts.notify_id }
         )
       end)
@@ -152,13 +150,13 @@ function M.run(opts)
   else
     stop_timers()
     sync_state.mark_ready()
-    vim.notify(
+    ui.notify_err(
       opts.tool_label
         .. ": dependency sync failed to start ("
         .. opts.base_cmd
         .. " not found)\n"
         .. tostring(handle_or_err),
-      vim.log.levels.ERROR,
+      nil,
       { id = opts.notify_id }
     )
   end

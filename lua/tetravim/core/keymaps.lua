@@ -179,7 +179,7 @@ local grpc = require("tetravim.util.grpc")
 local jvm = require("tetravim.util.jvm")
 local jvm_ok, jvm_err = pcall(jvm.setup_keymaps)
 if not jvm_ok then
-  vim.notify("Failed to register JVM keymaps: " .. tostring(jvm_err), vim.log.levels.WARN, { title = "TetraVim JVM" })
+  ui.notify_warn("Failed to register JVM keymaps: " .. tostring(jvm_err), "TetraVim JVM")
 end
 
 -- ==============================================================================
@@ -188,7 +188,7 @@ end
 local devops = require("tetravim.core.devops")
 local ok, err = pcall(devops.setup_keymaps)
 if not ok then
-  vim.notify("Failed to register DevOps keymaps: " .. tostring(err), vim.log.levels.WARN, { title = "TetraVim DevOps" })
+  ui.notify_warn("Failed to register DevOps keymaps: " .. tostring(err), "TetraVim DevOps")
 end
 
 lang_keymaps.setup()
@@ -342,12 +342,12 @@ local function save_current_file()
   local name = vim.api.nvim_buf_get_name(0)
   if name == "" then
     -- Unnamed/scratch buffer: prompt for a file name instead of crashing with E32
-    vim.notify("Buffer has no file name — use :saveas or :w <filename>", vim.log.levels.WARN)
+    ui.notify_warn("Buffer has no file name — use :saveas or :w <filename>")
     return
   end
   vim.cmd("update")
   local short = vim.fn.fnamemodify(name, ":t")
-  vim.notify("Saved " .. short, vim.log.levels.INFO)
+  ui.notify_info("Saved " .. short)
 end
 
 map({ "n", "i" }, "<C-s>", save_current_file, { desc = "Save Current File" })
@@ -355,7 +355,7 @@ map("n", "<leader>fs", save_current_file, { desc = "Save Current File" })
 
 map("n", "<leader>fa", function()
   vim.cmd("wall")
-  vim.notify("Saved all modified files", vim.log.levels.INFO)
+  ui.notify_info("Saved all modified files")
 end, { desc = "Save All Files" })
 
 map("n", "<leader>fS", function()
@@ -363,7 +363,7 @@ map("n", "<leader>fS", function()
   vim.ui.input({ prompt = " Save As: ", default = current }, function(input)
     if input and #input > 0 then
       vim.cmd("saveas! " .. vim.fn.fnameescape(input))
-      vim.notify("Saved as: " .. input, vim.log.levels.INFO)
+      ui.notify_info("Saved as: " .. input)
     end
   end)
 end, { desc = "Save As..." })

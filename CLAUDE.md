@@ -183,3 +183,9 @@ theme switcher" was removed — do not reintroduce provider palette tables.
   `pcall`/`executable` check that degrades to a single `ui.notify_*` call.
 - Every feature that touches an external tool should add a probe to the relevant
   `lua/tetravim/health/<group>.lua` section.
+- Never call `vim.notify(...)` raw. Route every notification through
+  `require("tetravim.util.ui").notify_info/warn/err` (facade) — or
+  `tetravim.util.notify` directly in the rare module that already binds it — so
+  the default title and the opt-in telemetry sink apply. Only `util/notify.lua`
+  (the base impl) and `util/ui.lua` (its raw fallback) may name `vim.notify`;
+  `tests/notify_layer_spec.lua` fails the suite on any other occurrence.

@@ -11,6 +11,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 local coverage_ns = vim.api.nvim_create_namespace("tetravim_coverage")
 local SIGN_GROUP = "tetravim_coverage_signs"
 
@@ -206,11 +208,7 @@ function M.parse_xml(content, report_path)
   -- strings passed straight to parse_xml.
   if report_path and summary.lines_total == 0 then
     vim.schedule(function()
-      vim.notify(
-        "JaCoCo report parsed but contains no coverable lines: " .. report_path,
-        vim.log.levels.WARN,
-        { title = "TetraVim Coverage" }
-      )
+      ui.notify_warn("JaCoCo report parsed but contains no coverable lines: " .. report_path, "TetraVim Coverage")
     end)
   end
 
@@ -399,7 +397,7 @@ function M.load(xml_path, opts)
 
   if not xml_path or vim.fn.filereadable(xml_path) == 0 then
     local msg = "No JaCoCo coverage report found in standard target/build dirs"
-    vim.notify(msg, vim.log.levels.WARN, { title = "TetraVim Coverage" })
+    ui.notify_warn(msg, "TetraVim Coverage")
     return false, msg
   end
 
@@ -413,7 +411,7 @@ function M.load(xml_path, opts)
     M.is_visible = false
     M.is_loading = false
     applied_bufs = {}
-    vim.notify("Failed to parse JaCoCo XML: " .. err_msg, vim.log.levels.ERROR, { title = "TetraVim Coverage" })
+    ui.notify_err("Failed to parse JaCoCo XML: " .. err_msg, "TetraVim Coverage")
     return false, err_msg
   end
 
@@ -429,7 +427,7 @@ function M.load(xml_path, opts)
   M.apply_to_all_buffers(opts.on_done)
 
   local s = res.summary
-  vim.notify(
+  ui.notify_info(
     string.format(
       "JaCoCo coverage loaded: %.1f%% (%d covered, %d missed, %d partial)",
       s.coverage_pct,
@@ -437,8 +435,7 @@ function M.load(xml_path, opts)
       s.lines_missed,
       s.lines_partial
     ),
-    vim.log.levels.INFO,
-    { title = "TetraVim Coverage" }
+    "TetraVim Coverage"
   )
 
   return true, res
@@ -472,12 +469,12 @@ end
 function M.toggle()
   if M.is_visible then
     M.clear(false)
-    vim.notify("Coverage overlay hidden", vim.log.levels.INFO, { title = "TetraVim Coverage" })
+    ui.notify_info("Coverage overlay hidden", "TetraVim Coverage")
   else
     if M.last_coverage then
       M.is_visible = true
       M.apply_to_all_buffers()
-      vim.notify("Coverage overlay shown", vim.log.levels.INFO, { title = "TetraVim Coverage" })
+      ui.notify_info("Coverage overlay shown", "TetraVim Coverage")
     else
       M.load()
     end
@@ -488,9 +485,7 @@ end
 ---@return table|nil
 function M.summary()
   if not M.last_coverage then
-    vim.notify("No coverage report loaded. Use <leader>jcl to load JaCoCo coverage.", vim.log.levels.WARN, {
-      title = "TetraVim Coverage",
-    })
+    ui.notify_warn("No coverage report loaded. Use <leader>jcl to load JaCoCo coverage.", "TetraVim Coverage")
     return nil
   end
 
@@ -505,7 +500,7 @@ function M.summary()
     s.lines_partial,
     #M.last_coverage.entries
   )
-  vim.notify(msg, vim.log.levels.INFO, { title = "TetraVim Coverage" })
+  ui.notify_info(msg, "TetraVim Coverage")
   return s
 end
 
@@ -542,7 +537,7 @@ end, { nargs = "?", complete = "file", desc = "Load JaCoCo code coverage report"
 
 vim.api.nvim_create_user_command("TetraVimCoverageClear", function()
   M.clear(true)
-  vim.notify("JaCoCo coverage cleared", vim.log.levels.INFO, { title = "TetraVim Coverage" })
+  ui.notify_info("JaCoCo coverage cleared", "TetraVim Coverage")
 end, { desc = "Clear JaCoCo code coverage" })
 
 vim.api.nvim_create_user_command("TetraVimCoverageToggle", function()

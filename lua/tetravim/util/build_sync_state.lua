@@ -10,6 +10,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 M.ready = false
 
 -- True while a sync spawned by run() is in flight. apply() in
@@ -40,7 +42,7 @@ function M.mark_ready()
   for _, cb in ipairs(listeners) do
     local ok, err = pcall(cb)
     if not ok then
-      vim.notify("TetraVim: build_sync_state on_ready listener failed: " .. tostring(err), vim.log.levels.WARN)
+      ui.notify_warn("TetraVim: build_sync_state on_ready listener failed: " .. tostring(err))
     end
   end
 end
@@ -81,7 +83,7 @@ function M.run()
   end
   sync_timer = vim.fn.timer_start(60000, function()
     if M.syncing then
-      vim.notify("TetraVim: build sync timeout (60s), clearing lock", vim.log.levels.WARN)
+      ui.notify_warn("TetraVim: build sync timeout (60s), clearing lock")
       M.syncing = false
       sync_timer = nil
     end

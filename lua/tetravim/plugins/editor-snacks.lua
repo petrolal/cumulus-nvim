@@ -1,3 +1,5 @@
+local ui = require("tetravim.util.ui")
+
 local banner = [[
   ╭────────────────────────────────────────────────╮  
   │                                                │  
@@ -177,7 +179,7 @@ return {
             if ok then
               persistence.load()
             else
-              vim.notify("persistence.nvim is not loaded", vim.log.levels.WARN)
+              ui.notify_warn("persistence.nvim is not loaded")
             end
           end,
         },
@@ -298,7 +300,7 @@ return {
           if #vim.lsp.get_clients({ bufnr = 0, method = "textDocument/typeDefinition" }) > 0 then
             Snacks.picker.lsp_type_definitions()
           else
-            vim.notify("LSP type definition not supported for buffer", vim.log.levels.WARN)
+            ui.notify_warn("LSP type definition not supported for buffer")
           end
         end,
         mode = "n",

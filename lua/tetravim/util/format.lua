@@ -9,6 +9,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 ---@param buf? number
 ---@return boolean
 function M.enabled(buf)
@@ -32,9 +34,11 @@ function M.info(buf)
     ("global: %s"):format(gaf and "enabled" or "disabled"),
     ("buffer: %s"):format(baf == nil and "inherit" or (baf and "enabled" or "disabled")),
   }
-  vim.notify(table.concat(lines, "\n"), enabled and vim.log.levels.INFO or vim.log.levels.WARN, {
-    title = "Autoformat (" .. (enabled and "enabled" or "disabled") .. ")",
-  })
+  ui.notify(
+    table.concat(lines, "\n"),
+    enabled and vim.log.levels.INFO or vim.log.levels.WARN,
+    "Autoformat (" .. (enabled and "enabled" or "disabled") .. ")"
+  )
 end
 
 ---@param buf boolean If true, toggle for the current buffer only; otherwise toggle globally.

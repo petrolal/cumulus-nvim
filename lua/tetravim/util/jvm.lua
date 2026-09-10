@@ -50,14 +50,14 @@ local function optimize_imports_buffer()
           elseif action.command then
             vim.lsp.buf.execute_command(action.command)
           end
-          vim.notify("Imports organized via LSP", vim.log.levels.INFO)
+          notify.notify_info("Imports organized via LSP")
           return
         end
       end
     end
   end
 
-  vim.notify("No LSP or organizer available to optimize imports", vim.log.levels.INFO)
+  notify.notify_info("No LSP or organizer available to optimize imports")
 end
 
 -- Common Maven lifecycle phases and plugin goals offered by <leader>jbm.
@@ -302,7 +302,7 @@ function M.setup_keymaps()
     M.offline_mode = not M.offline_mode
     local status = M.offline_mode and "ENABLED" or "DISABLED"
     local flags = M.offline_mode and "(-o / --offline)" or ""
-    vim.notify("Offline Mode: " .. status .. " " .. flags, vim.log.levels.INFO)
+    notify.notify_info("Offline Mode: " .. status .. " " .. flags)
   end, { desc = "Toggle Offline Mode (-o / --offline)" })
 
   local function resync_dependencies()
@@ -542,9 +542,9 @@ function M.setup_keymaps()
   map("n", "<leader>jxH", function()
     local clients = vim.lsp.get_clients({ name = "jdtls" })
     if #clients > 0 then
-      vim.notify("JDTLS is active and connected to project", vim.log.levels.INFO)
+      notify.notify_info("JDTLS is active and connected to project")
     else
-      vim.notify("JDTLS is not active for this buffer", vim.log.levels.WARN)
+      notify.notify_warn("JDTLS is not active for this buffer")
     end
   end, { desc = "JDTLS: Check Client Status" })
 
@@ -595,7 +595,7 @@ function M.setup_keymaps()
       ver.minor,
       ver.patch
     )
-    vim.notify(msg, vim.log.levels.INFO)
+    notify.notify_info(msg)
   end, { desc = "JVM Environment: LSP Status" })
 
   map("n", "<leader>jid", "<cmd>Mason<cr>", { desc = "Mason Package Manager" })

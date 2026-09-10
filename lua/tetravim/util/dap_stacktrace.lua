@@ -3,6 +3,8 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 --- Extract stacktrace line at cursor position
 ---@return string|nil The stacktrace line or nil if not found
 local function get_stacktrace_line_at_cursor()
@@ -63,7 +65,7 @@ end
 function M.drill_down_at_line()
   local line = get_stacktrace_line_at_cursor()
   if not line then
-    vim.notify("No stacktrace found at cursor", vim.log.levels.WARN)
+    ui.notify_warn("No stacktrace found at cursor")
     return
   end
 
@@ -78,7 +80,7 @@ function M.drill_down_at_line()
       vim.lsp.buf.workspace_symbol(method)
       return
     end
-    vim.notify("Unable to resolve stacktrace symbol", vim.log.levels.WARN)
+    ui.notify_warn("Unable to resolve stacktrace symbol")
     return
   end
 

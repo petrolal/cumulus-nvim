@@ -10,8 +10,10 @@
 
 local M = {}
 
+local ui = require("tetravim.util.ui")
+
 local function notify_warn(msg)
-  vim.notify(msg, vim.log.levels.WARN, { title = "TetraVim Doc" })
+  ui.notify_warn(msg, "TetraVim Doc")
 end
 
 --- Generate a documentation stub for the construct under the cursor.
