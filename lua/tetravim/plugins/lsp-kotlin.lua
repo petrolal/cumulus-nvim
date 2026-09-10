@@ -60,16 +60,33 @@ local function foreign_kotlin_lsp()
   return vim.v.shell_error == 0
 end
 
-local kotlin_lsp_suppressed = has_kotlin_lsp and foreign_kotlin_lsp()
-if kotlin_lsp_suppressed then
-  vim.schedule(function()
-    require("tetravim.util.ui").notify_warn(
-      "Kotlin LSP: another Neovim/IDE already holds the JetBrains workspace index -- "
-        .. "not starting a second intellij-server (it would fail every request). "
-        .. "Close the other session, or set TETRAVIM_KOTLIN_LSP_FORCE=1, then :LspStart kotlin_lsp.",
-      "kotlin-lsp"
-    )
-  end)
+-- Deferred suppression gate. This precondition used to be evaluated at
+-- module-load time, but `foreign_kotlin_lsp()` shells out to `pgrep`
+-- synchronously -- on the eager startup path that the CI startup-time budget
+-- guards. Run it lazily instead, from `kotlin_lsp_root` below, when the first
+-- Kotlin buffer actually asks the server to start; warn at most once per
+-- session.
+local suppressed_notified = false
+
+local function kotlin_lsp_root(fname_or_buf, on_dir)
+  if foreign_kotlin_lsp() then
+    if not suppressed_notified then
+      suppressed_notified = true
+      vim.schedule(function()
+        require("tetravim.util.ui").notify_warn(
+          "Kotlin LSP: another Neovim/IDE already holds the JetBrains workspace index -- "
+            .. "not starting a second intellij-server (it would fail every request). "
+            .. "Close the other session, or set TETRAVIM_KOTLIN_LSP_FORCE=1, then :LspStart kotlin_lsp.",
+          "kotlin-lsp"
+        )
+      end)
+    end
+    -- Do not call on_dir: with a function root_dir that never resolves, no
+    -- client is started for this buffer -- and a later buffer retries, so
+    -- closing the other session recovers without a config reload.
+    return
+  end
+  return resolve_root(fname_or_buf, on_dir)
 end
 
 local resilience = require("tetravim.util.lsp_resilience")
@@ -122,9 +139,11 @@ return {
       servers = {
         -- Official JetBrains Kotlin Language Server (IntelliJ IDEA engine)
         kotlin_lsp = {
-          enabled = has_kotlin_lsp and not kotlin_lsp_suppressed,
+          enabled = has_kotlin_lsp,
           cmd = { kotlin_lsp_bin, "--stdio" },
-          root_dir = resolve_root,
+          -- kotlin_lsp_root layers the (now deferred) concurrent-index guard
+          -- over resolve_root; the fallback server below keeps plain resolve_root.
+          root_dir = kotlin_lsp_root,
           on_attach = kotlin_on_attach,
           on_exit = kotlin_lsp_on_exit,
         },

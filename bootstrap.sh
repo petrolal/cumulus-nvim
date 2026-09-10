@@ -32,10 +32,16 @@ echo "=================================================="
 # ============================================================================
 section "Neovim"
 if ! command -v nvim >/dev/null 2>&1; then
-	fail "Neovim not found. Install >= 0.10 first."
+	fail "Neovim not found. Install >= 0.11 first."
 	echo "    macOS:  brew install neovim"
 	echo "    Ubuntu: sudo apt install neovim"
 	echo "    Arch:   sudo pacman -S neovim"
+	exit 1
+fi
+# init.lua hard-fails below 0.11 (vim.lsp.config/enable, vim.diagnostic.jump,
+# winborder); catch it here with an actionable message instead.
+if ! nvim --headless -u NONE -c 'lua os.exit(vim.fn.has("nvim-0.11") == 1 and 0 or 1)' -c 'qa!' >/dev/null 2>&1; then
+	fail "Neovim $(nvim --version | head -n 1 | awk '{print $2}') is too old -- TetraVim requires >= 0.11."
 	exit 1
 fi
 pass "Neovim: $(nvim --version | head -n 1)"

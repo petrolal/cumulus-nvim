@@ -5,10 +5,14 @@ local M = {}
 function M.check()
   vim.health.start("TetraVim Neovim Core & Platform")
 
-  if vim.fn.has("nvim-0.10.0") == 1 then
-    vim.health.ok(string.format("Neovim version: %s (>= 0.10.0 required)", vim.version()))
+  -- Hard floor mirrors init.lua: vim.lsp.config/vim.lsp.enable, vim.diagnostic.jump
+  -- and winborder are all 0.11 APIs, and init.lua bails before this file can load
+  -- on anything older -- so a sub-0.11 Neovim here means something bypassed
+  -- init.lua and belongs in the error bucket, not a soft warning.
+  if vim.fn.has("nvim-0.11") == 1 then
+    vim.health.ok(string.format("Neovim version: %s (>= 0.11 required)", vim.version()))
   else
-    vim.health.warn(string.format("Neovim version: %s (v0.10.0+ recommended)", vim.version()))
+    vim.health.error(string.format("Neovim version: %s -- TetraVim requires Neovim >= 0.11", vim.version()))
   end
 
   if vim.opt.confirm:get() == true then

@@ -6,12 +6,14 @@ tetravim.nvim covers it with native Neovim LSP / Tree-sitter / Mason tooling.
 Legend: ✅ full LSP + Tree-sitter · 🟡 Tree-sitter / syntax only (no OSS server)
 · ➖ not covered (no OSS equivalent) · 🔷 handled by an existing spec
 
+_Last reconciled with the code: 2026-09-10 (`lsp-kotlin.lua`, `lsp-quarkus.lua`)._
+
 ## Languages
 
 | IDEA bundles | tetravim | Spec file | Server / tool |
 | --- | --- | --- | --- |
 | Java | 🔷 | `lsp-java.lua`, `ftplugin/java.lua` | `jdtls` (+ java-debug, java-test) |
-| Kotlin | 🔷 | `lsp-kotlin.lua` | `kotlin_language_server` |
+| Kotlin | 🔷 | `lsp-kotlin.lua` | JetBrains `kotlin_lsp` (intellij-server / IDEA engine) when installed, else `kotlin_language_server` |
 | Groovy | 🔷 | `lsp-groovy.lua` | `groovyls` |
 | Scala | 🔷 | `lsp-scala.lua` | `nvim-metals` |
 | JavaScript / TypeScript / JSX / TSX | 🔷 | `lsp-typescript.lua` | `ts_ls` |
@@ -45,9 +47,11 @@ Go, Rust, PHP, Ruby, C/C++, Dart, GraphQL, Perl, Elixir, Clojure, Haskell.
 
 | IDEA bundles | tetravim | Notes |
 | --- | --- | --- |
-| Spring / Spring Boot / Data / Security / Batch | 🔷 | served by `jdtls` + `tetravim.util.spring*`; DAP via `ftplugin/java.lua` |
+| Spring / Spring Boot / Data / Security / Batch | 🔷 | `jdtls` + `tetravim.util.spring*` + Spring Boot LS (`lsp-spring-boot.lua`, `spring-boot.nvim` / `vscode-spring-boot-tools`); DAP via `ftplugin/java.lua` |
 | Jakarta EE / Java EE, Hibernate/JPA | 🔷 | `jdtls` semantic model |
-| Micronaut / Quarkus / Ktor / Helidon | 🔷 | `jdtls` / `kotlin_language_server` — no separate server |
+| Quarkus / MicroProfile | 🔷 | `lsp-quarkus.lua` → `quarkus.nvim` + `microprofile.nvim` (lsp4mp + Qute). Dormant until `:TetraVimFetchJvmLspJars` fetches the Red Hat `.vsix` bundles (not in Mason); each server is a separate ~1 GiB JVM, so activation is opt-in |
+| Micronaut | ➖ | intentionally unsupported — no viable Neovim language server exists |
+| Ktor / Helidon | 🔷 | `jdtls` / Kotlin LSP semantic model — no framework-specific server |
 | JUnit / TestNG (JVM test UI) | 🔷 | `tools-test.lua`, `neotest-java` |
 | Node.js / React | 🔷 | `ts_ls` |
 | Angular | ✅ | `lsp-web-frameworks.lua` → `angularls` |

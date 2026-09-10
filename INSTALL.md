@@ -31,7 +31,7 @@ Plain `nvim` command now launches TetraVim. That's it!
 
 ### System Dependencies
 - **git** - Version control
-- **neovim** - Editor (>= 0.10 recommended)
+- **neovim** - Editor (>= 0.11 required; `init.lua` hard-fails on older)
 - **java** - Required by LSP tools (JDTLS, Metals, etc.)
 - **ripgrep** - For fast file searching (Telescope)
 - **fd** - For fast file finding

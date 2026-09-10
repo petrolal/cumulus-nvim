@@ -2,9 +2,9 @@ name: CI
 
 # Runs the validation apparatus that already lives in this repo -- stylua,
 # shell-syntax checks, the plenary busted suite (lua/tetravim/tests/) and the
-# scripts/validate.sh orchestrator -- on every push to main and every PR, so a
-# regression is caught here instead of the next time someone runs validate.sh
-# by hand.
+# native headless provisioning smoke (tetravim.core.setup) -- on every push to
+# main and every PR, so a regression is caught here instead of at the next
+# clone.
 
 on:
   push:
@@ -187,7 +187,18 @@ jobs:
             if [ "$ms" -lt "$best" ]; then best=$ms; fi
           done
           echo "best startup: ${best}ms (budget ${BUDGET_MS}ms)"
-          tail -n 25 startuptime.log || true
+
+          # Attribution: the 15 costliest sourced files / require()s from the
+          # last run, by *self* time (col 3 of --startuptime). A budget
+          # regression is almost always one spec pulling something heavy onto
+          # the eager path -- this points straight at it instead of leaving a
+          # bare "total went up".
+          echo "--- slowest sources / requires (self ms) ---"
+          awk '$4 == "sourcing" || $4 ~ /^require\(/ {
+                 self = $3; $1 = $2 = $3 = ""; sub(/^ +/, "");
+                 printf "%9.3f  %s\n", self, $0
+               }' startuptime.log | sort -rn | head -n 15 || true
+
           if [ "$best" -gt "$BUDGET_MS" ]; then
             echo "::error::startup ${best}ms exceeds ${BUDGET_MS}ms budget"
             exit 1
